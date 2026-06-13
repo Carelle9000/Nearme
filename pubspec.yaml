@@ -1,0 +1,65 @@
+name: nearme
+description: "NearMe — Hyperlocal Dating App"
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.3.0
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_localizations:
+    sdk: flutter
+
+  # UI / State
+  cupertino_icons: ^1.0.8
+  provider: ^6.1.2
+  google_fonts: ^6.2.1
+  intl: ^0.20.2
+
+  # Network
+  http: ^1.2.0
+  web_socket_channel: ^3.0.1
+
+  # Auth locale (decode JWT sans vérification de signature)
+  jwt_decoder: ^2.0.1
+
+  # Connectivity
+  connectivity_plus: ^6.1.0
+
+  # Persistence légère (last_sync, tokens)
+  shared_preferences: ^2.3.2
+
+  # Photos
+  image_picker: ^1.1.2
+  camera: ^0.11.0+2
+  path_provider: ^2.1.5
+  path: ^1.9.0
+
+  # Permissions
+  permission_handler: ^11.3.1
+
+  # UUID local
+  uuid: ^4.4.0
+
+  # Background video on landing screen
+  video_player: ^2.9.2
+
+  # Secure token storage (iOS Keychain / Android Keystore)
+  flutter_secure_storage: ^9.2.2
+
+  # Social sign-in
+  google_sign_in: ^6.2.1
+  sign_in_with_apple: ^6.1.4
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/videos/
+    - assets/images/
