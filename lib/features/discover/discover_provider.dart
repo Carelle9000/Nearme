@@ -9,6 +9,7 @@ class DiscoverFilters {
   final int ageMin;
   final int ageMax;
   final double radiusKm;
+  final String? countryCode;
   final bool verifiedOnly;
   final bool onlineOnly;
   final bool sharedOnly;
@@ -17,6 +18,7 @@ class DiscoverFilters {
     this.ageMin = 18,
     this.ageMax = 40,
     this.radiusKm = 2.0,
+    this.countryCode,
     this.verifiedOnly = true,
     this.onlineOnly = false,
     this.sharedOnly = false,
@@ -26,6 +28,7 @@ class DiscoverFilters {
     int? ageMin,
     int? ageMax,
     double? radiusKm,
+    String? countryCode,
     bool? verifiedOnly,
     bool? onlineOnly,
     bool? sharedOnly,
@@ -34,6 +37,7 @@ class DiscoverFilters {
         ageMin: ageMin ?? this.ageMin,
         ageMax: ageMax ?? this.ageMax,
         radiusKm: radiusKm ?? this.radiusKm,
+        countryCode: countryCode ?? this.countryCode,
         verifiedOnly: verifiedOnly ?? this.verifiedOnly,
         onlineOnly: onlineOnly ?? this.onlineOnly,
         sharedOnly: sharedOnly ?? this.sharedOnly,
@@ -66,10 +70,17 @@ class DiscoverProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  void setCountryFilter(String? countryCode) {
+    _filters = _filters.copyWith(countryCode: countryCode);
+    _applyFilters();
+    notifyListeners();
+  }
+
   void _applyFilters() {
     _deck = kSampleProfiles.where((p) {
       if (p.age < _filters.ageMin || p.age > _filters.ageMax) return false;
       if (p.distanceKm > _filters.radiusKm) return false;
+      if (_filters.countryCode != null && p.country != _filters.countryCode) return false;
       if (_filters.verifiedOnly && !p.verified) return false;
       if (_filters.onlineOnly && !p.online) return false;
       if (_filters.sharedOnly && !p.sharedSpots) return false;

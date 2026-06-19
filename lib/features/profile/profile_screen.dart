@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 
 import '../../core/router/app_routes.dart';
@@ -7,6 +8,7 @@ import '../../core/utils/toasts.dart';
 import '../../core/widgets/signed_photo_image.dart';
 import '../../core/theme/app_colors.dart';
 import '../../data/models/app_user.dart';
+import '../../data/services/photo_service.dart';
 import '../auth/auth_provider.dart';
 import '../locale/locale_provider.dart';
 
@@ -18,7 +20,14 @@ class ProfileScreen extends StatelessWidget {
     final t = context.watch<LocaleProvider>().t;
     final user = context.select<AuthProvider, AppUser?>((a) => a.user);
 
-    if (user == null) return const SizedBox.shrink();
+    if (user == null) {
+      return Scaffold(
+        backgroundColor: AppColors.bg,
+        body: const Center(
+          child: CircularProgressIndicator(color: AppColors.violet),
+        ),
+      );
+    }
 
     return Scaffold(
       backgroundColor: AppColors.bg,
@@ -31,12 +40,10 @@ class ProfileScreen extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  if (user.photos.isNotEmpty) ...[
-                    const SizedBox(height: 20),
-                    _SectionTitle(t('myPhotos')),
-                    const SizedBox(height: 10),
-                    _PhotoGrid(photos: user.photos),
-                  ],
+                  const SizedBox(height: 20),
+                  _SectionTitle(t('myPhotos')),
+                  const SizedBox(height: 10),
+                  _EditablePhotoGrid(photos: user.photos ?? []),
                   if ((user.bio ?? '').isNotEmpty) ...[
                     const SizedBox(height: 20),
                     _SectionTitle(t('aboutMe')),
@@ -216,7 +223,7 @@ class _ProfileSliverHeader extends StatelessWidget {
                       color: AppColors.textMuted,
                     ),
                   ),
-                  if (user.isFaceVerified) ...[
+                  if (user.isFaceVerified ?? false) ...[
                     const SizedBox(height: 8),
                     Container(
                       padding: const EdgeInsets.symmetric(
@@ -378,13 +385,109 @@ class _InfoCard extends StatelessWidget {
   }
 }
 
-class _PhotoGrid extends StatelessWidget {
+class _EditablePhotoGrid extends StatefulWidget {
   final List<String> photos;
-  const _PhotoGrid({required this.photos});
+  const _EditablePhotoGrid({required this.photos});
+
+  @override
+  State<_EditablePhotoGrid> createState() => _EditablePhotoGridState();
+}
+
+class _EditablePhotoGridState extends State<_EditablePhotoGrid> {
+  late List<String> _photos;
+
+  @override
+  void initState() {
+    super.initState();
+    _photos = List.from(widget.photos);
+  }
+
+  @override
+  void didUpdateWidget(_EditablePhotoGrid oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.photos != widget.photos) {
+      _photos = List.from(widget.photos);
+    }
+  }
+
+  Future<void> _addPhoto() async {
+    if (_photos.length >= 6) {
+      if (mounted) AppToasts.info(context, 'Maximum 6 photos');
+      return;
+    }
+    final picker = ImagePicker();
+    final xfile = await picker.pickImage(
+      source: ImageSource.gallery,
+      imageQuality: 80,
+    );
+    if (xfile == null) return;
+    try {
+      final localPath = await PhotoService.persistLocally(xfile);
+      if (mounted) {
+        final auth = context.read<AuthProvider>();
+        await auth.addPhotos([localPath]);
+        if (mounted) {
+          setState(() {
+            _photos = List.from(auth.user?.photos ?? []);
+          });
+        }
+      }
+    } catch (e) {
+      if (mounted) AppToasts.error(context, 'Failed to load photo');
+    }
+  }
+
+  Future<void> _deletePhoto(String url) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: AppColors.surfaceHigh,
+        title: Text(
+          'Delete photo',
+          style: GoogleFonts.fraunces(
+            fontSize: 18,
+            fontWeight: FontWeight.w600,
+            color: AppColors.textPrimary,
+          ),
+        ),
+        content: Text(
+          'Remove this photo from your profile?',
+          style: GoogleFonts.dmSans(
+            fontSize: 14,
+            color: AppColors.textSecondary,
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: Text(
+              'Cancel',
+              style: GoogleFonts.dmSans(color: AppColors.textSecondary),
+            ),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            style: TextButton.styleFrom(foregroundColor: AppColors.pink),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+    if (mounted) {
+      final auth = context.read<AuthProvider>();
+      await auth.deletePhoto(url);
+      if (mounted) {
+        setState(() {
+          _photos = List.from(auth.user?.photos ?? []);
+        });
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
-    final visible = photos.take(6).toList();
+    final visible = _photos.take(6).toList();
     return GridView.builder(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
@@ -394,11 +497,59 @@ class _PhotoGrid extends StatelessWidget {
         mainAxisSpacing: 8,
         childAspectRatio: 0.75,
       ),
-      itemCount: visible.length,
-      itemBuilder: (context, i) => ClipRRect(
-        borderRadius: BorderRadius.circular(12),
-        child: SignedPhotoImage(path: visible[i]),
-      ),
+      itemCount: visible.length + (visible.length < 6 ? 1 : 0),
+      itemBuilder: (context, i) {
+        if (i == visible.length) {
+          // Add button
+          return GestureDetector(
+            onTap: _addPhoto,
+            child: Container(
+              decoration: BoxDecoration(
+                color: AppColors.surface,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: AppColors.border),
+              ),
+              child: const Center(
+                child: Icon(
+                  Icons.add_photo_alternate_outlined,
+                  color: AppColors.violet,
+                  size: 32,
+                ),
+              ),
+            ),
+          );
+        }
+        // Photo tile
+        return Stack(
+          fit: StackFit.expand,
+          children: [
+            ClipRRect(
+              borderRadius: BorderRadius.circular(12),
+              child: SignedPhotoImage(path: visible[i]),
+            ),
+            Positioned(
+              top: 4,
+              right: 4,
+              child: GestureDetector(
+                onTap: () => _deletePhoto(visible[i]),
+                child: Container(
+                  width: 28,
+                  height: 28,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: AppColors.pink.withValues(alpha: 0.2),
+                  ),
+                  child: const Icon(
+                    Icons.cancel,
+                    color: AppColors.pink,
+                    size: 18,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        );
+      },
     );
   }
 }

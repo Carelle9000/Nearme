@@ -2,22 +2,25 @@ import 'package:flutter/foundation.dart';
 
 import '../../data/models/app_user.dart';
 import '../../data/services/auth_service.dart';
+import '../../data/services/photo_service.dart';
 
 class AuthProvider extends ChangeNotifier {
   final AuthService _service;
   AppUser? _user;
   bool _busy = false;
+  bool _uploadingPhotos = false;
   String? _error;
 
   AuthProvider(this._service) {
     _user = _service.currentUser;
   }
 
-  AppUser? get user      => _user;
-  bool get isLoggedIn    => _user != null && _service.isLoggedIn;
-  bool get busy          => _busy;
-  String? get error      => _error;
-  String? get accessToken => _service.accessToken;
+  AppUser? get user             => _user;
+  bool get isLoggedIn           => _user != null && _service.isLoggedIn;
+  bool get busy                 => _busy;
+  bool get uploadingPhotos      => _uploadingPhotos;
+  String? get error             => _error;
+  String? get accessToken       => _service.accessToken;
 
   // ── Auth ────────────────────────────────────────────────────────────────────
 
@@ -74,6 +77,35 @@ class AuthProvider extends ChangeNotifier {
   Future<void> updateBio(String bio) async {
     if (_user == null) return;
     await _run(() => _service.updateUser(_user!.copyWith(bio: bio)));
+  }
+
+  Future<void> addPhotos(List<String> localPaths) async {
+    if (_user == null) return;
+    _uploadingPhotos = true;
+    _error = null;
+    notifyListeners();
+    try {
+      await _service.addPhotos(_user!.id, localPaths);
+      _user = _service.currentUser;
+    } catch (e) {
+      _error = e.toString();
+    } finally {
+      _uploadingPhotos = false;
+      await PhotoService.clearLocalPhotos();
+      notifyListeners();
+    }
+  }
+
+  Future<void> deletePhoto(String downloadUrl) async {
+    if (_user == null) return;
+    try {
+      await _service.deletePhoto(_user!.id, downloadUrl);
+      _user = _service.currentUser;
+      notifyListeners();
+    } catch (e) {
+      _error = e.toString();
+      notifyListeners();
+    }
   }
 
   Future<void> logout() async {

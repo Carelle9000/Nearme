@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 
 import '../../core/theme/app_colors.dart';
 import '../../core/utils/toasts.dart';
+import '../../core/widgets/signed_photo_image.dart';
 import '../../data/models/app_user.dart';
+import '../../data/services/photo_service.dart';
 import '../locale/locale_provider.dart';
 import 'auth_provider.dart';
 
@@ -13,6 +16,7 @@ import 'auth_provider.dart';
 // Step 1: Account   (name / email / password)
 // Step 2: Profile   (gender / height / bio / intention)
 // Step 3: Interests
+// Step 4: Photos    (profile photos — required minimum 1)
 //
 
 class MultiStepRegister extends StatefulWidget {
@@ -47,6 +51,9 @@ class _MultiStepRegisterState extends State<MultiStepRegister> {
   // Step 3 — Interests
   final List<String> _selectedInterests = [];
 
+  // Step 4 — Photos
+  final List<String> _localPhotoPaths = [];
+
   // Extra account / profile fields
   final _confirmPassCtrl = TextEditingController();
   final _locationCtrl = TextEditingController();
@@ -65,6 +72,27 @@ class _MultiStepRegisterState extends State<MultiStepRegister> {
     super.dispose();
   }
 
+  // ── Photo picker ────────────────────────────────────────────────────────────
+
+  Future<void> _addPhoto() async {
+    if (_localPhotoPaths.length >= 6) {
+      if (mounted) AppToasts.info(context, 'Maximum 6 photos');
+      return;
+    }
+    final picker = ImagePicker();
+    final xfile = await picker.pickImage(
+      source: ImageSource.gallery,
+      imageQuality: 80,
+    );
+    if (xfile == null) return;
+    try {
+      final localPath = await PhotoService.persistLocally(xfile);
+      setState(() => _localPhotoPaths.add(localPath));
+    } catch (e) {
+      if (mounted) AppToasts.error(context, 'Failed to load photo');
+    }
+  }
+
   // ── Navigation ──────────────────────────────────────────────────────────────
 
   void _next() {
@@ -73,7 +101,7 @@ class _MultiStepRegisterState extends State<MultiStepRegister> {
       AppToasts.error(context, error);
       return;
     }
-    if (_currentStep < 2) {
+    if (_currentStep < 3) {
       _pageController.nextPage(
         duration: const Duration(milliseconds: 300),
         curve: Curves.easeInOut,
@@ -116,6 +144,9 @@ class _MultiStepRegisterState extends State<MultiStepRegister> {
           return 'Please accept the Terms of Service to continue';
         }
         return null;
+      case 3:
+        if (_localPhotoPaths.isEmpty) return 'Add at least 1 photo';
+        return null;
       default:
         return null;
     }
@@ -141,6 +172,10 @@ class _MultiStepRegisterState extends State<MultiStepRegister> {
       );
       if (!mounted) return;
       if (ok) {
+        // Upload photos after successful registration
+        if (_localPhotoPaths.isNotEmpty) {
+          await auth.addPhotos(_localPhotoPaths);
+        }
         widget.onSuccess(_emailCtrl.text.trim());
       } else if (auth.error != null) {
         AppToasts.error(context, auth.error!);
@@ -201,6 +236,17 @@ class _MultiStepRegisterState extends State<MultiStepRegister> {
                   t: t,
                 ),
               ),
+              SingleChildScrollView(
+                child: _PhotosStep(
+                  photoPaths: _localPhotoPaths,
+                  onAddPhoto: _addPhoto,
+                  onRemovePhoto: (index) => setState(() {
+                    PhotoService.deleteLocal(_localPhotoPaths[index]);
+                    _localPhotoPaths.removeAt(index);
+                  }),
+                  t: t,
+                ),
+              ),
             ],
           ),
         ),
@@ -229,7 +275,7 @@ class _ProgressBar extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 4),
       child: Row(
-        children: List.generate(3, (i) {
+        children: List.generate(4, (i) {
           return Expanded(
             child: Container(
               height: 6,
@@ -298,7 +344,7 @@ class _NavBar extends StatelessWidget {
                     child: CircularProgressIndicator(
                         strokeWidth: 2, color: Colors.white),
                   )
-                : Text(currentStep == 2
+                : Text(currentStep == 3
                     ? t('createAccount').toUpperCase()
                     : t('next').toUpperCase()),
           ),
@@ -553,7 +599,7 @@ class _InterestsStep extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final interests = t('interests_list').split(',');
-    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+    return Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
       Row(children: [
         const Icon(Icons.palette_rounded, color: AppColors.pink, size: 24),
         const SizedBox(width: 12),
@@ -571,7 +617,7 @@ class _InterestsStep extends StatelessWidget {
             color: AppColors.textSecondary,
           )),
       const SizedBox(height: 24),
-      Expanded(
+      Flexible(
         child: SingleChildScrollView(
           child: Wrap(
             spacing: 10,
@@ -603,9 +649,123 @@ class _InterestsStep extends StatelessWidget {
   }
 }
 
+// ─── Step 4: Photos ───────────────────────────────────────────────────────────
+
+class _PhotosStep extends StatelessWidget {
+  final List<String> photoPaths;
+  final VoidCallback onAddPhoto;
+  final ValueChanged<int> onRemovePhoto;
+  final String Function(String) t;
+
+  const _PhotosStep({
+    required this.photoPaths,
+    required this.onAddPhoto,
+    required this.onRemovePhoto,
+    required this.t,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(children: [
+          const Icon(Icons.image_outlined, color: AppColors.emerald, size: 24),
+          const SizedBox(width: 12),
+          Text('Photos',
+              style: GoogleFonts.fraunces(
+                fontSize: 28,
+                fontWeight: FontWeight.w800,
+                color: AppColors.textPrimary,
+              )),
+        ]),
+        const SizedBox(height: 10),
+        Text('Add at least 1 photo of yourself to get started.',
+            style: GoogleFonts.dmSans(
+              fontSize: 15,
+              color: AppColors.textSecondary,
+            )),
+        const SizedBox(height: 24),
+        GridView.builder(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: 3,
+            crossAxisSpacing: 8,
+            mainAxisSpacing: 8,
+            childAspectRatio: 0.75,
+          ),
+          itemCount: photoPaths.length + (photoPaths.length < 6 ? 1 : 0),
+          itemBuilder: (ctx, i) {
+            if (i == photoPaths.length) {
+              return GestureDetector(
+                onTap: onAddPhoto,
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: AppColors.surface,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: AppColors.border),
+                  ),
+                  child: const Center(
+                    child: Icon(
+                      Icons.add_photo_alternate_outlined,
+                      color: AppColors.violet,
+                      size: 32,
+                    ),
+                  ),
+                ),
+              );
+            }
+            return Stack(
+              fit: StackFit.expand,
+              children: [
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(12),
+                  child: SignedPhotoImage(path: photoPaths[i]),
+                ),
+                Positioned(
+                  top: 4,
+                  right: 4,
+                  child: GestureDetector(
+                    onTap: () => onRemovePhoto(i),
+                    child: Container(
+                      width: 28,
+                      height: 28,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: AppColors.pink.withValues(alpha: 0.2),
+                      ),
+                      child: const Icon(
+                        Icons.cancel,
+                        color: AppColors.pink,
+                        size: 18,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            );
+          },
+        ),
+        const SizedBox(height: 16),
+        Center(
+          child: Text(
+            '${photoPaths.length}/6',
+            style: GoogleFonts.dmSans(
+              fontSize: 12,
+              color: AppColors.textMuted,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
 // ─── Shared field widget ──────────────────────────────────────────────────────
 
-class _Field extends StatelessWidget {
+class _Field extends StatefulWidget {
   final String label;
   final TextEditingController controller;
   final String? hint;
@@ -625,9 +785,22 @@ class _Field extends StatelessWidget {
   });
 
   @override
+  State<_Field> createState() => _FieldState();
+}
+
+class _FieldState extends State<_Field> {
+  late bool _obscured;
+
+  @override
+  void initState() {
+    super.initState();
+    _obscured = widget.obscure;
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      Text(label.toUpperCase(), style: GoogleFonts.dmSans(
+      Text(widget.label.toUpperCase(), style: GoogleFonts.dmSans(
         fontSize: 12,
         fontWeight: FontWeight.w800,
         color: AppColors.textPrimary,
@@ -635,17 +808,27 @@ class _Field extends StatelessWidget {
       )),
       const SizedBox(height: 12),
       TextField(
-        controller: controller,
-        obscureText: obscure,
-        keyboardType: keyboard,
-        maxLines: lines,
+        controller: widget.controller,
+        obscureText: _obscured,
+        keyboardType: widget.keyboard,
+        maxLines: widget.lines,
         style: GoogleFonts.dmSans(
             color: AppColors.textPrimary, fontWeight: FontWeight.w600),
         decoration: InputDecoration(
-          hintText: hint,
+          hintText: widget.hint,
           hintStyle: GoogleFonts.dmSans(color: AppColors.textSecondary, fontSize: 14),
           prefixIcon:
-              icon != null ? Icon(icon, color: AppColors.violetGlow, size: 20) : null,
+              widget.icon != null ? Icon(widget.icon, color: AppColors.violetGlow, size: 20) : null,
+          suffixIcon: widget.obscure
+              ? IconButton(
+                  icon: Icon(
+                    _obscured ? Icons.visibility_off_rounded : Icons.visibility_rounded,
+                    color: AppColors.violetGlow,
+                    size: 20,
+                  ),
+                  onPressed: () => setState(() => _obscured = !_obscured),
+                )
+              : null,
           filled: true,
           fillColor: AppColors.surface,
           contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),

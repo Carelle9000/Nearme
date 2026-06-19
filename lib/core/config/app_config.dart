@@ -28,5 +28,6 @@ abstract final class AppConfig {
   // Rempli uniquement pour Flutter Web. Sur Android/iOS le clientId est lu
   // depuis google-services.json / GoogleService-Info.plist.
   // Obtenir ce clientId dans Google Cloud Console → Identifiants → Client OAuth Web.
-  static const String? googleWebClientId = null;
+  static const String googleWebClientId =
+      "513859324827-q9kec51te7cifs6t3bmvratg69h3et21.apps.googleusercontent.com";
 }

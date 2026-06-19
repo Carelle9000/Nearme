@@ -50,7 +50,10 @@ class _LandingScreenState extends State<LandingScreen> {
     super.dispose();
   }
 
-  void _start() => Navigator.of(context).pushNamed(AppRoutes.auth);
+  void _start() => Navigator.of(context).pushNamed(
+        AppRoutes.langSelect,
+        arguments: true, // Signal to LangSelect this is onboarding flow
+      );
 
   @override
   Widget build(BuildContext context) {

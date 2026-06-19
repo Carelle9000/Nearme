@@ -3,6 +3,7 @@ class Profile {
   final int age;
   final String emoji;
   final String hood;
+  final String country;
   final double distanceKm;
   final String bio;
   final List<String> tags;
@@ -18,6 +19,7 @@ class Profile {
     required this.age,
     required this.emoji,
     required this.hood,
+    required this.country,
     required this.distanceKm,
     required this.bio,
     required this.tags,

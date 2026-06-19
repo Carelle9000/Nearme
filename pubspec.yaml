@@ -18,17 +18,17 @@ dependencies:
   google_fonts: ^6.2.1
   intl: ^0.20.2
 
-  # Network
-  http: ^1.2.0
-  web_socket_channel: ^3.0.1
-
-  # Auth locale (decode JWT sans vérification de signature)
-  jwt_decoder: ^2.0.1
+  # Firebase
+  firebase_core: ^3.0.0
+  firebase_auth: ^5.0.0
+  cloud_firestore: ^5.0.0
+  firebase_storage: ^12.0.0
+  cloud_functions: ^5.6.2
 
   # Connectivity
   connectivity_plus: ^6.1.0
 
-  # Persistence légère (last_sync, tokens)
+  # Persistence légère (langue, pays)
   shared_preferences: ^2.3.2
 
   # Photos
@@ -46,12 +46,15 @@ dependencies:
   # Background video on landing screen
   video_player: ^2.9.2
 
-  # Secure token storage (iOS Keychain / Android Keystore)
-  flutter_secure_storage: ^9.2.2
-
-  # Social sign-in
+  # Social sign-in (requis par firebase_auth)
   google_sign_in: ^6.2.1
   sign_in_with_apple: ^6.1.4
+
+  # HTTP client for API calls
+  http: ^1.1.0
+
+  # Stripe Identity verification
+  flutter_stripe: ^9.0.0
 
 dev_dependencies:
   flutter_test:

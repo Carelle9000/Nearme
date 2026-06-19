@@ -2,12 +2,11 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 import '../theme/app_colors.dart';
 
 enum ToastType { success, error, warning, info }
-
-// ─── Public API ───────────────────────────────────────────────────────────────
 
 class AppToasts {
   AppToasts._();
@@ -22,7 +21,6 @@ class AppToasts {
   }) {
     if (!context.mounted) return;
 
-    // Remove any existing toast immediately (no animation — new one takes over)
     _current?.remove();
     _current = null;
 
@@ -61,8 +59,6 @@ class AppToasts {
   static void info(BuildContext context, String message) =>
       show(context, message, type: ToastType.info);
 }
-
-// ─── Animated toast card ──────────────────────────────────────────────────────
 
 class _ToastCard extends StatefulWidget {
   final String message;
@@ -129,25 +125,25 @@ class _ToastCardState extends State<_ToastCard>
   Widget build(BuildContext context) {
     final safeTop = MediaQuery.of(context).padding.top;
 
-    final (Color accent, Color bgTint, IconData icon) = switch (widget.type) {
+    final (Color accent, Color accentSubtle, IconData icon) = switch (widget.type) {
       ToastType.success => (
-          const Color(0xFF22C55E),
-          const Color(0xFFF0FDF4),
+          AppColors.emerald,
+          AppColors.emerald.withValues(alpha: 0.15),
           Icons.check_circle_rounded,
         ),
       ToastType.error => (
-          AppColors.rose,
-          const Color(0xFFFFF1F4),
+          AppColors.pink,
+          AppColors.pink.withValues(alpha: 0.15),
           Icons.error_rounded,
         ),
       ToastType.warning => (
-          const Color(0xFFF59E0B),
-          const Color(0xFFFFFBEB),
+          AppColors.gold,
+          AppColors.gold.withValues(alpha: 0.15),
           Icons.warning_rounded,
         ),
       ToastType.info => (
-          AppColors.navy,
-          const Color(0xFFF0F4FF),
+          AppColors.violet,
+          AppColors.violet.withValues(alpha: 0.15),
           Icons.info_rounded,
         ),
     };
@@ -168,46 +164,39 @@ class _ToastCardState extends State<_ToastCard>
             child: Material(
               color: Colors.transparent,
               child: Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                 decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border(
-                    left: BorderSide(color: accent, width: 4),
+                  color: AppColors.surfaceHigh,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                    color: accent.withValues(alpha: 0.25),
+                    width: 1.2,
                   ),
                   boxShadow: [
                     BoxShadow(
-                      color: accent.withValues(alpha: 0.18),
-                      blurRadius: 24,
+                      color: accent.withValues(alpha: 0.12),
+                      blurRadius: 16,
                       offset: const Offset(0, 8),
-                    ),
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.07),
-                      blurRadius: 8,
-                      offset: const Offset(0, 2),
                     ),
                   ],
                 ),
                 child: Row(
                   children: [
-                    // Icône colorée dans un cercle teinté
                     Container(
-                      width: 38,
-                      height: 38,
+                      width: 40,
+                      height: 40,
                       decoration: BoxDecoration(
-                        color: bgTint,
+                        color: accentSubtle,
                         shape: BoxShape.circle,
                       ),
-                      child: Icon(icon, color: accent, size: 21),
+                      child: Icon(icon, color: accent, size: 22),
                     ),
                     const SizedBox(width: 12),
-                    // Message
                     Expanded(
                       child: Text(
                         widget.message,
-                        style: const TextStyle(
-                          color: AppColors.navy,
+                        style: GoogleFonts.dmSans(
+                          color: AppColors.textPrimary,
                           fontSize: 14,
                           fontWeight: FontWeight.w600,
                           height: 1.4,
@@ -215,12 +204,11 @@ class _ToastCardState extends State<_ToastCard>
                       ),
                     ),
                     const SizedBox(width: 8),
-                    // Bouton fermer
                     GestureDetector(
                       onTap: _dismiss,
-                      child: const Icon(
+                      child: Icon(
                         Icons.close_rounded,
-                        color: AppColors.textSecondary,
+                        color: AppColors.textMuted,
                         size: 18,
                       ),
                     ),

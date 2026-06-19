@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 
 import '../../core/constants/countries_data.dart';
 import '../../core/router/app_routes.dart';
 import '../../core/theme/app_colors.dart';
-import '../../core/theme/app_theme.dart';
 import '../../data/models/country.dart';
 import '../../l10n/app_strings.dart';
 import 'locale_provider.dart';
@@ -31,10 +31,6 @@ class _LangSelectScreenState extends State<LangSelectScreen> {
     await locale.persist();
     if (!mounted) return;
 
-    // arguments == true  → called from LandingScreen (onboarding flow)
-    //                       → replace this screen with /auth
-    // no argument        → called from Discover settings icon
-    //                       → just pop back to discover
     final fromOnboarding =
         ModalRoute.of(context)?.settings.arguments == true;
 
@@ -58,12 +54,6 @@ class _LangSelectScreenState extends State<LangSelectScreen> {
 
     return Scaffold(
       backgroundColor: AppColors.bg,
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        centerTitle: true,
-        title: Text(t('chooseLanguage'), style: AppTheme.display(size: 20, color: AppColors.navy)),
-      ),
       body: SafeArea(
         child: Column(
           children: [
@@ -71,11 +61,26 @@ class _LangSelectScreenState extends State<LangSelectScreen> {
               child: ListView(
                 padding: const EdgeInsets.symmetric(horizontal: 24),
                 children: [
+                  const SizedBox(height: 20),
+                  Text(
+                    t('chooseLanguage'),
+                    textAlign: TextAlign.center,
+                    style: GoogleFonts.fraunces(
+                      fontSize: 32,
+                      fontWeight: FontWeight.w900,
+                      color: AppColors.textPrimary,
+                      letterSpacing: -0.8,
+                    ),
+                  ),
                   const SizedBox(height: 10),
                   Text(
                     t('langSub'),
                     textAlign: TextAlign.center,
-                    style: AppTheme.body(size: 14),
+                    style: GoogleFonts.dmSans(
+                      fontSize: 15,
+                      color: AppColors.textSecondary,
+                      height: 1.5,
+                    ),
                   ),
                   const SizedBox(height: 32),
                   _SectionLabel(text: t('selectLanguage')),
@@ -84,16 +89,13 @@ class _LangSelectScreenState extends State<LangSelectScreen> {
                     selected: locale.langCode,
                     onSelect: (code) => locale.selectLanguage(code),
                   ),
-                  const SizedBox(height: 32),
+                  const SizedBox(height: 40),
                   _SectionLabel(text: t('selectCountry')),
                   const SizedBox(height: 16),
-                  TextField(
+                  _SearchField(
                     controller: _search,
                     onChanged: (v) => setState(() => _query = v),
-                    decoration: InputDecoration(
-                      hintText: t('searchCountries'),
-                      prefixIcon: const Icon(Icons.search_rounded, color: AppColors.violet),
-                    ),
+                    hintText: t('searchCountries'),
                   ),
                   const SizedBox(height: 16),
                   ...visibleCountries.map((c) => _CountryTile(
@@ -101,7 +103,7 @@ class _LangSelectScreenState extends State<LangSelectScreen> {
                         selected: locale.country.code == c.code,
                         onTap: () => locale.selectCountry(c),
                       )),
-                  const SizedBox(height: 32),
+                  const SizedBox(height: 40),
                 ],
               ),
             ),
@@ -110,20 +112,36 @@ class _LangSelectScreenState extends State<LangSelectScreen> {
               child: Column(children: [
                 SizedBox(
                   width: double.infinity,
+                  height: 58,
                   child: Container(
                     decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(20),
                       boxShadow: [
                         BoxShadow(
-                          color: AppColors.violet.withValues(alpha: 0.2),
-                          blurRadius: 15,
-                          offset: const Offset(0, 8),
+                          color: AppColors.violet.withValues(alpha: 0.4),
+                          blurRadius: 20,
+                          offset: const Offset(0, 10),
                         ),
                       ],
                     ),
                     child: ElevatedButton(
                       onPressed: _confirm,
-                      style: ElevatedButton.styleFrom(shape: const StadiumBorder()),
-                      child: Text(t('continueBtn').toUpperCase()),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.violet,
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        elevation: 0,
+                      ),
+                      child: Text(
+                        t('continueBtn').toUpperCase(),
+                        style: GoogleFonts.dmSans(
+                          fontWeight: FontWeight.w800,
+                          fontSize: 15,
+                          letterSpacing: 1.2,
+                        ),
+                      ),
                     ),
                   ),
                 ),
@@ -131,7 +149,11 @@ class _LangSelectScreenState extends State<LangSelectScreen> {
                 Text(
                   t('changeAnytime'),
                   textAlign: TextAlign.center,
-                  style: AppTheme.body(size: 12, color: AppColors.textMuted),
+                  style: GoogleFonts.dmSans(
+                    fontSize: 12,
+                    color: AppColors.textMuted,
+                    height: 1.5,
+                  ),
                 ),
               ]),
             ),
@@ -150,11 +172,58 @@ class _SectionLabel extends StatelessWidget {
   Widget build(BuildContext context) {
     return Text(
       text.toUpperCase(),
-      style: const TextStyle(
+      style: GoogleFonts.dmSans(
         fontSize: 12,
         fontWeight: FontWeight.w800,
-        letterSpacing: 1.2,
-        color: AppColors.navy,
+        letterSpacing: 1.5,
+        color: AppColors.textMuted,
+      ),
+    );
+  }
+}
+
+class _SearchField extends StatelessWidget {
+  final TextEditingController controller;
+  final ValueChanged<String> onChanged;
+  final String hintText;
+
+  const _SearchField({
+    required this.controller,
+    required this.onChanged,
+    required this.hintText,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return TextField(
+      controller: controller,
+      onChanged: onChanged,
+      style: GoogleFonts.dmSans(
+        color: AppColors.textPrimary,
+        fontWeight: FontWeight.w500,
+      ),
+      decoration: InputDecoration(
+        hintText: hintText,
+        hintStyle: GoogleFonts.dmSans(
+          color: AppColors.textSecondary.withValues(alpha: 0.7),
+          fontSize: 15,
+        ),
+        prefixIcon: Icon(Icons.search_rounded, color: AppColors.violetGlow, size: 22),
+        filled: true,
+        fillColor: AppColors.surface.withValues(alpha: 0.6),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(20),
+          borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.1)),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(20),
+          borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.1)),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(20),
+          borderSide: const BorderSide(color: AppColors.violet, width: 1.5),
+        ),
       ),
     );
   }
@@ -186,17 +255,21 @@ class _LangGrid extends StatelessWidget {
             duration: const Duration(milliseconds: 200),
             padding: const EdgeInsets.symmetric(horizontal: 12),
             decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(20),
+              color: isSelected
+                  ? AppColors.violet.withValues(alpha: 0.12)
+                  : AppColors.surface,
+              borderRadius: BorderRadius.circular(16),
               border: Border.all(
-                color: isSelected ? AppColors.violet : AppColors.border,
-                width: 2,
+                color: isSelected
+                    ? AppColors.violet.withValues(alpha: 0.5)
+                    : AppColors.border,
+                width: 1.5,
               ),
               boxShadow: [
                 if (isSelected)
                   BoxShadow(
-                    color: AppColors.violet.withValues(alpha: 0.1),
-                    blurRadius: 10,
+                    color: AppColors.violet.withValues(alpha: 0.15),
+                    blurRadius: 12,
                   ),
               ],
             ),
@@ -210,16 +283,16 @@ class _LangGrid extends StatelessWidget {
                   children: [
                     Text(
                       l.englishName,
-                      style: TextStyle(
-                        color: AppColors.navy,
+                      style: GoogleFonts.dmSans(
+                        color: AppColors.textPrimary,
                         fontWeight: FontWeight.w700,
-                        fontSize: 14,
+                        fontSize: 13,
                       ),
                       overflow: TextOverflow.ellipsis,
                     ),
                     Text(
                       l.nativeName,
-                      style: TextStyle(
+                      style: GoogleFonts.dmSans(
                         color: AppColors.textSecondary,
                         fontSize: 11,
                       ),
@@ -249,18 +322,22 @@ class _CountryTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.only(bottom: 10),
       child: GestureDetector(
         onTap: onTap,
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 200),
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: selected
+                ? AppColors.violet.withValues(alpha: 0.12)
+                : AppColors.surface,
             borderRadius: BorderRadius.circular(16),
             border: Border.all(
-              color: selected ? AppColors.violet : AppColors.border,
-              width: 1.5,
+              color: selected
+                  ? AppColors.violet.withValues(alpha: 0.5)
+                  : AppColors.border,
+              width: 1.2,
             ),
           ),
           child: Row(children: [
@@ -269,8 +346,8 @@ class _CountryTile extends StatelessWidget {
             Expanded(
               child: Text(
                 country.name,
-                style: TextStyle(
-                  color: AppColors.navy,
+                style: GoogleFonts.dmSans(
+                  color: AppColors.textPrimary,
                   fontSize: 15,
                   fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
                 ),

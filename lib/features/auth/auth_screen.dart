@@ -806,7 +806,7 @@ class _LoginForm extends StatelessWidget {
   }
 }
 
-class _ModernTextField extends StatelessWidget {
+class _ModernTextField extends StatefulWidget {
   final TextEditingController controller;
   final String hintText;
   final IconData icon;
@@ -822,26 +822,49 @@ class _ModernTextField extends StatelessWidget {
   });
 
   @override
+  State<_ModernTextField> createState() => _ModernTextFieldState();
+}
+
+class _ModernTextFieldState extends State<_ModernTextField> {
+  late bool _obscured;
+
+  @override
+  void initState() {
+    super.initState();
+    _obscured = widget.obscureText;
+  }
+
+  @override
   Widget build(BuildContext context) {
     return ClipRRect(
       borderRadius: BorderRadius.circular(20),
       child: BackdropFilter(
         filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
         child: TextField(
-          controller: controller,
-          obscureText: obscureText,
-          keyboardType: keyboardType,
+          controller: widget.controller,
+          obscureText: _obscured,
+          keyboardType: widget.keyboardType,
           style: GoogleFonts.dmSans(
             color: AppColors.textPrimary,
             fontWeight: FontWeight.w500,
           ),
           decoration: InputDecoration(
-            hintText: hintText,
+            hintText: widget.hintText,
             hintStyle: GoogleFonts.dmSans(
               color: AppColors.textSecondary.withValues(alpha: 0.7),
               fontSize: 15,
             ),
-            prefixIcon: Icon(icon, color: AppColors.violetGlow, size: 22),
+            prefixIcon: Icon(widget.icon, color: AppColors.violetGlow, size: 22),
+            suffixIcon: widget.obscureText
+                ? IconButton(
+                    icon: Icon(
+                      _obscured ? Icons.visibility_off_rounded : Icons.visibility_rounded,
+                      color: AppColors.violetGlow,
+                      size: 22,
+                    ),
+                    onPressed: () => setState(() => _obscured = !_obscured),
+                  )
+                : null,
             filled: true,
             fillColor: AppColors.surface.withValues(alpha: 0.6),
             contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),

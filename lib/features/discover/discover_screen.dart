@@ -23,6 +23,7 @@ class DiscoverScreen extends StatefulWidget {
 
 class _DiscoverScreenState extends State<DiscoverScreen> {
   bool _listenerAdded = false;
+  String? _lastCountryCode;
 
   @override
   void didChangeDependencies() {
@@ -30,6 +31,13 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
     if (!_listenerAdded) {
       _listenerAdded = true;
       context.read<DiscoverProvider>().addListener(_onDiscoverChange);
+    }
+
+    // Update country filter if user changed their location
+    final locale = context.read<LocaleProvider>();
+    if (_lastCountryCode != locale.country.code) {
+      _lastCountryCode = locale.country.code;
+      context.read<DiscoverProvider>().setCountryFilter(locale.country.code);
     }
   }
 

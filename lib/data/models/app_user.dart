@@ -2,10 +2,10 @@ enum Intention { friendship, marriage, fun, sex }
 
 /// Application user model.
 ///
-/// Authentication credentials are handled entirely by Supabase Auth.
+/// Authentication credentials are handled by Firebase Auth.
 /// This model holds only profile data.
 class AppUser {
-  final String id;       // UUID from Supabase auth.users
+  final String id;       // UID from Firebase Auth
   final String name;
   final String email;
   final DateTime createdAt;
@@ -19,10 +19,10 @@ class AppUser {
   final String? location;
   final List<String> interests;
 
-  /// Storage paths in Supabase Storage bucket `profile-photos`.
-  /// e.g. "userId/1748000000000.jpg"
-  final List<String> photos;
-  final bool isFaceVerified;
+  /// Firebase Storage URLs for profile photos.
+  /// e.g. "https://firebasestorage.googleapis.com/..."
+  final List<String>? photos;
+  final bool? isFaceVerified;
 
   const AppUser({
     required this.id,
@@ -36,8 +36,8 @@ class AppUser {
     this.intention,
     this.location,
     this.interests = const [],
-    this.photos = const [],
-    this.isFaceVerified = false,
+    this.photos,
+    this.isFaceVerified,
   });
 
   Map<String, dynamic> toJson() => {
@@ -52,8 +52,8 @@ class AppUser {
         'intention': intention?.name,
         'location': location,
         'interests': interests,
-        'photos': photos,
-        'isFaceVerified': isFaceVerified,
+        'photos': photos ?? [],
+        'isFaceVerified': isFaceVerified ?? false,
       };
 
   factory AppUser.fromJson(Map<String, dynamic> json) => AppUser(
@@ -73,6 +73,43 @@ class AppUser {
         photos: List<String>.from(json['photos'] ?? []),
         isFaceVerified: json['isFaceVerified'] as bool? ?? false,
       );
+
+  factory AppUser.fromFirestore(Map<String, dynamic> data, dynamic user) {
+    final displayName = user?.displayName ?? '';
+    final email = user?.email ?? '';
+
+    return AppUser(
+      id: user?.uid ?? data['id'] ?? '',
+      name: data['name'] as String? ?? displayName,
+      email: data['email'] as String? ?? email,
+      createdAt: DateTime.now(),
+      verified: user?.emailVerified ?? false,
+      gender: data['gender'] as String?,
+      height: (data['heightCm'] as num?)?.toDouble(),
+      bio: data['bio'] as String?,
+      intention: data['intention'] != null
+          ? Intention.values.byName(data['intention'] as String)
+          : null,
+      location: data['location'] as String?,
+      interests: List<String>.from(data['interests'] ?? []),
+      photos: List<String>.from(data['photos'] ?? []),
+      isFaceVerified: data['isFaceVerified'] as bool? ?? false,
+    );
+  }
+
+  Map<String, dynamic> toFirestore() => {
+        'name': name,
+        'email': email,
+        'gender': gender,
+        'heightCm': height?.toInt(),
+        'bio': bio,
+        'intention': intention?.name,
+        'location': location,
+        'interests': interests,
+        'photos': photos ?? [],
+        'isFaceVerified': isFaceVerified ?? false,
+        'updatedAt': DateTime.now(),
+      };
 
   AppUser copyWith({
     String? name,
