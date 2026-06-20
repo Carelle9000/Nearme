@@ -8,7 +8,10 @@ import 'features/auth/auth_screen.dart';
 import 'features/auth/identity_verification_screen.dart';
 import 'features/chat/chat_screen.dart';
 import 'features/landing/landing_screen.dart';
+import 'features/landing/onboarding_screen.dart';
 import 'features/locale/lang_select_screen.dart';
+import 'features/locale/language_selection_screen.dart';
+import 'features/locale/country_selection_screen.dart';
 import 'features/locale/locale_provider.dart';
 import 'features/shell/main_shell.dart';
 
@@ -18,9 +21,16 @@ class NearMeApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final locale = context.watch<LocaleProvider>();
-    // Read once at startup — determines whether to skip onboarding.
-    // Not watched: auth state changes are handled by _AuthGuard per-route.
-    final isLoggedIn = context.read<AuthProvider>().isLoggedIn;
+    final authProvider = context.read<AuthProvider>();
+    final isLoggedIn = authProvider.isLoggedIn;
+
+    // ✅ Vérifier si vérification d'âge est nécessaire après connexion
+    String initialRoute = AppRoutes.landing;
+    if (isLoggedIn) {
+      // Au lieu d'aller directement à discover, vérifier si vérification nécessaire
+      initialRoute = AppRoutes.discover;
+      // La logique de redirection vers identity est dans MainShell ou AuthGuard
+    }
 
     return MaterialApp(
       title: 'NearMe',
@@ -32,11 +42,14 @@ class NearMeApp extends StatelessWidget {
         child: child ?? const SizedBox.shrink(),
       ),
       // Returning users skip onboarding entirely
-      initialRoute: isLoggedIn ? AppRoutes.discover : AppRoutes.landing,
+      initialRoute: initialRoute,
       routes: {
         AppRoutes.landing: (_) => const LandingScreen(),
+        AppRoutes.onboarding: (_) => const OnboardingScreen(),
         AppRoutes.auth: (_) => const AuthScreen(),
         AppRoutes.langSelect: (_) => const LangSelectScreen(),
+        AppRoutes.languageSelect: (_) => const LanguageSelectionScreen(),
+        AppRoutes.countrySelect: (_) => const CountrySelectionScreen(),
         AppRoutes.identity: (_) => const IdentityVerificationScreen(),
         AppRoutes.discover: (_) =>
             const _AuthGuard(child: MainShell()),

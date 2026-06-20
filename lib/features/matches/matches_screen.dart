@@ -1,3 +1,4 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
@@ -16,30 +17,67 @@ class MatchesScreen extends StatelessWidget {
     final provider = context.watch<MatchesProvider>();
 
     return Scaffold(
-      backgroundColor: AppColors.bg,
-      body: SafeArea(
-        child: Column(
-          children: [
-            _MatchesHeader(t: t),
-            Expanded(
-              child: provider.matches.isEmpty
-                  ? _EmptyState(t: t)
-                  : ListView.separated(
-                      padding: const EdgeInsets.fromLTRB(16, 12, 16, 100),
-                      itemCount: provider.matches.length,
-                      separatorBuilder: (context, i) =>
-                          const SizedBox(height: 8),
-                      itemBuilder: (context, i) => _MatchTile(
-                        entry: provider.matches[i],
-                        onTap: () => Navigator.of(context).pushNamed(
-                          AppRoutes.chat,
-                          arguments: provider.matches[i].id,
-                        ),
-                      ),
-                    ),
+      backgroundColor: Colors.transparent,
+      body: Stack(
+        children: [
+          // Modern Gradient Background
+          Positioned.fill(
+            child: Container(
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    Color(0xFF09090E),
+                    Color(0xFF0F172A),
+                    Color(0xFF1E1B4B),
+                    Color(0xFF09090E),
+                  ],
+                  stops: [0.0, 0.3, 0.7, 1.0],
+                ),
+              ),
             ),
-          ],
-        ),
+          ),
+
+          // Ambient Glows
+          const _AmbientGlow(
+            offset: Offset(0.85, 0.15),
+            color: AppColors.pink,
+            radius: 350,
+            opacity: 0.12,
+          ),
+          const _AmbientGlow(
+            offset: Offset(0.1, 0.85),
+            color: AppColors.violet,
+            radius: 300,
+            opacity: 0.1,
+          ),
+
+          SafeArea(
+            child: Column(
+              children: [
+                _MatchesHeader(t: t),
+                Expanded(
+                  child: provider.matches.isEmpty
+                      ? _EmptyState(t: t)
+                      : ListView.separated(
+                          padding: const EdgeInsets.fromLTRB(16, 12, 16, 100),
+                          itemCount: provider.matches.length,
+                          separatorBuilder: (context, i) =>
+                              const SizedBox(height: 10),
+                          itemBuilder: (context, i) => _MatchTile(
+                            entry: provider.matches[i],
+                            onTap: () => Navigator.of(context).pushNamed(
+                              AppRoutes.chat,
+                              arguments: provider.matches[i].id,
+                            ),
+                          ),
+                        ),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -62,32 +100,59 @@ class _MatchesHeader extends StatelessWidget {
           Text(
             t('matches'),
             style: GoogleFonts.fraunces(
-              fontSize: 24,
-              fontWeight: FontWeight.w600,
+              fontSize: 28,
+              fontWeight: FontWeight.w900,
               color: AppColors.textPrimary,
-              letterSpacing: -0.3,
+              letterSpacing: -0.5,
             ),
           ),
-          const SizedBox(width: 10),
+          const SizedBox(width: 12),
           Consumer<MatchesProvider>(
             builder: (context2, mp, child) {
               if (mp.unreadCount == 0) return const SizedBox.shrink();
-              return Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 9, vertical: 3),
+              return AnimatedContainer(
+                duration: const Duration(milliseconds: 300),
+                padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 5),
                 decoration: BoxDecoration(
-                  color: AppColors.pink.withValues(alpha: 0.18),
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [
+                      AppColors.pink.withValues(alpha: 0.25),
+                      AppColors.pink.withValues(alpha: 0.15),
+                    ],
+                  ),
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(
-                      color: AppColors.pink.withValues(alpha: 0.35)),
-                ),
-                child: Text(
-                  '${mp.unreadCount}',
-                  style: GoogleFonts.dmSans(
-                    color: AppColors.pink,
-                    fontSize: 11,
-                    fontWeight: FontWeight.w700,
+                    color: AppColors.pink.withValues(alpha: 0.4),
+                    width: 1.2,
                   ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppColors.pink.withValues(alpha: 0.15),
+                      blurRadius: 10,
+                      spreadRadius: 0,
+                    ),
+                  ],
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.notifications_active_rounded,
+                      color: AppColors.pink,
+                      size: 16,
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      '${mp.unreadCount}',
+                      style: GoogleFonts.dmSans(
+                        color: AppColors.pink,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ],
                 ),
               );
             },
@@ -99,125 +164,224 @@ class _MatchesHeader extends StatelessWidget {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Match tile — dark card premium
+// Match Tile — Modern Card with Blur
 // ─────────────────────────────────────────────────────────────────────────────
 
-class _MatchTile extends StatelessWidget {
+class _MatchTile extends StatefulWidget {
   final MatchEntry entry;
   final VoidCallback onTap;
   const _MatchTile({required this.entry, required this.onTap});
 
   @override
+  State<_MatchTile> createState() => _MatchTileState();
+}
+
+class _MatchTileState extends State<_MatchTile>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _scaleAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      duration: const Duration(milliseconds: 200),
+      vsync: this,
+    );
+    _scaleAnimation = Tween<double>(begin: 1.0, end: 0.98).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
+    );
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final hasUnread = entry.hasUnread;
+    final hasUnread = widget.entry.hasUnread;
 
     return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.all(14),
-        decoration: BoxDecoration(
-          color: AppColors.surface,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(
+      onTapDown: (_) => _controller.forward(),
+      onTapUp: (_) {
+        _controller.reverse();
+        widget.onTap();
+      },
+      onTapCancel: () => _controller.reverse(),
+      child: ScaleTransition(
+        scale: _scaleAnimation,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 300),
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
             color: hasUnread
-                ? AppColors.pink.withValues(alpha: 0.30)
-                : AppColors.border,
-            width: hasUnread ? 1.5 : 1,
-          ),
-        ),
-        child: Row(
-          children: [
-            // Avatar + online dot
-            Stack(
-              children: [
-                Container(
-                  width: 52,
-                  height: 52,
-                  decoration: BoxDecoration(
-                    color: AppColors.violet.withValues(alpha: 0.12),
-                    shape: BoxShape.circle,
-                    border: Border.all(
-                        color: AppColors.borderLight, width: 1),
-                  ),
-                  child: Center(
-                    child: Text(
-                      entry.profile.emoji,
-                      style: const TextStyle(fontSize: 24),
-                    ),
-                  ),
-                ),
-                if (entry.profile.online)
-                  Positioned(
-                    right: 1,
-                    bottom: 1,
-                    child: Container(
-                      width: 12,
-                      height: 12,
-                      decoration: BoxDecoration(
-                        color: AppColors.emerald,
-                        shape: BoxShape.circle,
-                        border: Border.all(
-                            color: AppColors.surface, width: 2),
-                      ),
-                    ),
-                  ),
-              ],
+                ? AppColors.surface.withValues(alpha: 0.4)
+                : AppColors.surface.withValues(alpha: 0.2),
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(
+              color: hasUnread
+                  ? AppColors.pink.withValues(alpha: 0.35)
+                  : Colors.white.withValues(alpha: 0.06),
+              width: hasUnread ? 1.5 : 1.2,
             ),
-            const SizedBox(width: 13),
-            // Texte
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+            boxShadow: hasUnread
+                ? [
+                    BoxShadow(
+                      color: AppColors.pink.withValues(alpha: 0.15),
+                      blurRadius: 15,
+                      spreadRadius: 0,
+                    ),
+                  ]
+                : [],
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(20),
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
+              child: Row(
                 children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  // Avatar with Online Indicator
+                  Stack(
                     children: [
-                      Text(
-                        '${entry.profile.name}, ${entry.profile.age}',
-                        style: GoogleFonts.dmSans(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w600,
-                          color: AppColors.textPrimary,
+                      Container(
+                        width: 60,
+                        height: 60,
+                        decoration: BoxDecoration(
+                          gradient: AppColors.violetGradient,
+                          shape: BoxShape.circle,
+                          boxShadow: [
+                            BoxShadow(
+                              color: AppColors.violet.withValues(alpha: 0.2),
+                              blurRadius: 12,
+                              spreadRadius: 1,
+                            ),
+                          ],
+                        ),
+                        child: Center(
+                          child: Text(
+                            widget.entry.profile.emoji,
+                            style: const TextStyle(fontSize: 28),
+                          ),
                         ),
                       ),
-                      Text(
-                        _timeAgo(entry.matchedAt),
-                        style: GoogleFonts.dmSans(
-                          fontSize: 11,
-                          color: AppColors.textMuted,
+                      if (widget.entry.profile.online)
+                        Positioned(
+                          right: 0,
+                          bottom: 0,
+                          child: Container(
+                            width: 16,
+                            height: 16,
+                            decoration: BoxDecoration(
+                              color: AppColors.emerald,
+                              shape: BoxShape.circle,
+                              border: Border.all(
+                                color: AppColors.surface,
+                                width: 2.5,
+                              ),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: AppColors.emerald.withValues(alpha: 0.4),
+                                  blurRadius: 8,
+                                  spreadRadius: 1,
+                                ),
+                              ],
+                            ),
+                            child: const Center(
+                              child: Icon(
+                                Icons.circle,
+                                size: 6,
+                                color: AppColors.emerald,
+                              ),
+                            ),
+                          ),
                         ),
-                      ),
                     ],
                   ),
-                  const SizedBox(height: 3),
-                  Text(
-                    entry.lastMessage ?? 'New match — say hello 💫',
-                    style: GoogleFonts.dmSans(
-                      fontSize: 13,
-                      color: hasUnread
-                          ? AppColors.textPrimary
-                          : AppColors.textMuted,
-                      fontWeight: hasUnread
-                          ? FontWeight.w500
-                          : FontWeight.normal,
+                  const SizedBox(width: 14),
+                  // Info Section
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              '${widget.entry.profile.name}, ${widget.entry.profile.age}',
+                              style: GoogleFonts.dmSans(
+                                fontSize: 15,
+                                fontWeight: FontWeight.w700,
+                                color: AppColors.textPrimary,
+                              ),
+                            ),
+                            Text(
+                              _timeAgo(widget.entry.matchedAt),
+                              style: GoogleFonts.dmSans(
+                                fontSize: 11,
+                                color: AppColors.textMuted,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 6),
+                        Row(
+                          children: [
+                            Icon(
+                              widget.entry.lastMessage == null
+                                  ? Icons.favorite_outline_rounded
+                                  : Icons.mail_outline_rounded,
+                              size: 14,
+                              color: hasUnread
+                                  ? AppColors.pink
+                                  : AppColors.textSecondary,
+                            ),
+                            const SizedBox(width: 6),
+                            Expanded(
+                              child: Text(
+                                widget.entry.lastMessage ??
+                                    'New match — say hello',
+                                style: GoogleFonts.dmSans(
+                                  fontSize: 13,
+                                  color: hasUnread
+                                      ? AppColors.textPrimary
+                                      : AppColors.textMuted,
+                                  fontWeight: hasUnread
+                                      ? FontWeight.w500
+                                      : FontWeight.normal,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
                     ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
                   ),
+                  const SizedBox(width: 12),
+                  if (hasUnread)
+                    Container(
+                      width: 10,
+                      height: 10,
+                      decoration: BoxDecoration(
+                        color: AppColors.pink,
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(
+                            color: AppColors.pink.withValues(alpha: 0.5),
+                            blurRadius: 6,
+                            spreadRadius: 1,
+                          ),
+                        ],
+                      ),
+                    ),
                 ],
               ),
             ),
-            const SizedBox(width: 10),
-            if (hasUnread)
-              Container(
-                width: 8,
-                height: 8,
-                decoration: const BoxDecoration(
-                  color: AppColors.pink,
-                  shape: BoxShape.circle,
-                ),
-              ),
-          ],
+          ),
         ),
       ),
     );
@@ -233,7 +397,7 @@ class _MatchTile extends StatelessWidget {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Empty state
+// Empty State — Modern Design
 // ─────────────────────────────────────────────────────────────────────────────
 
 class _EmptyState extends StatelessWidget {
@@ -248,39 +412,139 @@ class _EmptyState extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
+            // Modern Icon Container
             Container(
-              width: 80,
-              height: 80,
+              width: 100,
+              height: 100,
               decoration: BoxDecoration(
-                color: AppColors.surface,
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    AppColors.pink.withValues(alpha: 0.15),
+                    AppColors.violet.withValues(alpha: 0.15),
+                  ],
+                ),
                 shape: BoxShape.circle,
-                border: Border.all(color: AppColors.border),
+                border: Border.all(
+                  color: Colors.white.withValues(alpha: 0.1),
+                  width: 1.5,
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: AppColors.pink.withValues(alpha: 0.1),
+                    blurRadius: 20,
+                    spreadRadius: 2,
+                  ),
+                ],
               ),
-              child: const Center(
-                child: Text('💌', style: TextStyle(fontSize: 36)),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(50),
+                child: BackdropFilter(
+                  filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                  child: Center(
+                    child: Icon(
+                      Icons.favorite_outline_rounded,
+                      size: 50,
+                      color: AppColors.pink.withValues(alpha: 0.6),
+                    ),
+                  ),
+                ),
               ),
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: 28),
             Text(
               t('noMatchesYet'),
               style: GoogleFonts.fraunces(
-                fontSize: 22,
-                fontWeight: FontWeight.w500,
+                fontSize: 24,
+                fontWeight: FontWeight.w900,
                 color: AppColors.textPrimary,
+                letterSpacing: -0.5,
               ),
               textAlign: TextAlign.center,
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 12),
             Text(
-              t('noMatchesSub'),
+              'Start swiping to find your perfect match nearby!',
               style: GoogleFonts.dmSans(
                 fontSize: 14,
                 color: AppColors.textMuted,
                 height: 1.6,
+                fontWeight: FontWeight.w400,
               ),
               textAlign: TextAlign.center,
             ),
+            const SizedBox(height: 28),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+              decoration: BoxDecoration(
+                color: AppColors.violet.withValues(alpha: 0.15),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: AppColors.violet.withValues(alpha: 0.3),
+                  width: 1.2,
+                ),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    Icons.explore_rounded,
+                    size: 18,
+                    color: AppColors.violet,
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    'Go to Discover',
+                    style: GoogleFonts.dmSans(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.violet,
+                    ),
+                  ),
+                ],
+              ),
+            ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Ambient Glow Animation
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _AmbientGlow extends StatelessWidget {
+  final Offset offset;
+  final Color color;
+  final double radius;
+  final double opacity;
+
+  const _AmbientGlow({
+    required this.offset,
+    required this.color,
+    required this.radius,
+    required this.opacity,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final size = MediaQuery.of(context).size;
+    return Positioned(
+      left: size.width * offset.dx - radius,
+      top: size.height * offset.dy - radius,
+      child: Container(
+        width: radius * 2,
+        height: radius * 2,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          color: color.withValues(alpha: opacity),
+        ),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 100, sigmaY: 100),
+          child: Container(color: Colors.transparent),
         ),
       ),
     );

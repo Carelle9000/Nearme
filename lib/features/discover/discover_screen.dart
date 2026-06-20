@@ -76,19 +76,56 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
     final locale = context.watch<LocaleProvider>();
 
     return Scaffold(
-      backgroundColor: AppColors.bg,
-      body: SafeArea(
-        child: Column(
-          children: [
-            _Header(
-              t: t,
-              location: '${locale.country.flag} ${locale.country.name}',
+      backgroundColor: Colors.transparent,
+      body: Stack(
+        children: [
+          // Modern Gradient Background
+          Positioned.fill(
+            child: Container(
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    Color(0xFF09090E),
+                    Color(0xFF0F172A),
+                    Color(0xFF1E1B4B),
+                    Color(0xFF09090E),
+                  ],
+                  stops: [0.0, 0.3, 0.7, 1.0],
+                ),
+              ),
             ),
-            _TrialBanner(t: t),
-            Expanded(child: _Deck(provider: discover)),
-            _ActionRow(provider: discover),
-          ],
-        ),
+          ),
+
+          // Ambient Glows
+          const _AmbientGlow(
+            offset: Offset(1.0, 0.0),
+            color: AppColors.cyan,
+            radius: 400,
+            opacity: 0.1,
+          ),
+          const _AmbientGlow(
+            offset: Offset(0.0, 1.0),
+            color: AppColors.pink,
+            radius: 350,
+            opacity: 0.08,
+          ),
+
+          SafeArea(
+            child: Column(
+              children: [
+                _Header(
+                  t: t,
+                  location: '${locale.country.flag} ${locale.country.name}',
+                ),
+                _TrialBanner(t: t),
+                Expanded(child: _Deck(provider: discover)),
+                _ActionRow(provider: discover),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -175,24 +212,79 @@ class _Header extends StatelessWidget {
   }
 }
 
-class _IconAction extends StatelessWidget {
+class _IconAction extends StatefulWidget {
   final IconData icon;
   final VoidCallback onTap;
   const _IconAction({required this.icon, required this.onTap});
 
   @override
+  State<_IconAction> createState() => _IconActionState();
+}
+
+class _IconActionState extends State<_IconAction>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _scaleAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      duration: const Duration(milliseconds: 150),
+      vsync: this,
+    );
+    _scaleAnimation = Tween<double>(begin: 1.0, end: 0.92).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
+    );
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        width: 40,
-        height: 40,
-        decoration: BoxDecoration(
-          color: AppColors.surface,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: AppColors.border),
+      onTapDown: (_) => _controller.forward(),
+      onTapUp: (_) {
+        _controller.reverse();
+        widget.onTap();
+      },
+      onTapCancel: () => _controller.reverse(),
+      child: ScaleTransition(
+        scale: _scaleAnimation,
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(14),
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+            child: Container(
+              width: 42,
+              height: 42,
+              decoration: BoxDecoration(
+                color: AppColors.surface.withValues(alpha: 0.3),
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(
+                  color: Colors.white.withValues(alpha: 0.08),
+                  width: 1.2,
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.1),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: Icon(
+                widget.icon,
+                color: AppColors.textSecondary,
+                size: 19,
+              ),
+            ),
+          ),
         ),
-        child: Icon(icon, color: AppColors.textSecondary, size: 18),
       ),
     );
   }
@@ -210,34 +302,61 @@ class _TrialBanner extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 9),
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
       decoration: BoxDecoration(
-        color: AppColors.gold.withValues(alpha: 0.08),
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            AppColors.gold.withValues(alpha: 0.12),
+            AppColors.gold.withValues(alpha: 0.06),
+          ],
+        ),
         border: Border(
           top: BorderSide(
-              color: AppColors.gold.withValues(alpha: 0.20), width: 1),
+              color: AppColors.gold.withValues(alpha: 0.25), width: 1.2),
           bottom: BorderSide(
-              color: AppColors.gold.withValues(alpha: 0.20), width: 1),
+              color: AppColors.gold.withValues(alpha: 0.25), width: 1.2),
         ),
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(
-            t('trialBanner'),
-            style: GoogleFonts.dmSans(
-              fontSize: 11,
-              fontWeight: FontWeight.w500,
-              color: AppColors.gold.withValues(alpha: 0.85),
-            ),
+          Row(
+            children: [
+              Icon(
+                Icons.card_giftcard_rounded,
+                size: 16,
+                color: AppColors.gold.withValues(alpha: 0.8),
+              ),
+              const SizedBox(width: 8),
+              Text(
+                'Free Trial Active',
+                style: GoogleFonts.dmSans(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.gold.withValues(alpha: 0.85),
+                ),
+              ),
+            ],
           ),
-          Text(
-            '6 days left →',
-            style: GoogleFonts.dmSans(
-              fontSize: 11,
-              fontWeight: FontWeight.w700,
-              color: AppColors.gold,
-            ),
+          Row(
+            children: [
+              Text(
+                '6 days left',
+                style: GoogleFonts.dmSans(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.gold,
+                ),
+              ),
+              const SizedBox(width: 6),
+              Icon(
+                Icons.arrow_forward_rounded,
+                size: 14,
+                color: AppColors.gold,
+              ),
+            ],
           ),
         ],
       ),
@@ -262,50 +381,109 @@ class _Deck extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             Container(
-              width: 72,
-              height: 72,
+              width: 90,
+              height: 90,
               decoration: BoxDecoration(
-                color: AppColors.surface,
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    AppColors.violet.withValues(alpha: 0.15),
+                    AppColors.pink.withValues(alpha: 0.1),
+                  ],
+                ),
                 shape: BoxShape.circle,
-                border: Border.all(color: AppColors.border),
+                border: Border.all(
+                  color: Colors.white.withValues(alpha: 0.1),
+                  width: 1.5,
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: AppColors.violet.withValues(alpha: 0.1),
+                    blurRadius: 20,
+                    spreadRadius: 2,
+                  ),
+                ],
               ),
-              child: const Center(
-                child: Text('✨', style: TextStyle(fontSize: 32)),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(45),
+                child: BackdropFilter(
+                  filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                  child: Center(
+                    child: Icon(
+                      Icons.done_all_rounded,
+                      size: 48,
+                      color: AppColors.violet.withValues(alpha: 0.7),
+                    ),
+                  ),
+                ),
               ),
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: 28),
             Text(
               'All caught up',
               style: GoogleFonts.fraunces(
-                fontSize: 22,
-                fontWeight: FontWeight.w500,
+                fontSize: 26,
+                fontWeight: FontWeight.w900,
                 color: AppColors.textPrimary,
+                letterSpacing: -0.5,
               ),
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 12),
             Text(
-              'No more profiles nearby right now.',
+              'No more profiles nearby right now. Come back soon!',
               style: GoogleFonts.dmSans(
                 fontSize: 14,
                 color: AppColors.textMuted,
+                height: 1.6,
               ),
+              textAlign: TextAlign.center,
             ),
-            const SizedBox(height: 24),
-            OutlinedButton(
-              onPressed: provider.reset,
-              style: OutlinedButton.styleFrom(
-                foregroundColor: AppColors.violet,
-                side: const BorderSide(color: AppColors.border),
-                shape: const StadiumBorder(),
-                padding: const EdgeInsets.symmetric(
-                    horizontal: 28, vertical: 12),
+            const SizedBox(height: 28),
+            Container(
+              decoration: BoxDecoration(
+                gradient: AppColors.violetGradient,
+                borderRadius: BorderRadius.circular(20),
+                boxShadow: [
+                  BoxShadow(
+                    color: AppColors.violet.withValues(alpha: 0.3),
+                    blurRadius: 15,
+                    offset: const Offset(0, 8),
+                  ),
+                ],
               ),
-              child: Text(
-                'Reset deck',
-                style: GoogleFonts.dmSans(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.violetGlow,
+              child: ElevatedButton(
+                onPressed: provider.reset,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.transparent,
+                  foregroundColor: Colors.white,
+                  elevation: 0,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 32,
+                    vertical: 14,
+                  ),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.refresh_rounded,
+                      size: 18,
+                      color: Colors.white,
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      'Reset Deck',
+                      style: GoogleFonts.dmSans(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 0.5,
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ),
@@ -629,6 +807,45 @@ class _ActionBtn extends StatelessWidget {
               : null,
         ),
         child: Center(child: child),
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Ambient Glow
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _AmbientGlow extends StatelessWidget {
+  final Offset offset;
+  final Color color;
+  final double radius;
+  final double opacity;
+
+  const _AmbientGlow({
+    required this.offset,
+    required this.color,
+    required this.radius,
+    required this.opacity,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final size = MediaQuery.of(context).size;
+    return Positioned(
+      left: size.width * offset.dx - radius,
+      top: size.height * offset.dy - radius,
+      child: Container(
+        width: radius * 2,
+        height: radius * 2,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          color: color.withValues(alpha: opacity),
+        ),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 100, sigmaY: 100),
+          child: Container(color: Colors.transparent),
+        ),
       ),
     );
   }
