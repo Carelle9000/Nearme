@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -9,6 +10,10 @@ import '../auth/auth_provider.dart';
 import '../discover/discover_screen.dart';
 import '../matches/matches_provider.dart';
 import '../matches/matches_screen.dart';
+import '../notifications/notifications_provider.dart';
+import '../notifications/notifications_screen.dart';
+import '../favorites/favorites_provider.dart';
+import '../favorites/favorites_screen.dart';
 import '../profile/profile_screen.dart';
 
 class MainShell extends StatefulWidget {
@@ -18,35 +23,69 @@ class MainShell extends StatefulWidget {
   State<MainShell> createState() => _MainShellState();
 }
 
-class _MainShellState extends State<MainShell> {
+class _MainShellState extends State<MainShell> with WidgetsBindingObserver {
   int _tab = 0;
-
-  static const _screens = [
-    DiscoverScreen(),
-    MatchesScreen(),
-    ProfileScreen(),
-  ];
+  Timer? _presenceTimer;
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _checkAgeVerification();
+      final auth = context.read<AuthProvider>();
+      if (auth.user != null) {
+        context.read<MatchesProvider>().init(auth.user!.id);
+        context.read<FavoritesProvider>().loadFavorites(auth.user!.id);
+        context.read<NotificationsProvider>().init(auth.user!.id);
+        auth.updatePresence(true);
+      }
+      _startPresenceTimer();
     });
   }
 
-  void _checkAgeVerification() {
-    final authProvider = context.read<AuthProvider>();
-    final user = authProvider.user;
-
-    if (user != null && !user.isAgeVerified) {
-      Navigator.of(context).pushReplacementNamed(AppRoutes.identity);
-    }
+  void _startPresenceTimer() {
+    _presenceTimer?.cancel();
+    _presenceTimer = Timer.periodic(const Duration(minutes: 3), (timer) {
+      final auth = context.read<AuthProvider>();
+      if (auth.user != null && auth.isLoggedIn) {
+        auth.updatePresence(true);
+      }
+    });
   }
 
   @override
+  void dispose() {
+    _presenceTimer?.cancel();
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
+    final auth = context.read<AuthProvider>();
+    if (auth.user == null) return;
+
+    if (state == AppLifecycleState.resumed) {
+      auth.updatePresence(true);
+    } else if (state == AppLifecycleState.paused ||
+               state == AppLifecycleState.inactive ||
+               state == AppLifecycleState.detached) {
+      auth.updatePresence(false);
+    }
+  }
+
+  static const _screens = [
+    DiscoverScreen(),
+    MatchesScreen(), // ❤️ Matchs
+    Center(child: Text('Messages Coming Soon', style: TextStyle(color: Colors.white))), // 💬 Messages
+    FavoritesScreen(), // ⭐ Favoris
+    ProfileScreen(), // 👤 Profil
+  ];
+
+  @override
   Widget build(BuildContext context) {
-    final unread =
+    final unreadMatches =
         context.select<MatchesProvider, int>((mp) => mp.unreadCount);
 
     return Scaffold(
@@ -54,7 +93,7 @@ class _MainShellState extends State<MainShell> {
       body: IndexedStack(index: _tab, children: _screens),
       bottomNavigationBar: _ModernBottomNav(
         currentIndex: _tab,
-        unreadCount: unread,
+        unreadCount: unreadMatches,
         onTap: (i) => setState(() => _tab = i),
       ),
     );
@@ -108,24 +147,38 @@ class _ModernBottomNav extends StatelessWidget {
                   _ModernNavItem(
                     icon: Icons.explore_outlined,
                     activeIcon: Icons.explore_rounded,
-                    label: 'Explore',
+                    label: 'Discover',
                     active: currentIndex == 0,
                     onTap: () => onTap(0),
                   ),
                   _ModernNavItem(
-                    icon: Icons.mail_outline_rounded,
-                    activeIcon: Icons.mail_rounded,
-                    label: 'Messages',
+                    icon: Icons.favorite_outline_rounded,
+                    activeIcon: Icons.favorite_rounded,
+                    label: 'Matches',
                     active: currentIndex == 1,
-                    badge: unreadCount > 0 ? unreadCount : null,
                     onTap: () => onTap(1),
+                  ),
+                  _ModernNavItem(
+                    icon: Icons.chat_bubble_outline_rounded,
+                    activeIcon: Icons.chat_bubble_rounded,
+                    label: 'Messages',
+                    active: currentIndex == 2,
+                    badge: unreadCount > 0 ? unreadCount : null,
+                    onTap: () => onTap(2),
+                  ),
+                  _ModernNavItem(
+                    icon: Icons.star_outline_rounded,
+                    activeIcon: Icons.star_rounded,
+                    label: 'Favorites',
+                    active: currentIndex == 3,
+                    onTap: () => onTap(3),
                   ),
                   _ModernNavItem(
                     icon: Icons.person_outline_rounded,
                     activeIcon: Icons.person_rounded,
                     label: 'Profile',
-                    active: currentIndex == 2,
-                    onTap: () => onTap(2),
+                    active: currentIndex == 4,
+                    onTap: () => onTap(4),
                   ),
                 ],
               ),
@@ -170,7 +223,7 @@ class _ModernNavItemState extends State<_ModernNavItem>
       duration: const Duration(milliseconds: 150),
       vsync: this,
     );
-    _scaleAnimation = Tween<double>(begin: 1.0, end: 0.9).animate(
+    _scaleAnimation = Tween<double>(begin: 1.0, end: 0.95).animate(
       CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
     );
   }
@@ -193,89 +246,71 @@ class _ModernNavItemState extends State<_ModernNavItem>
       behavior: HitTestBehavior.opaque,
       child: ScaleTransition(
         scale: _scaleAnimation,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Stack(
-              clipBehavior: Clip.none,
-              children: [
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                  decoration: BoxDecoration(
+        child: SizedBox(
+          width: 70,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  Icon(
+                    widget.active ? widget.activeIcon : widget.icon,
                     color: widget.active
-                        ? AppColors.violet.withValues(alpha: 0.2)
-                        : Colors.transparent,
-                    borderRadius: BorderRadius.circular(14),
-                    border: widget.active
-                        ? Border.all(
-                            color: AppColors.violet.withValues(alpha: 0.3),
-                            width: 1.2,
-                          )
-                        : null,
+                        ? AppColors.violet
+                        : Colors.white.withValues(alpha: 0.3),
+                    size: 24,
                   ),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        widget.active ? widget.activeIcon : widget.icon,
-                        color: widget.active
-                            ? AppColors.violet
-                            : AppColors.textMuted,
-                        size: 24,
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        widget.label,
-                        style: GoogleFonts.dmSans(
-                          fontSize: 10,
-                          fontWeight:
-                              widget.active ? FontWeight.w700 : FontWeight.w500,
-                          color: widget.active
-                              ? AppColors.violet
-                              : AppColors.textMuted,
+                  // Badge for unread messages
+                  if (widget.badge != null && widget.badge! > 0)
+                    Positioned(
+                      right: -6,
+                      top: -4,
+                      child: Container(
+                        padding: const EdgeInsets.all(4),
+                        decoration: const BoxDecoration(
+                          color: AppColors.pink,
+                          shape: BoxShape.circle,
                         ),
-                      ),
-                    ],
-                  ),
-                ),
-                // Badge for unread messages
-                if (widget.badge != null && widget.badge! > 0)
-                  Positioned(
-                    right: -4,
-                    top: -4,
-                    child: Container(
-                      width: 20,
-                      height: 20,
-                      decoration: BoxDecoration(
-                        color: AppColors.pink,
-                        shape: BoxShape.circle,
-                        border: Border.all(
-                          color: AppColors.bg,
-                          width: 2.5,
+                        constraints: const BoxConstraints(
+                          minWidth: 14,
+                          minHeight: 14,
                         ),
-                        boxShadow: [
-                          BoxShadow(
-                            color: AppColors.pink.withValues(alpha: 0.4),
-                            blurRadius: 8,
-                            spreadRadius: 1,
-                          ),
-                        ],
-                      ),
-                      child: Center(
-                        child: Text(
-                          widget.badge! > 9 ? '9+' : '${widget.badge}',
-                          style: GoogleFonts.dmSans(
-                            color: Colors.white,
-                            fontSize: 9,
-                            fontWeight: FontWeight.w900,
+                        child: Center(
+                          child: Text(
+                            widget.badge! > 9 ? '!' : '${widget.badge}',
+                            style: GoogleFonts.dmSans(
+                              color: Colors.white,
+                              fontSize: 8,
+                              fontWeight: FontWeight.w900,
+                            ),
                           ),
                         ),
                       ),
                     ),
+                ],
+              ),
+              const SizedBox(height: 6),
+              if (widget.active)
+                Container(
+                  width: 4,
+                  height: 4,
+                  decoration: const BoxDecoration(
+                    color: AppColors.violet,
+                    shape: BoxShape.circle,
                   ),
-              ],
-            ),
-          ],
+                )
+              else
+                Text(
+                  widget.label,
+                  style: GoogleFonts.dmSans(
+                    fontSize: 10,
+                    fontWeight: FontWeight.w500,
+                    color: Colors.white.withValues(alpha: 0.3),
+                  ),
+                ),
+            ],
+          ),
         ),
       ),
     );

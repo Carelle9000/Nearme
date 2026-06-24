@@ -61,6 +61,16 @@ class AppColors {
     colors: [Color(0xFF09090E), Color(0xFF111118)],
   );
 
+  static const midnightGradient = LinearGradient(
+    begin: Alignment.topRight,
+    end: Alignment.bottomLeft,
+    colors: [
+      Color(0xFF09090E),
+      Color(0xFF0F172A),
+      Color(0xFF1E1B4B),
+    ],
+  );
+
   // ── Backward-compat aliases ───────────────────────────────────────────────
   static const rose      = pink;
   static const navy      = dark;

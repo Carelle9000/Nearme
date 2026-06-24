@@ -10,4 +10,5 @@ class AppRoutes {
   static const identity = '/identity';
   static const discover = '/discover'; // → MainShell
   static const chat = '/chat'; // arguments: matchId (String)
+  static const editProfile = '/edit-profile';
 }

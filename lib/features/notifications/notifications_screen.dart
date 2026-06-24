@@ -59,7 +59,7 @@ class NotificationsScreen extends StatelessWidget {
                         TextButton(
                           onPressed: () => provider.markAllAsRead(userId),
                           child: Text(
-                            'Tout lire',
+                            'Mark all as read',
                             style: GoogleFonts.dmSans(
                               color: AppColors.violet,
                               fontWeight: FontWeight.w600,
@@ -138,7 +138,7 @@ class _NotificationTile extends StatelessWidget {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    timeago.format(notification.createdAt, locale: 'fr'),
+                    timeago.format(notification.createdAt, locale: 'en'),
                     style: GoogleFonts.dmSans(
                       fontSize: 12,
                       color: Colors.white.withValues(alpha: 0.4),
@@ -216,7 +216,7 @@ class _EmptyState extends StatelessWidget {
           ),
           const SizedBox(height: 16),
           Text(
-            'Aucune notification',
+            'No notifications',
             style: GoogleFonts.dmSans(
               fontSize: 16,
               color: Colors.white.withValues(alpha: 0.3),

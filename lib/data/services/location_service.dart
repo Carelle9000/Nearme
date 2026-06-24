@@ -1,9 +1,8 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:geoflutterfire2/geoflutterfire2.dart';
+import 'package:geoflutterfire_plus/geoflutterfire_plus.dart';
 import 'package:geolocator/geolocator.dart';
 
 class LocationService {
-  final _geo = GeoFlutterFire();
   final _firestore = FirebaseFirestore.instance;
 
   /// Demande les permissions et récupère la position actuelle
@@ -28,10 +27,10 @@ class LocationService {
   /// Met à jour la position de l'utilisateur dans Firestore
   Future<void> updateUserLocation(String userId, Position position) async {
     final geoPoint = GeoPoint(position.latitude, position.longitude);
-    final point = _geo.point(latitude: position.latitude, longitude: position.longitude);
+    final geoFirePoint = GeoFirePoint(geoPoint);
 
     await _firestore.collection('profiles').doc(userId).update({
-      'position': point.data, // Contient 'geopoint' et 'geohash'
+      'position': geoFirePoint.data, // Contient 'geopoint' et 'geohash'
       'updatedAt': FieldValue.serverTimestamp(),
     });
   }

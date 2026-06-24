@@ -14,127 +14,84 @@ service cloud.firestore {
     }
 
     // ─────────────────────────────────────────────────────────────────────
-    // profiles/{uid} — User profile data (semi-public, own is writable)
+    // profiles/{uid} — User profile data
     // ─────────────────────────────────────────────────────────────────────
 
     match /profiles/{uid} {
-      // Public read: anyone can see profiles
       allow read: if isAuth();
-
-      // Own profile: read + write
       allow write: if isUser(uid);
-    }
 
-    // ─────────────────────────────────────────────────────────────────────
-    // likes/{likeId} — User likes (read if participant, write if from user)
-    // ─────────────────────────────────────────────────────────────────────
+      // Subcollections
 
-    match /likes/{likeId} {
-      allow read: if isAuth() && (
-        isUser(resource.data.fromUserId) ||
-        isUser(resource.data.toUserId)
-      );
+      match /sent_likes/{targetId} {
+        allow read, write: if isUser(uid);
+      }
 
-      allow create: if isAuth() && isUser(request.data.fromUserId);
+      match /nopes/{targetId} {
+        allow read, write: if isUser(uid);
+      }
 
-      allow update, delete: if isAuth() && isUser(resource.data.fromUserId);
-    }
+      match /received_likes/{senderId} {
+        allow read: if isUser(uid);
+        allow write: if isAuth(); // Allow others to like/unlike (create/update/delete)
+      }
 
-    // ─────────────────────────────────────────────────────────────────────
-    // matches/{matchId} — User matches (read if participant)
-    // ─────────────────────────────────────────────────────────────────────
+      match /favorites/{targetId} {
+        allow read, write: if isUser(uid);
+      }
 
-    match /matches/{matchId} {
-      allow read: if isAuth() && (
-        isUser(resource.data.userId1) ||
-        isUser(resource.data.userId2)
-      );
-
-      allow create: if isAuth() && (
-        isUser(request.data.userId1) ||
-        isUser(request.data.userId2)
-      );
-
-      // ─────────────────────────────────────────────────────────────────
-      // matches/{matchId}/messages/{messageId} — Chat messages
-      // ─────────────────────────────────────────────────────────────────
-
-      match /messages/{messageId} {
-        // Read if you're part of this match
-        allow read: if isAuth() && (
-          isUser(get(/databases/$(database)/documents/matches/$(matchId)).data.userId1) ||
-          isUser(get(/databases/$(database)/documents/matches/$(matchId)).data.userId2)
-        );
-
-        // Create your own message
-        allow create: if isAuth() && isUser(request.data.senderId);
-
-        // Update read status if you're recipient
-        allow update: if isAuth() &&
-          request.resource.data.readAt != null &&
-          !resource.data.readAt != null;
+      match /notifications/{notifId} {
+        allow read: if isUser(uid);
+        allow update: if isUser(uid); // Mark as read
+        allow create: if isAuth(); // Allow others to send notifications (likes, matches)
       }
     }
 
     // ─────────────────────────────────────────────────────────────────────
-    // sharedSpots/{spotId} — User shared locations
+    // matches/{matchId} — User matches
     // ─────────────────────────────────────────────────────────────────────
+
+    match /matches/{matchId} {
+      // Allow read if user is in the 'users' array
+      allow read: if isAuth() && request.auth.uid in resource.data.users;
+
+      // Allow create if user is in the 'users' array being set
+      allow create: if isAuth() && request.auth.uid in request.resource.data.users;
+
+      match /messages/{messageId} {
+        allow read: if isAuth() && request.auth.uid in get(/databases/$(database)/documents/matches/$(matchId)).data.users;
+        allow create: if isAuth() && isUser(request.data.senderId);
+        allow update: if isAuth() && request.resource.data.readAt != null;
+      }
+    }
+
+    // ─────────────────────────────────────────────────────────────────────
+    // Old collections (backward compatibility or cleanup)
+    // ─────────────────────────────────────────────────────────────────────
+
+    match /likes/{likeId} {
+      allow read, write: if false; // Migrated to profiles/{uid}/sent_likes
+    }
 
     match /sharedSpots/{spotId} {
       allow read: if isAuth();
-
       allow create, update, delete: if isAuth() && isUser(resource.data.userId);
     }
 
-    // ─────────────────────────────────────────────────────────────────────
-    // blocks/{blockId} — User blocks
-    // ─────────────────────────────────────────────────────────────────────
-
     match /blocks/{blockId} {
-      // You can read blocks you're involved in
-      allow read: if isAuth() && (
-        isUser(resource.data.blockerId) ||
-        isUser(resource.data.blockedId)
-      );
-
-      // You can only create your own blocks
-      allow create: if isAuth() && isUser(request.data.blockerId);
-
-      // You can only delete your own blocks
-      allow delete: if isAuth() && isUser(resource.data.blockerId);
+      allow read: if isAuth() && (isUser(resource.data.blockerId) || isUser(resource.data.blockedId));
+      allow create, delete: if isAuth() && isUser(request.data.blockerId);
     }
-
-    // ─────────────────────────────────────────────────────────────────────
-    // subscriptions/{uid} — User subscription info
-    // ─────────────────────────────────────────────────────────────────────
 
     match /subscriptions/{uid} {
-      // Read own subscription
-      allow read: if isUser(uid);
-
-      // Write own subscription (managed by backend, but allow client update)
-      allow write: if isUser(uid);
+      allow read, write: if isUser(uid);
     }
-
-    // ─────────────────────────────────────────────────────────────────────
-    // users/{uid} — User data (including age verification status)
-    // ─────────────────────────────────────────────────────────────────────
 
     match /users/{uid} {
-      // Read own user data
-      allow read: if isUser(uid);
-
-      // Write own user data
-      allow write: if isUser(uid);
+      allow read, write: if isUser(uid);
     }
 
-    // ─────────────────────────────────────────────────────────────────────
-    // verificationLogs/{logId} — Audit trail for verifications
-    // ─────────────────────────────────────────────────────────────────────
-
     match /verificationLogs/{logId} {
-      // Cloud Functions can write (via admin SDK)
-      // Users cannot read (audit trail is private)
       allow write: if isAuth();
       allow read: if false;
     }

@@ -1,40 +1,110 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart' as auth;
 import '../models/profile.dart';
+import 'notification_service.dart';
+import '../models/app_notification.dart';
 
 class MatchService {
   final FirebaseFirestore _db = FirebaseFirestore.instance;
+  final NotificationService _notificationService = NotificationService();
 
   /// Enregistre un "Like" et vérifie si c'est un match mutuel
-  Future<bool> swipeLike(String currentUserId, Profile targetProfile) async {
+  Future<bool> swipeLike(String currentUserId, String currentUserName, String? currentUserPhoto, Profile targetProfile) async {
     try {
-      // 1. Enregistrer le like
+      // ✅ Sécurité : Utiliser l'UID réel de Firebase Auth
+      final authenticatedUid = auth.FirebaseAuth.instance.currentUser?.uid;
+      if (authenticatedUid == null) throw Exception('User not authenticated');
+
+      final uid = authenticatedUid;
+
+      // 1. Enregistrer le like envoyé
       await _db
           .collection('profiles')
-          .doc(currentUserId)
-          .collection('likes')
+          .doc(uid)
+          .collection('sent_likes')
           .doc(targetProfile.id)
           .set({
         'targetId': targetProfile.id,
         'createdAt': FieldValue.serverTimestamp(),
       });
 
-      // 2. Vérifier si l'autre a déjà liké
-      final otherLike = await _db
+      // 2. Enregistrer le like reçu chez la cible
+      await _db
           .collection('profiles')
           .doc(targetProfile.id)
-          .collection('likes')
-          .doc(currentUserId)
+          .collection('received_likes')
+          .doc(uid)
+          .set({
+        'senderId': uid,
+        'createdAt': FieldValue.serverTimestamp(),
+      });
+
+      // 3. Vérifier si l'autre m'a déjà liké (match)
+      final otherLike = await _db
+          .collection('profiles')
+          .doc(uid)
+          .collection('received_likes')
+          .doc(targetProfile.id)
           .get();
 
       if (otherLike.exists) {
         // C'est un match !
-        await _createMatch(currentUserId, targetProfile.id);
+        await _createMatch(uid, targetProfile.id);
+        // ... reste du code identique ...
+
+        // Notification de match pour la cible
+        await _notificationService.sendNotification(
+          recipientId: targetProfile.id,
+          senderId: currentUserId,
+          senderName: currentUserName,
+          senderPhoto: currentUserPhoto,
+          type: NotificationType.match,
+          message: 'It\'s a match with $currentUserName!',
+        );
+
+        // Notification de match pour l'utilisateur actuel
+        await _notificationService.sendNotification(
+          recipientId: currentUserId,
+          senderId: targetProfile.id,
+          senderName: targetProfile.name,
+          senderPhoto: targetProfile.photos.isNotEmpty ? targetProfile.photos.first : null,
+          type: NotificationType.match,
+          message: 'It\'s a match with ${targetProfile.name}!',
+        );
+
         return true;
+      } else {
+        // Simple Like : Notification "Quelqu'un vous a liké"
+        await _notificationService.sendNotification(
+          recipientId: targetProfile.id,
+          senderId: currentUserId,
+          senderName: currentUserName,
+          senderPhoto: currentUserPhoto,
+          type: NotificationType.like,
+          message: '$currentUserName sent you a Like!',
+        );
       }
       return false;
     } catch (e) {
       print('Error swiping like: $e');
       return false;
+    }
+  }
+
+  /// Enregistre un "Nope" (rejet)
+  Future<void> swipeNope(String currentUserId, String targetUserId) async {
+    try {
+      await _db
+          .collection('profiles')
+          .doc(currentUserId)
+          .collection('nopes')
+          .doc(targetUserId)
+          .set({
+        'targetId': targetUserId,
+        'createdAt': FieldValue.serverTimestamp(),
+      });
+    } catch (e) {
+      print('Error swiping nope: $e');
     }
   }
 

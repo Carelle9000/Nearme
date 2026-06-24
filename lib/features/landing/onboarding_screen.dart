@@ -5,6 +5,9 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../core/router/app_routes.dart';
 import '../../core/theme/app_colors.dart';
 
+import '../locale/locale_provider.dart';
+import 'package:provider/provider.dart';
+
 class OnboardingScreen extends StatefulWidget {
   const OnboardingScreen({super.key});
 
@@ -16,29 +19,29 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   final PageController _pageController = PageController();
   int _currentIndex = 0;
 
-  final List<OnboardingData> _pages = [
+  List<OnboardingData> _getPages(String Function(String) t) => [
     OnboardingData(
-      title: 'Proximité Réelle',
-      description: 'Découvrez des personnes passionnantes qui se trouvent à quelques pas de vous en temps réel.',
+      title: t('realProximityTitle'),
+      description: t('realProximityDesc'),
       image: 'https://images.unsplash.com/photo-1516738901171-8eb4fc13bd20?q=80&w=2070&auto=format&fit=crop',
       icon: Icons.location_on_rounded,
     ),
     OnboardingData(
-      title: 'Sécurité Maximale',
-      description: 'Chaque profil est vérifié pour garantir des rencontres authentiques et sereines.',
+      title: t('maxSafetyTitle'),
+      description: t('maxSafetyDesc'),
       image: 'https://images.unsplash.com/photo-1557200134-90327ee9fafa?q=80&w=2070&auto=format&fit=crop',
       icon: Icons.verified_user_rounded,
     ),
     OnboardingData(
-      title: 'Connexions Instantanées',
-      description: 'N\'attendez plus des jours pour une réponse. Connectez-vous et rencontrez-vous maintenant.',
+      title: t('instantConnectionsTitle'),
+      description: t('instantConnectionsDesc'),
       image: 'https://images.unsplash.com/photo-1521737604893-d14cc237f11d?q=80&w=2070&auto=format&fit=crop',
       icon: Icons.bolt_rounded,
     ),
   ];
 
-  void _onNext() {
-    if (_currentIndex < _pages.length - 1) {
+  void _onNext(int totalPages) {
+    if (_currentIndex < totalPages - 1) {
       _pageController.nextPage(
         duration: const Duration(milliseconds: 500),
         curve: Curves.easeInOutCubic,
@@ -50,6 +53,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final t = context.watch<LocaleProvider>().t;
+    final pages = _getPages(t);
+
     return Scaffold(
       body: Stack(
         children: [
@@ -88,9 +94,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
           PageView.builder(
             controller: _pageController,
             onPageChanged: (index) => setState(() => _currentIndex = index),
-            itemCount: _pages.length,
+            itemCount: pages.length,
             itemBuilder: (context, index) {
-              return _OnboardingPage(data: _pages[index]);
+              return _OnboardingPage(data: pages[index]);
             },
           ),
 
@@ -105,7 +111,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 // Indicators
                 Row(
                   children: List.generate(
-                    _pages.length,
+                    pages.length,
                     (index) => AnimatedContainer(
                       duration: const Duration(milliseconds: 300),
                       margin: const EdgeInsets.only(right: 8),
@@ -123,7 +129,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
                 // Next Button
                 GestureDetector(
-                  onTap: _onNext,
+                  onTap: () => _onNext(pages.length),
                   child: Container(
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
@@ -138,7 +144,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                       ],
                     ),
                     child: Icon(
-                      _currentIndex == _pages.length - 1
+                      _currentIndex == pages.length - 1
                           ? Icons.check_rounded
                           : Icons.arrow_forward_ios_rounded,
                       color: Colors.white,

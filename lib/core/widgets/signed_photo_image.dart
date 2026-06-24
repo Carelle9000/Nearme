@@ -19,11 +19,15 @@ import '../theme/app_colors.dart';
 class SignedPhotoImage extends StatefulWidget {
   final String path;
   final BoxFit fit;
+  final int? cacheWidth;
+  final int? cacheHeight;
 
   const SignedPhotoImage({
     super.key,
     required this.path,
     this.fit = BoxFit.cover,
+    this.cacheWidth,
+    this.cacheHeight,
   });
 
   @override
@@ -64,6 +68,8 @@ class _SignedPhotoImageState extends State<SignedPhotoImage> {
       return Image.file(
         File(_resolved!),
         fit: widget.fit,
+        cacheWidth: widget.cacheWidth,
+        cacheHeight: widget.cacheHeight,
         errorBuilder: (ctx, err, stack) => _ErrorTile(),
       );
     }
@@ -72,6 +78,8 @@ class _SignedPhotoImageState extends State<SignedPhotoImage> {
     return Image.network(
       _resolved!,
       fit: widget.fit,
+      cacheWidth: widget.cacheWidth,
+      cacheHeight: widget.cacheHeight,
       errorBuilder: (ctx, err, stack) => _ErrorTile(),
     );
   }

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
+import '../../../core/widgets/signed_photo_image.dart';
+import '../../../core/widgets/photo_viewer.dart';
 import '../../../core/router/app_routes.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../data/models/profile.dart';
@@ -42,7 +44,7 @@ class MatchModal extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              _Avatar(emoji: '🫵', color: AppColors.violetGlow),
+              const _Avatar(emoji: '🫵', color: AppColors.violetGlow),
               Transform.translate(
                 offset: const Offset(-14, 0),
                 child: Container(
@@ -62,7 +64,7 @@ class MatchModal extends StatelessWidget {
               Transform.translate(
                 offset: const Offset(-14, 0),
                 child: _Avatar(
-                  emoji: profile.emoji,
+                  profile: profile,
                   color: AppColors.pink,
                 ),
               ),
@@ -145,9 +147,10 @@ class MatchModal extends StatelessWidget {
 }
 
 class _Avatar extends StatelessWidget {
-  final String emoji;
+  final Profile? profile;
+  final String? emoji;
   final Color color;
-  const _Avatar({required this.emoji, required this.color});
+  const _Avatar({this.profile, this.emoji, required this.color});
 
   @override
   Widget build(BuildContext context) {
@@ -159,8 +162,15 @@ class _Avatar extends StatelessWidget {
         shape: BoxShape.circle,
         border: Border.all(color: color.withValues(alpha: 0.45), width: 2),
       ),
+      clipBehavior: Clip.antiAlias,
       child: Center(
-        child: Text(emoji, style: const TextStyle(fontSize: 36)),
+        child: profile != null && profile!.photos.isNotEmpty
+            ? GestureDetector(
+                onTap: () => PhotoViewer.show(context, photos: profile!.photos, initialIndex: 0),
+                child: SignedPhotoImage(path: profile!.photos.first, fit: BoxFit.cover, cacheWidth: 300),
+              )
+            : Text(emoji ?? profile?.emoji ?? '👤',
+                style: const TextStyle(fontSize: 36)),
       ),
     );
   }

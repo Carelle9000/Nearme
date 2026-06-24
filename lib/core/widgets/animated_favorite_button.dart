@@ -30,17 +30,17 @@ class _AnimatedFavoriteButtonState extends State<AnimatedFavoriteButton>
   void initState() {
     super.initState();
     _controller = AnimationController(
-      duration: const Duration(milliseconds: 300),
+      duration: const Duration(milliseconds: 400),
       vsync: this,
     );
     _scaleAnimation = TweenSequence<double>([
       TweenSequenceItem(
-        tween: Tween<double>(begin: 1.0, end: 1.3).chain(CurveTween(curve: Curves.easeOut)),
-        weight: 50,
+        tween: Tween<double>(begin: 1.0, end: 1.5).chain(CurveTween(curve: Curves.easeOutBack)),
+        weight: 40,
       ),
       TweenSequenceItem(
-        tween: Tween<double>(begin: 1.3, end: 1.0).chain(CurveTween(curve: Curves.elasticIn)),
-        weight: 50,
+        tween: Tween<double>(begin: 1.5, end: 1.0).chain(CurveTween(curve: Curves.easeIn)),
+        weight: 60,
       ),
     ]).animate(_controller);
   }

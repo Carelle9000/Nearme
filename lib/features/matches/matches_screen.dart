@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 
+import '../../../core/widgets/signed_photo_image.dart';
+import '../../../core/widgets/photo_viewer.dart';
 import '../../core/router/app_routes.dart';
 import '../../core/theme/app_colors.dart';
 import '../locale/locale_provider.dart';
@@ -259,11 +261,21 @@ class _MatchTileState extends State<_MatchTile>
                             ),
                           ],
                         ),
+                        clipBehavior: Clip.antiAlias,
                         child: Center(
-                          child: Text(
-                            widget.entry.profile.emoji,
-                            style: const TextStyle(fontSize: 28),
-                          ),
+                          child: widget.entry.profile.photos.isNotEmpty
+                              ? GestureDetector(
+                                  onTap: () => PhotoViewer.show(context, photos: widget.entry.profile.photos),
+                                  child: SignedPhotoImage(
+                                    path: widget.entry.profile.photos.first,
+                                    fit: BoxFit.cover,
+                                    cacheWidth: 300,
+                                  ),
+                                )
+                              : Text(
+                                  widget.entry.profile.emoji,
+                                  style: const TextStyle(fontSize: 28),
+                                ),
                         ),
                       ),
                       if (widget.entry.profile.online)

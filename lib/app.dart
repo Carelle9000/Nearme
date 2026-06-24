@@ -13,6 +13,7 @@ import 'features/locale/lang_select_screen.dart';
 import 'features/locale/language_selection_screen.dart';
 import 'features/locale/country_selection_screen.dart';
 import 'features/locale/locale_provider.dart';
+import 'features/profile/edit_profile_screen.dart';
 import 'features/shell/main_shell.dart';
 
 class NearMeApp extends StatelessWidget {
@@ -55,27 +56,50 @@ class NearMeApp extends StatelessWidget {
             const _AuthGuard(child: MainShell()),
         AppRoutes.chat: (_) =>
             const _AuthGuard(child: ChatScreen()),
+        AppRoutes.editProfile: (_) =>
+            const _AuthGuard(child: EditProfileScreen()),
       },
     );
   }
 }
 
-class _AuthGuard extends StatelessWidget {
+class _AuthGuard extends StatefulWidget {
   final Widget child;
   const _AuthGuard({required this.child});
 
   @override
+  State<_AuthGuard> createState() => _AuthGuardState();
+}
+
+class _AuthGuardState extends State<_AuthGuard> {
+  @override
   Widget build(BuildContext context) {
-    final loggedIn =
-        context.select<AuthProvider, bool>((a) => a.isLoggedIn);
+    final auth = context.watch<AuthProvider>();
+    final loggedIn = auth.isLoggedIn;
+    final needsAgeVerification = auth.needsAgeVerification;
+
     if (!loggedIn) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        Navigator.of(context).pushReplacementNamed(AppRoutes.auth);
+        if (mounted) {
+          Navigator.of(context).pushReplacementNamed(AppRoutes.auth);
+        }
       });
       return const Scaffold(
         body: Center(child: CircularProgressIndicator()),
       );
     }
-    return child;
+
+    if (needsAgeVerification) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          Navigator.of(context).pushReplacementNamed(AppRoutes.identity);
+        }
+      });
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    return widget.child;
   }
 }

@@ -8,6 +8,7 @@ import 'package:provider/provider.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/utils/toasts.dart';
 import '../../core/widgets/signed_photo_image.dart';
+import '../../core/widgets/photo_viewer.dart';
 import '../../data/models/app_user.dart';
 import '../../data/services/photo_service.dart';
 import '../auth/auth_provider.dart';
@@ -399,7 +400,10 @@ class _PhotoGrid extends StatelessWidget {
       itemBuilder: (_, i) {
         if (i == photos.length) return GestureDetector(onTap: onAdd, child: Container(decoration: BoxDecoration(color: AppColors.surface, borderRadius: BorderRadius.circular(16), border: Border.all(color: Colors.white12)), child: const Icon(Icons.add_a_photo_outlined, color: AppColors.violet, size: 28)));
         return Stack(fit: StackFit.expand, children: [
-          ClipRRect(borderRadius: BorderRadius.circular(16), child: SignedPhotoImage(path: photos[i])),
+          GestureDetector(
+            onTap: () => PhotoViewer.show(context, photos: photos, initialIndex: i),
+            child: ClipRRect(borderRadius: BorderRadius.circular(16), child: SignedPhotoImage(path: photos[i], cacheWidth: 300)),
+          ),
           Positioned(top: 4, right: 4, child: GestureDetector(onTap: () => onDelete(photos[i]), child: Container(padding: const EdgeInsets.all(4), decoration: const BoxDecoration(color: Colors.black26, shape: BoxShape.circle), child: const Icon(Icons.close, color: Colors.white, size: 14)))),
           if (i == 0)
             Positioned(bottom: 0, left: 0, right: 0, child: Container(padding: const EdgeInsets.symmetric(vertical: 4), color: Colors.black45, child: Text('Main', textAlign: TextAlign.center, style: GoogleFonts.dmSans(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold)))),

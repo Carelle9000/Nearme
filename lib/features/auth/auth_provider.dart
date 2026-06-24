@@ -20,6 +20,7 @@ class AuthProvider extends ChangeNotifier {
   bool get busy                 => _busy;
   bool get uploadingPhotos      => _uploadingPhotos;
   String? get error             => _error;
+  bool get needsAgeVerification   => _service.needsAgeVerification;
   String? get accessToken       => _service.accessToken;
 
   // ── Auth ────────────────────────────────────────────────────────────────────
@@ -32,23 +33,11 @@ class AuthProvider extends ChangeNotifier {
     required String name,
     required String email,
     required String password,
-    String? gender,
-    double? height,
-    String? bio,
-    Intention? intention,
-    String? location,
-    List<String> interests = const [],
   }) =>
       _run(() => _service.register(
             name:      name,
             email:     email,
             password:  password,
-            gender:    gender,
-            height:    height,
-            bio:       bio,
-            intention: intention,
-            location:  location,
-            interests: interests,
           ));
 
   Future<bool> loginWithGoogle() => _run(() => _service.loginWithGoogle());
@@ -74,9 +63,25 @@ class AuthProvider extends ChangeNotifier {
     }
   }
 
+  Future<void> updateProfile(AppUser updatedUser) async {
+    await _run(() => _service.updateUser(updatedUser));
+  }
+
   Future<void> updateBio(String bio) async {
     if (_user == null) return;
     await _run(() => _service.updateUser(_user!.copyWith(bio: bio)));
+  }
+
+  Future<void> toggleFavorite(String targetUserId) async {
+    if (_user == null) return;
+    try {
+      await _service.toggleFavorite(targetUserId);
+      _user = _service.currentUser;
+      notifyListeners();
+    } catch (e) {
+      _error = e.toString();
+      notifyListeners();
+    }
   }
 
   Future<void> addPhotos(List<String> localPaths) async {
@@ -111,6 +116,18 @@ class AuthProvider extends ChangeNotifier {
   Future<void> logout() async {
     await _service.logout();
     _user = null;
+    notifyListeners();
+  }
+
+  Future<void> refresh() async {
+    await _service.refreshCurrentUser();
+    _user = _service.currentUser;
+    notifyListeners();
+  }
+
+  Future<void> updatePresence(bool isOnline) async {
+    await _service.updatePresence(isOnline);
+    _user = _service.currentUser;
     notifyListeners();
   }
 

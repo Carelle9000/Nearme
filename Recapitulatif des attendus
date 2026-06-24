@@ -1,0 +1,153 @@
+Voici un parcours utilisateur typique pour une application de rencontre moderne, sécurisée et conforme aux bonnes pratiques actuelles.
+
+1. Écran d'accueil (Onboarding)
+Présentation rapide de l'application
+Explication de la politique de confidentialité
+Mise en avant des règles de sécurité
+Choix de la langue
+Objectif
+
+Permettre à l'utilisateur de comprendre immédiatement la valeur de l'application et les règles de la communauté.
+
+2. Inscription
+
+Options courantes :
+
+E-mail + mot de passe
+Numéro de téléphone avec code OTP
+Connexion via Google
+Connexion via Apple (iOS)
+Sécurité
+Vérification de l'e-mail ou du téléphone obligatoire
+Détection des comptes suspects
+Limitation des créations massives de comptes
+3. Création du profil
+
+L'utilisateur renseigne :
+
+Prénom
+Date de naissance
+Genre
+Orientation (optionnel selon le positionnement)
+Ville ou région
+Description personnelle
+Centres d'intérêt
+Photos
+Contrôles
+Âge minimum (souvent 18 ans)
+Modération automatique des photos
+Détection de contenu inapproprié
+4. Vérification du profil
+
+Étape recommandée :
+
+Selfie en temps réel
+Comparaison avec les photos du profil
+Badge "Profil vérifié"
+Avantages
+Réduction des faux profils
+Plus grande confiance entre utilisateurs
+5. Configuration des préférences
+
+L'utilisateur définit :
+
+Tranche d'âge recherchée
+Distance maximale
+Genres recherchés
+Critères spécifiques
+6. Écran principal (Découverte)
+
+Navigation souvent organisée en onglets :
+
+Découvrir
+Cartes de profils
+Swipe gauche (passer)
+Swipe droite (aimer)
+Boutons Like et Pass
+Recherche
+Recherche avancée
+Filtres
+Favoris
+Profils sauvegardés
+7. Match
+
+Lorsqu'il y a intérêt mutuel :
+
+Animation de match
+Notification
+Proposition d'envoyer un premier message
+8. Messagerie
+
+Fonctionnalités modernes :
+
+Messages texte
+Photos (optionnel)
+Réactions
+Messages vocaux (optionnel)
+Sécurité
+Blocage utilisateur
+Signalement
+Filtrage anti-spam
+Détection automatique de contenus abusifs
+9. Rencontres et sécurité
+
+Avant une rencontre physique :
+
+Conseils de sécurité
+Partage de localisation avec un proche (optionnel)
+Bouton d'urgence selon les pays
+10. Profil utilisateur
+
+Gestion de :
+
+Photos
+Informations personnelles
+Préférences
+Paramètres de confidentialité
+11. Paramètres de confidentialité
+
+Éléments essentiels :
+
+Masquer le profil
+Contrôle de visibilité
+Gestion des données personnelles
+Suppression du compte
+Téléchargement des données
+12. Signalement et modération
+
+Accessible partout :
+
+Faux profil
+Harcèlement
+Arnaque
+Contenu inapproprié
+Traitement
+Analyse automatique
+Revue manuelle
+Suspension ou bannissement
+Structure de navigation recommandée
+
+Barre inférieure avec 5 onglets :
+
+🏠 Découvrir
+
+❤️ Matchs
+
+💬 Messages
+
+🔔 Notifications
+
+👤 Profil
+
+Architecture de sécurité minimale
+Authentification JWT ou Firebase Auth
+Chiffrement HTTPS/TLS
+Validation OTP
+Vérification des photos
+Détection de comptes multiples
+Protection contre le spam
+Signalement et blocage
+Sauvegarde chiffrée des données sensibles
+Journalisation des actions critiques
+
+Pour une application de rencontre lancée en 2026, un MVP solide comprend généralement : authentification, profils vérifiés, découverte par swipe, matchs, messagerie, blocage et signalement. Les

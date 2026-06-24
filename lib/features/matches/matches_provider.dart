@@ -1,6 +1,8 @@
+import 'dart:async';
 import 'package:flutter/foundation.dart';
-
 import '../../data/models/profile.dart';
+import '../../data/services/match_service.dart';
+import '../../data/services/user_service.dart';
 
 class ChatMessage {
   final String text;
@@ -58,27 +60,76 @@ class MatchEntry {
 }
 
 class MatchesProvider extends ChangeNotifier {
-  final List<MatchEntry> _matches = [];
-  int _nextId = 1;
+  final MatchService _matchService = MatchService();
+  final UserService _userService = UserService();
+
+  List<MatchEntry> _matches = [];
+  StreamSubscription? _subscription;
+  bool _isLoading = false;
 
   List<MatchEntry> get matches => List.unmodifiable(_matches);
   int get count => _matches.length;
   int get unreadCount => _matches.where((m) => m.hasUnread).length;
+  bool get isLoading => _isLoading;
 
-  // ──────────────────────────────────────────────────────────────────────────
-  // Mutations
-  // ──────────────────────────────────────────────────────────────────────────
+  void init(String userId) {
+    _subscription?.cancel();
+    _isLoading = true;
+    notifyListeners();
 
+    _subscription = _matchService.getMatchesIds(userId).listen(
+      (ids) async {
+        final List<MatchEntry> newMatches = [];
+
+        for (final id in ids) {
+          // Find existing match to preserve messages (for now)
+          final existing = _matches.where((m) => m.profile.id == id).firstOrNull;
+
+          if (existing != null) {
+            newMatches.add(existing);
+          } else {
+            // Load profile from UserService
+            final profile = await _userService.getProfile(id);
+
+            if (profile != null) {
+              newMatches.add(MatchEntry(
+                id: id,
+                profile: profile,
+                matchedAt: DateTime.now(),
+              ));
+            }
+          }
+        }
+
+        _matches = newMatches;
+        _isLoading = false;
+        notifyListeners();
+      },
+      onError: (error) {
+        debugPrint('Error listening to matches: $error');
+        _isLoading = false;
+        notifyListeners();
+      },
+    );
+  }
+
+  /// Compatibility method for local feedback (optional)
   void addMatch(Profile profile) {
-    _matches.insert(
-      0,
-      MatchEntry(
-        id: '${_nextId++}',
+    // If not already in list, add a temporary entry
+    if (!_matches.any((m) => m.profile.id == profile.id)) {
+      _matches.insert(0, MatchEntry(
+        id: profile.id, // Using profile ID as temp match ID
         profile: profile,
         matchedAt: DateTime.now(),
-      ),
-    );
-    notifyListeners();
+      ));
+      notifyListeners();
+    }
+  }
+
+  @override
+  void dispose() {
+    _subscription?.cancel();
+    super.dispose();
   }
 
   /// Mark all current messages in [matchId] as read.

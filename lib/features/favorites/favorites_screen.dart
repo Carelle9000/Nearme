@@ -4,45 +4,19 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 
 import '../../core/theme/app_colors.dart';
-import '../../data/models/profile.dart';
-import '../../data/services/user_service.dart';
 import '../auth/auth_provider.dart';
 import '../discover/widgets/profile_card.dart';
+import 'favorites_provider.dart';
 
-class FavoritesScreen extends StatefulWidget {
+class FavoritesScreen extends StatelessWidget {
   const FavoritesScreen({super.key});
 
   @override
-  State<FavoritesScreen> createState() => _FavoritesScreenState();
-}
-
-class _FavoritesScreenState extends State<FavoritesScreen> {
-  List<Profile>? _favorites;
-  bool _isLoading = true;
-
-  @override
-  void initState() {
-    super.initState();
-    _loadFavorites();
-  }
-
-  Future<void> _loadFavorites() async {
-    final auth = context.read<AuthProvider>();
-    if (auth.user == null) return;
-
-    final userService = context.read<UserService>();
-    final list = await userService.getFavorites(auth.user!.id);
-
-    if (mounted) {
-      setState(() {
-        _favorites = list;
-        _isLoading = false;
-      });
-    }
-  }
-
-  @override
   Widget build(BuildContext context) {
+    final t = context.watch<AuthProvider>(); // To watch favorites list in user model
+    final provider = context.watch<FavoritesProvider>();
+    final auth = context.read<AuthProvider>();
+
     return Scaffold(
       backgroundColor: Colors.transparent,
       body: Stack(
@@ -70,7 +44,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                 Padding(
                   padding: const EdgeInsets.fromLTRB(24, 20, 24, 10),
                   child: Text(
-                    'Mes Favoris',
+                    'My Favorites',
                     style: GoogleFonts.fraunces(
                       fontSize: 32,
                       fontWeight: FontWeight.w600,
@@ -79,9 +53,9 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                   ),
                 ),
                 Expanded(
-                  child: _isLoading
+                  child: provider.isLoading
                       ? const Center(child: CircularProgressIndicator(color: AppColors.violet))
-                      : (_favorites == null || _favorites!.isEmpty)
+                      : (provider.favorites.isEmpty)
                           ? _EmptyState()
                           : GridView.builder(
                               padding: const EdgeInsets.all(16),
@@ -91,18 +65,24 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                                 crossAxisSpacing: 12,
                                 mainAxisSpacing: 12,
                               ),
-                              itemCount: _favorites!.length,
+                              itemCount: provider.favorites.length,
                               itemBuilder: (context, index) {
-                                final profile = _favorites![index];
+                                final profile = provider.favorites[index];
                                 return ClipRRect(
                                   borderRadius: BorderRadius.circular(20),
                                   child: ProfileCard(
                                     profile: profile,
-                                    isFavorite: true,
+                                    isFavorite: auth.user?.favorites.contains(profile.id) ?? true,
+                                    height: double.infinity,
                                     onFavorite: () async {
-                                      final auth = context.read<AuthProvider>();
-                                      await context.read<UserService>().toggleFavorite(auth.user!.id, profile.id);
-                                      _loadFavorites();
+                                      final user = auth.user;
+                                      if (user != null) {
+                                        await auth.toggleFavorite(profile.id);
+                                        // Refresh the list after toggle
+                                        if (context.mounted) {
+                                          context.read<FavoritesProvider>().refresh(user.id);
+                                        }
+                                      }
                                     },
                                   ),
                                 );
@@ -132,7 +112,7 @@ class _EmptyState extends StatelessWidget {
           ),
           const SizedBox(height: 16),
           Text(
-            'Aucun favori pour le moment',
+            'No favorites yet',
             style: GoogleFonts.dmSans(
               fontSize: 16,
               color: Colors.white.withValues(alpha: 0.3),

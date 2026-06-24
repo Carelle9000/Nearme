@@ -1,4 +1,6 @@
 import 'dart:typed_data';
+
+import 'package:firebase_auth/firebase_auth.dart' hide AuthProvider;
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
@@ -7,8 +9,9 @@ import 'package:provider/provider.dart';
 import '../../core/router/app_routes.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/utils/toasts.dart';
+import '../../features/auth/auth_provider.dart';
 import '../../features/identity/identity_verification_provider.dart';
-import '../../features/locale/locale_provider.dart';
+import '../locale/locale_provider.dart';
 
 class IdentityVerificationScreen extends StatefulWidget {
   const IdentityVerificationScreen({super.key});
@@ -20,56 +23,54 @@ class IdentityVerificationScreen extends StatefulWidget {
 
 class _IdentityVerificationScreenState extends State<IdentityVerificationScreen> {
   @override
-  void initState() {
-    super.initState();
-    _setupWebsocketListener();
-  }
-
-  void _setupWebsocketListener() {
-    // TODO: If you have WebSocket service, uncomment:
-    // context.read<WsService>().on('verification:age_verified', (_) {
-    //   context.read<IdentityVerificationProvider>()
-    //       .onWebhookVerificationComplete(true);
-    // });
-  }
-
-  @override
   Widget build(BuildContext context) {
     final provider = context.watch<IdentityVerificationProvider>();
+    final t = context.watch<LocaleProvider>().t;
 
     return Scaffold(
       backgroundColor: AppColors.bg,
       body: SafeArea(
         child: switch (provider.step) {
-          VerificationStep.faceCapture =>
-            _FaceVerificationStep(onNext: _handleFaceComplete),
+          VerificationStep.documentCapture =>
+            DocumentCaptureStep(onDocumentSelected: _handleDocumentSelected, t: t),
           VerificationStep.ageVerification =>
-            _AgeVerificationStep(onNext: _handleAgeStart),
-          VerificationStep.verificationPending => const _VerificationPendingStep(),
-          VerificationStep.completed => const _VerificationCompleteStep(),
+            AgeVerificationStep(onNext: _handleAgeStart, t: t),
+          VerificationStep.verificationPending => VerificationPendingStep(t: t),
+          VerificationStep.completed => VerificationCompleteStep(t: t),
         },
       ),
     );
   }
 
-  Future<void> _handleFaceComplete(Uint8List selfie, Uint8List reference) async {
-    final success = await context
-        .read<IdentityVerificationProvider>()
-        .startFaceVerification(
-          selfieBytes: selfie,
-          referenceBytes: reference,
-        );
+  Future<void> _handleDocumentSelected(String documentPath) async {
+    final authProvider = context.read<AuthProvider>();
+    final userId = authProvider.user?.id;
 
-    if (success && mounted) {
-      AppToasts.success(context, 'Face verified ✓');
-    } else if (mounted) {
-      AppToasts.error(context, 'Face verification failed');
+    if (userId == null) {
+      if (mounted) AppToasts.error(context, 'User not authenticated');
+      return;
     }
+
+    context
+        .read<IdentityVerificationProvider>()
+        .setDocumentAndContinue(documentPath, userId);
   }
 
   Future<void> _handleAgeStart() async {
+    // Debug: check Firebase Auth status
+    final firebaseUser = FirebaseAuth.instance.currentUser;
+    debugPrint('[IdentityVerification] Firebase Auth UID: ${firebaseUser?.uid}');
+
+    final authProvider = context.read<AuthProvider>();
+    final userId = authProvider.user?.id;
+
+    if (userId == null) {
+      if (mounted) AppToasts.error(context, 'User not authenticated');
+      return;
+    }
+
     final success =
-        await context.read<IdentityVerificationProvider>().startAgeVerification();
+        await context.read<IdentityVerificationProvider>().startAgeVerification(userId);
 
     if (!success && mounted) {
       AppToasts.error(context, 'Failed to start age verification');
@@ -77,196 +78,11 @@ class _IdentityVerificationScreenState extends State<IdentityVerificationScreen>
   }
 }
 
-// ─── Step 1: Face Verification ─────────────────────────────────
-class _FaceVerificationStep extends StatefulWidget {
-  final Future<void> Function(Uint8List selfie, Uint8List reference) onNext;
-  const _FaceVerificationStep({required this.onNext});
-
-  @override
-  State<_FaceVerificationStep> createState() => _FaceVerificationStepState();
-}
-
-class _FaceVerificationStepState extends State<_FaceVerificationStep> {
-  Uint8List? _selfieBytes;
-  Uint8List? _referenceBytes;
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      children: [
-        const SizedBox(height: 20),
-        Text(
-          'Verify Your Face',
-          style: GoogleFonts.fraunces(
-            fontSize: 28,
-            fontWeight: FontWeight.w800,
-            color: AppColors.textPrimary,
-          ),
-        ),
-        const SizedBox(height: 10),
-        Text(
-          'Step 1: Facial Recognition',
-          style: GoogleFonts.dmSans(
-            fontSize: 14,
-            color: AppColors.textSecondary,
-          ),
-        ),
-        const SizedBox(height: 40),
-        Expanded(
-          child: ListView(
-            padding: const EdgeInsets.symmetric(horizontal: 24),
-            children: [
-              _PhotoStep(
-                title: 'Take a Selfie',
-                subtitle: 'Clear, well-lit photo of your face',
-                icon: Icons.camera_alt_rounded,
-                isSelected: _selfieBytes != null,
-                onCapture: () => _capturePhoto(isSelfie: true),
-              ),
-              const SizedBox(height: 32),
-              _PhotoStep(
-                title: 'Upload Profile Photo',
-                subtitle: 'Match the angle and lighting',
-                icon: Icons.image_rounded,
-                isSelected: _referenceBytes != null,
-                onCapture: () => _pickPhoto(),
-              ),
-              const SizedBox(height: 40),
-            ],
-          ),
-        ),
-        Padding(
-          padding: const EdgeInsets.fromLTRB(24, 16, 24, 24),
-          child: SizedBox(
-            width: double.infinity,
-            height: 58,
-            child: ElevatedButton(
-              onPressed: (_selfieBytes != null && _referenceBytes != null)
-                  ? () => widget.onNext(_selfieBytes!, _referenceBytes!)
-                  : null,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.violet,
-                disabledBackgroundColor: AppColors.border,
-              ),
-              child: Text('Next: Age Verification'.toUpperCase()),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Future<void> _capturePhoto({required bool isSelfie}) async {
-    final picker = ImagePicker();
-    final xfile = await picker.pickImage(source: ImageSource.camera);
-
-    if (xfile == null) return;
-
-    final bytes = await xfile.readAsBytes();
-    setState(() {
-      if (isSelfie) {
-        _selfieBytes = bytes;
-      } else {
-        _referenceBytes = bytes;
-      }
-    });
-  }
-
-  Future<void> _pickPhoto() async {
-    final picker = ImagePicker();
-    final xfile = await picker.pickImage(source: ImageSource.gallery);
-
-    if (xfile == null) return;
-
-    final bytes = await xfile.readAsBytes();
-    setState(() => _referenceBytes = bytes);
-  }
-}
-
-class _PhotoStep extends StatelessWidget {
-  final String title;
-  final String subtitle;
-  final IconData icon;
-  final bool isSelected;
-  final VoidCallback onCapture;
-
-  const _PhotoStep({
-    required this.title,
-    required this.subtitle,
-    required this.icon,
-    required this.isSelected,
-    required this.onCapture,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          title,
-          style: GoogleFonts.dmSans(
-            fontSize: 14,
-            fontWeight: FontWeight.w700,
-            color: AppColors.textPrimary,
-          ),
-        ),
-        const SizedBox(height: 4),
-        Text(
-          subtitle,
-          style: GoogleFonts.dmSans(
-            fontSize: 12,
-            color: AppColors.textSecondary,
-          ),
-        ),
-        const SizedBox(height: 12),
-        GestureDetector(
-          onTap: onCapture,
-          child: Container(
-            height: 200,
-            decoration: BoxDecoration(
-              color: AppColors.surface,
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(
-                color: isSelected ? AppColors.emerald : AppColors.border,
-              ),
-            ),
-            child: isSelected
-                ? Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          Icons.check_circle_rounded,
-                          color: AppColors.emerald,
-                          size: 48,
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          'Photo selected',
-                          style: GoogleFonts.dmSans(
-                            color: AppColors.emerald,
-                            fontWeight: FontWeight.w600,
-                            fontSize: 12,
-                          ),
-                        ),
-                      ],
-                    ),
-                  )
-                : Center(
-                    child: Icon(icon, color: AppColors.violet, size: 48),
-                  ),
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-// ─── Step 2: Age Verification ──────────────────────────────────
-class _AgeVerificationStep extends StatelessWidget {
+// ─── Step 1: Age Verification ──────────────────────────────
+class AgeVerificationStep extends StatelessWidget {
   final VoidCallback onNext;
-  const _AgeVerificationStep({required this.onNext});
+  final String Function(String) t;
+  const AgeVerificationStep({required this.onNext, required this.t});
 
   @override
   Widget build(BuildContext context) {
@@ -274,7 +90,7 @@ class _AgeVerificationStep extends StatelessWidget {
       children: [
         const SizedBox(height: 40),
         Text(
-          'Verify Your Age',
+          t('verifyAge'),
           style: GoogleFonts.fraunces(
             fontSize: 28,
             fontWeight: FontWeight.w800,
@@ -283,7 +99,7 @@ class _AgeVerificationStep extends StatelessWidget {
         ),
         const SizedBox(height: 10),
         Text(
-          'Step 2: Identity Document',
+          t('idDocVerification'),
           style: GoogleFonts.dmSans(
             fontSize: 14,
             color: AppColors.textSecondary,
@@ -310,7 +126,7 @@ class _AgeVerificationStep extends StatelessWidget {
                 ),
                 const SizedBox(height: 24),
                 Text(
-                  'Secure ID Verification',
+                  t('secureIdVerification'),
                   textAlign: TextAlign.center,
                   style: GoogleFonts.dmSans(
                     fontSize: 16,
@@ -322,7 +138,7 @@ class _AgeVerificationStep extends StatelessWidget {
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 24),
                   child: Text(
-                    'Your ID is never stored. Stripe verifies securely & deletes it immediately.',
+                    t('stripeVerificationNotice'),
                     textAlign: TextAlign.center,
                     style: GoogleFonts.dmSans(
                       fontSize: 13,
@@ -344,7 +160,7 @@ class _AgeVerificationStep extends StatelessWidget {
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.violet,
               ),
-              child: const Text('Verify with ID'),
+              child: Text(t('verifyWithId')),
             ),
           ),
         ),
@@ -353,9 +169,10 @@ class _AgeVerificationStep extends StatelessWidget {
   }
 }
 
-// ─── Step 3: Pending ───────────────────────────────────────────
-class _VerificationPendingStep extends StatelessWidget {
-  const _VerificationPendingStep();
+// ─── Step 2: Pending ───────────────────────────────────────
+class VerificationPendingStep extends StatelessWidget {
+  final String Function(String) t;
+  const VerificationPendingStep({required this.t});
 
   @override
   Widget build(BuildContext context) {
@@ -373,7 +190,7 @@ class _VerificationPendingStep extends StatelessWidget {
           ),
           const SizedBox(height: 24),
           Text(
-            'Verifying Your Identity',
+            t('verifyingIdentity'),
             style: GoogleFonts.fraunces(
               fontSize: 20,
               fontWeight: FontWeight.w700,
@@ -382,7 +199,7 @@ class _VerificationPendingStep extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           Text(
-            'This usually takes less than 30 seconds.',
+            t('takes30Seconds'),
             style: GoogleFonts.dmSans(
               fontSize: 14,
               color: AppColors.textSecondary,
@@ -394,56 +211,285 @@ class _VerificationPendingStep extends StatelessWidget {
   }
 }
 
-// ─── Step 4: Complete ─────────────────────────────────────────
-class _VerificationCompleteStep extends StatelessWidget {
-  const _VerificationCompleteStep();
+// ─── Step 3: Complete ─────────────────────────────────────
+class VerificationCompleteStep extends StatefulWidget {
+  final String Function(String) t;
+  final VoidCallback? onFinish;
+  const VerificationCompleteStep({required this.t, this.onFinish});
+
+  @override
+  State<VerificationCompleteStep> createState() =>
+      _VerificationCompleteStepState();
+}
+
+class _VerificationCompleteStepState extends State<VerificationCompleteStep> {
+  @override
+  void initState() {
+    super.initState();
+    Future.delayed(Duration.zero, () async {
+      if (mounted) {
+        AppToasts.success(context, widget.t('welcomeToNearme'));
+
+        final auth = context.read<AuthProvider>();
+        await auth.logout();
+
+        if (mounted) {
+          Navigator.of(context).pushNamedAndRemoveUntil(AppRoutes.auth, (route) => false);
+        }
+      }
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
-    return Center(
+    return const Center(
+      child: CircularProgressIndicator(color: AppColors.violet),
+    );
+  }
+}
+
+// ─── Step 0: Document Capture ─────────────────────────────────
+class DocumentCaptureStep extends StatefulWidget {
+  final Function(String) onDocumentSelected;
+  final String Function(String) t;
+  const DocumentCaptureStep({required this.onDocumentSelected, required this.t});
+
+  @override
+  State<DocumentCaptureStep> createState() => _DocumentCaptureStepState();
+}
+
+class _DocumentCaptureStepState extends State<DocumentCaptureStep> {
+  String? _selectedDocumentPath;
+  Uint8List? _selectedDocumentBytes;
+  String? _selectedDocumentType;
+
+  final ImagePicker _picker = ImagePicker();
+
+  Future<void> _pickDocument(ImageSource source) async {
+    try {
+      final image = await _picker.pickImage(source: source);
+      if (image != null) {
+        final bytes = await image.readAsBytes();
+        setState(() {
+          _selectedDocumentPath = image.path;
+          _selectedDocumentBytes = bytes;
+        });
+      }
+    } catch (e) {
+      debugPrint('Error picking image: $e');
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.symmetric(vertical: 20),
       child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Container(
-            width: 80,
-            height: 80,
-            decoration: const BoxDecoration(
-              shape: BoxShape.circle,
-              color: AppColors.emerald,
+          const SizedBox(height: 20),
+          Text(
+            widget.t('uploadDocument'),
+          style: GoogleFonts.fraunces(
+            fontSize: 28,
+            fontWeight: FontWeight.w800,
+            color: AppColors.textPrimary,
+          ),
+        ),
+        const SizedBox(height: 10),
+        Text(
+          widget.t('docTypesList'),
+          style: GoogleFonts.dmSans(
+            fontSize: 14,
+            color: AppColors.textSecondary,
+          ),
+        ),
+          const SizedBox(height: 40),
+          if (_selectedDocumentPath == null) ...[
+            Container(
+              width: 100,
+              height: 100,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: AppColors.violet.withValues(alpha: 0.15),
+              ),
+              child: const Icon(
+                Icons.document_scanner_rounded,
+                color: AppColors.violet,
+                size: 50,
+              ),
             ),
-            child: const Icon(
-              Icons.check_rounded,
-              color: Colors.white,
-              size: 44,
+            const SizedBox(height: 24),
+            Text(
+              widget.t('selectDocType'),
+              style: GoogleFonts.dmSans(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+                color: AppColors.textPrimary,
+              ),
+            ),
+            const SizedBox(height: 24),
+            Wrap(
+              spacing: 12,
+              runSpacing: 12,
+              alignment: WrapAlignment.center,
+              children: [
+                _DocumentTypeButton(
+                  label: widget.t('idCard'),
+                  icon: Icons.credit_card,
+                  onTap: () {
+                    setState(() => _selectedDocumentType = 'id_card');
+                  },
+                ),
+                _DocumentTypeButton(
+                  label: widget.t('passport'),
+                  icon: Icons.assignment_ind,
+                  onTap: () {
+                    setState(() => _selectedDocumentType = 'passport');
+                  },
+                ),
+                _DocumentTypeButton(
+                  label: widget.t('driverLicense'),
+                  icon: Icons.drive_eta,
+                  onTap: () {
+                    setState(() => _selectedDocumentType = 'driving_license');
+                  },
+                ),
+              ],
+            ),
+          ] else ...[
+            Container(
+              width: 150,
+              height: 150,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: AppColors.violet, width: 2),
+              ),
+              child: Image.memory(
+                _selectedDocumentBytes!,
+                fit: BoxFit.cover,
+              ),
+            ),
+            const SizedBox(height: 24),
+            Text(
+              widget.t('docCapturedSuccess'),
+              style: GoogleFonts.dmSans(
+                fontSize: 14,
+                color: AppColors.emerald,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
+          const SizedBox(height: 40),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24),
+            child: Column(
+              children: [
+                if (_selectedDocumentPath == null) ...[
+                  SizedBox(
+                    width: double.infinity,
+                    height: 58,
+                    child: ElevatedButton.icon(
+                      onPressed: _selectedDocumentType != null
+                          ? () => _pickDocument(ImageSource.camera)
+                          : null,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.violet,
+                      ),
+                      icon: const Icon(Icons.camera_alt),
+                      label: Text(widget.t('takePhoto')),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  SizedBox(
+                    width: double.infinity,
+                    height: 58,
+                    child: OutlinedButton.icon(
+                      onPressed: _selectedDocumentType != null
+                          ? () => _pickDocument(ImageSource.gallery)
+                          : null,
+                      style: OutlinedButton.styleFrom(
+                        side: const BorderSide(color: AppColors.violet),
+                      ),
+                      icon: const Icon(Icons.image, color: AppColors.violet),
+                      label: Text(widget.t('chooseGallery')),
+                    ),
+                  ),
+                ] else ...[
+                  SizedBox(
+                    width: double.infinity,
+                    height: 58,
+                    child: ElevatedButton(
+                      onPressed: () {
+                        widget.onDocumentSelected(_selectedDocumentPath!);
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.violet,
+                      ),
+                      child: Text(widget.t('continueToVerification')),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  SizedBox(
+                    width: double.infinity,
+                    height: 58,
+                    child: OutlinedButton(
+                      onPressed: () {
+                        setState(() {
+                          _selectedDocumentPath = null;
+                          _selectedDocumentType = null;
+                        });
+                      },
+                      style: OutlinedButton.styleFrom(
+                        side: const BorderSide(color: AppColors.violet),
+                      ),
+                      child: Text(widget.t('chooseDifferentDoc')),
+                    ),
+                  ),
+                ],
+              ],
             ),
           ),
-          const SizedBox(height: 24),
-          Text(
-            'Verified!',
-            style: GoogleFonts.fraunces(
-              fontSize: 28,
-              fontWeight: FontWeight.w800,
-              color: AppColors.textPrimary,
+        ],
+      ),
+    );
+  }
+}
+
+class _DocumentTypeButton extends StatelessWidget {
+  final String label;
+  final IconData icon;
+  final VoidCallback onTap;
+
+  const _DocumentTypeButton({
+    required this.label,
+    required this.icon,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Column(
+        children: [
+          Container(
+            width: 70,
+            height: 70,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: AppColors.violet.withValues(alpha: 0.1),
             ),
+            child: Icon(icon, color: AppColors.violet, size: 35),
           ),
           const SizedBox(height: 8),
           Text(
-            'Your identity has been verified.\nWelcome to NearMe!',
-            textAlign: TextAlign.center,
+            label,
             style: GoogleFonts.dmSans(
-              fontSize: 14,
-              color: AppColors.textSecondary,
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              color: AppColors.textPrimary,
             ),
-          ),
-          const SizedBox(height: 40),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.of(context).pushReplacementNamed(AppRoutes.discover);
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.violet,
-            ),
-            child: const Text('Start Exploring'),
+            textAlign: TextAlign.center,
           ),
         ],
       ),

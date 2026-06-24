@@ -18,10 +18,12 @@ class AuthService {
   final _firestore = FirebaseFirestore.instance;
 
   AppUser? _cachedUser;
+  bool _needsAgeVerification = false;
 
   bool get isLoggedIn => _auth.currentUser != null;
   AppUser? get currentUser => _cachedUser;
   String? get accessToken => null;
+  bool get needsAgeVerification => _needsAgeVerification;
 
   Stream<fb.User?> get authStateChanges => _auth.authStateChanges();
 
@@ -29,6 +31,7 @@ class AuthService {
     final user = _auth.currentUser;
     if (user == null) {
       _cachedUser = null;
+      _needsAgeVerification = false;
       return;
     }
 
@@ -46,6 +49,9 @@ class AuthService {
           verified: user.emailVerified,
         );
       }
+
+      // ✅ Vérifier si vérification d'âge est nécessaire
+      _checkAgeVerificationNeeded();
     } catch (_) {
       _cachedUser = AppUser(
         id: user.uid,
@@ -54,19 +60,45 @@ class AuthService {
         createdAt: DateTime.now(),
         verified: user.emailVerified,
       );
+      _checkAgeVerificationNeeded();
     }
+  }
+
+  /// Vérifier si la vérification d'âge est nécessaire
+  void _checkAgeVerificationNeeded() {
+    if (_cachedUser == null) {
+      _needsAgeVerification = false;
+      return;
+    }
+
+    final birthDate = _cachedUser!.birthDate;
+    final isAgeVerified = _cachedUser!.isAgeVerified;
+
+    if (birthDate == null) {
+      _needsAgeVerification = false;
+      return;
+    }
+
+    final age = _calculateAge(birthDate);
+
+    // Besoin de vérification si: age < 20 ET pas encore vérifié
+    _needsAgeVerification = age < 20 && !isAgeVerified;
+  }
+
+  int _calculateAge(DateTime birthDate) {
+    final today = DateTime.now();
+    int age = today.year - birthDate.year;
+    if (today.month < birthDate.month ||
+        (today.month == birthDate.month && today.day < birthDate.day)) {
+      age--;
+    }
+    return age;
   }
 
   Future<AppUser> register({
     required String name,
     required String email,
     required String password,
-    String? gender,
-    double? height,
-    String? bio,
-    Intention? intention,
-    String? location,
-    List<String> interests = const [],
   }) async {
     final userCred = await _auth.createUserWithEmailAndPassword(
       email: email.trim(),
@@ -77,14 +109,10 @@ class AuthService {
     await _firestore.collection('profiles').doc(uid).set({
       'name': name.trim(),
       'email': email.trim(),
-      'gender': gender,
-      'heightCm': height?.toInt(),
-      'bio': bio?.trim(),
-      'intention': intention?.toString(),
-      'location': location,
-      'interests': interests,
       'photos': [],
       'isFaceVerified': false,
+      'isAgeVerified': false,
+      'createdAt': FieldValue.serverTimestamp(),
       'updatedAt': FieldValue.serverTimestamp(),
     });
 
@@ -94,12 +122,6 @@ class AuthService {
       email: email.trim(),
       createdAt: DateTime.now(),
       verified: false,
-      gender: gender,
-      height: height,
-      bio: bio?.trim(),
-      intention: intention,
-      location: location,
-      interests: interests,
     );
 
     return _cachedUser!;
@@ -133,14 +155,10 @@ class AuthService {
       await _firestore.collection('profiles').doc(uid).set({
         'name': googleAccount.displayName ?? '',
         'email': googleAccount.email,
-        'gender': null,
-        'heightCm': null,
-        'bio': null,
-        'intention': null,
-        'location': null,
-        'interests': [],
         'photos': [],
         'isFaceVerified': false,
+        'isAgeVerified': false,
+        'createdAt': FieldValue.serverTimestamp(),
         'updatedAt': FieldValue.serverTimestamp(),
       });
     }
@@ -169,14 +187,10 @@ class AuthService {
       await _firestore.collection('profiles').doc(uid).set({
         'name': credential.givenName ?? credential.familyName ?? '',
         'email': credential.email ?? '',
-        'gender': null,
-        'heightCm': null,
-        'bio': null,
-        'intention': null,
-        'location': null,
-        'interests': [],
         'photos': [],
         'isFaceVerified': false,
+        'isAgeVerified': false,
+        'createdAt': FieldValue.serverTimestamp(),
         'updatedAt': FieldValue.serverTimestamp(),
       });
     }
@@ -192,22 +206,43 @@ class AuthService {
   Future<AppUser> updateUser(AppUser user) async {
     if (_auth.currentUser == null) throw Exception('Not logged in');
 
-    await _firestore.collection('profiles').doc(user.id).update({
-      'name': user.name,
-      'email': user.email,
-      'gender': user.gender,
-      'heightCm': user.height?.toInt(),
-      'bio': user.bio,
-      'intention': user.intention?.toString(),
-      'location': user.location,
-      'interests': user.interests,
-      'photos': user.photos ?? [],
-      'isFaceVerified': user.isFaceVerified ?? false,
-      'updatedAt': FieldValue.serverTimestamp(),
-    });
+    await _firestore
+        .collection('profiles')
+        .doc(user.id)
+        .update(user.toFirestore());
 
     _cachedUser = user;
+    _checkAgeVerificationNeeded();
     return user;
+  }
+
+  Future<bool> toggleFavorite(String targetUserId) async {
+    if (_cachedUser == null) return false;
+
+    final userRef = _firestore.collection('profiles').doc(_cachedUser!.id);
+    final favRef = userRef.collection('favorites').doc(targetUserId);
+
+    final currentFavorites = List<String>.from(_cachedUser!.favorites);
+    bool isRemoving = currentFavorites.contains(targetUserId);
+
+    if (isRemoving) {
+      currentFavorites.remove(targetUserId);
+      await favRef.delete();
+      await userRef.update({
+        'favorites': FieldValue.arrayRemove([targetUserId]),
+        'updatedAt': FieldValue.serverTimestamp(),
+      });
+    } else {
+      currentFavorites.add(targetUserId);
+      await favRef.set({'timestamp': FieldValue.serverTimestamp()});
+      await userRef.update({
+        'favorites': FieldValue.arrayUnion([targetUserId]),
+        'updatedAt': FieldValue.serverTimestamp(),
+      });
+    }
+
+    _cachedUser = _cachedUser!.copyWith(favorites: currentFavorites);
+    return isRemoving; // Return whether we removed it
   }
 
   Future<List<String>> addPhotos(String uid, List<String> localPaths) async {
@@ -233,7 +268,48 @@ class AuthService {
     _cachedUser = _cachedUser?.copyWith(photos: updated);
   }
 
+  /// Reload user data from Firestore (used after age verification)
+  Future<void> refreshCurrentUser() async {
+    final user = _auth.currentUser;
+    if (user == null) {
+      _cachedUser = null;
+      _needsAgeVerification = false;
+      return;
+    }
+
+    try {
+      final docSnap =
+          await _firestore.collection('profiles').doc(user.uid).get();
+      if (docSnap.exists) {
+        _cachedUser = AppUser.fromFirestore(docSnap.data() ?? {}, user);
+      }
+      _checkAgeVerificationNeeded();
+    } catch (_) {
+      // Silent fail — keep existing cache
+    }
+  }
+
+  Future<void> updatePresence(bool isOnline) async {
+    final user = _auth.currentUser;
+    if (user == null) return;
+
+    await _firestore.collection('profiles').doc(user.uid).update({
+      'isOnline': isOnline,
+      'lastSeen': FieldValue.serverTimestamp(),
+    });
+
+    if (_cachedUser != null && _cachedUser!.id == user.uid) {
+      _cachedUser = _cachedUser!.copyWith(
+        isOnline: isOnline,
+        lastSeen: DateTime.now(),
+      );
+    }
+  }
+
   Future<void> logout() async {
+    try {
+      await updatePresence(false);
+    } catch (_) {}
     await _googleSignIn.signOut();
     await _auth.signOut();
     _cachedUser = null;

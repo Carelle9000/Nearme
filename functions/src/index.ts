@@ -176,7 +176,8 @@ export const uploadPhoto = onCall(
 
 import Stripe from "stripe";
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || "");
+// Initialize Stripe with key from env (loaded in function calls)
+let stripe: Stripe | null = null;
 
 /**
  * Creates a Stripe Identity verification session for age verification
@@ -188,18 +189,26 @@ export const createVerificationSession = onCall(
     const userId = request.auth?.uid;
 
     if (!userId) {
+      logger.error("[Verification] User not authenticated");
       throw new Error("User must be authenticated");
     }
 
-    if (!process.env.STRIPE_SECRET_KEY) {
-      logger.error("STRIPE_SECRET_KEY not configured");
+    const stripeKey = process.env.STRIPE_SECRET_KEY;
+    if (!stripeKey) {
+      logger.error("[Verification] STRIPE_SECRET_KEY not configured");
       throw new Error("Stripe not configured");
     }
 
     try {
+      // Initialize Stripe with the configured key
+      if (!stripe) {
+        stripe = new Stripe(stripeKey);
+      }
+
       // Get user from Firestore
       const userDoc = await db.collection("users").doc(userId).get();
       if (!userDoc.exists) {
+        logger.error(`[Verification] User document not found: ${userId}`);
         throw new Error("User not found");
       }
 
@@ -232,8 +241,8 @@ export const createVerificationSession = onCall(
       );
 
       return {
-        sessionId: session.id,
-        clientSecret: session.client_secret,
+        session_id: session.id,
+        client_secret: session.client_secret,
       };
     } catch (error) {
       logger.error("[Verification] Error creating session:", error);
@@ -255,16 +264,26 @@ export const handleStripeWebhook = onCall(
       throw new Error("Missing stripe-signature header");
     }
 
-    if (!process.env.STRIPE_WEBHOOK_SECRET) {
+    const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
+    if (!webhookSecret) {
       logger.error("STRIPE_WEBHOOK_SECRET not configured");
       throw new Error("Webhook secret not configured");
     }
 
+    const stripeKey = process.env.STRIPE_SECRET_KEY;
+    if (!stripeKey) {
+      throw new Error("Stripe not configured");
+    }
+
     try {
+      if (!stripe) {
+        stripe = new Stripe(stripeKey);
+      }
+
       const event = stripe.webhooks.constructEvent(
         request.rawRequest?.body || "",
         signature,
-        process.env.STRIPE_WEBHOOK_SECRET
+        webhookSecret
       );
 
       logger.info(`[Webhook] Event received: ${event.type}`);
@@ -275,6 +294,7 @@ export const handleStripeWebhook = onCall(
         return {received: true};
       }
 
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const session = event.data.object as any;
       const userId = session.metadata?.userId;
 
@@ -339,7 +359,17 @@ export const getVerificationStatus = onCall(
       throw new Error("Missing verificationId");
     }
 
+    const stripeKey = process.env.STRIPE_SECRET_KEY;
+    if (!stripeKey) {
+      throw new Error("Stripe not configured");
+    }
+
     try {
+      // Initialize Stripe with the configured key
+      if (!stripe) {
+        stripe = new Stripe(stripeKey);
+      }
+
       // Verify user owns this session
       const userDoc = await db.collection("users").doc(userId).get();
       const user = userDoc.data();
@@ -353,6 +383,7 @@ export const getVerificationStatus = onCall(
         verificationId
       );
 
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const verifiedOutputs = session.verified_outputs as any;
       return {
         id: session.id,

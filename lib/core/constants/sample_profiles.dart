@@ -2,6 +2,7 @@ import '../../data/models/profile.dart';
 
 const List<Profile> kSampleProfiles = [
   Profile(
+    id: 's1',
     name: 'Sofia',
     age: 26,
     emoji: '🌺',
@@ -18,6 +19,7 @@ const List<Profile> kSampleProfiles = [
     sharedSpots: true,
   ),
   Profile(
+    id: 's2',
     name: 'Alex',
     age: 29,
     emoji: '🏄',
@@ -34,6 +36,7 @@ const List<Profile> kSampleProfiles = [
     sharedSpots: false,
   ),
   Profile(
+    id: 's3',
     name: 'Jamie',
     age: 27,
     emoji: '🌿',
@@ -50,6 +53,7 @@ const List<Profile> kSampleProfiles = [
     sharedSpots: false,
   ),
   Profile(
+    id: 's4',
     name: 'Riley',
     age: 31,
     emoji: '🎸',
@@ -66,6 +70,7 @@ const List<Profile> kSampleProfiles = [
     sharedSpots: true,
   ),
   Profile(
+    id: 's5',
     name: 'Morgan',
     age: 24,
     emoji: '📸',
@@ -82,6 +87,7 @@ const List<Profile> kSampleProfiles = [
     sharedSpots: false,
   ),
   Profile(
+    id: 's6',
     name: 'Casey',
     age: 33,
     emoji: '🌮',

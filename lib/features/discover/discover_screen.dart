@@ -9,6 +9,9 @@ import '../../data/models/profile.dart';
 import '../auth/auth_provider.dart';
 import '../locale/locale_provider.dart';
 import '../matches/matches_provider.dart';
+import '../notifications/notifications_provider.dart';
+import '../notifications/notifications_screen.dart';
+import '../favorites/favorites_provider.dart';
 import 'discover_provider.dart';
 import 'widgets/filter_panel.dart';
 import 'widgets/match_modal.dart';
@@ -22,44 +25,59 @@ class DiscoverScreen extends StatefulWidget {
 }
 
 class _DiscoverScreenState extends State<DiscoverScreen> {
-  bool _listenerAdded = false;
+  DiscoverProvider? _discoverProvider;
   String? _lastCountryCode;
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    if (!_listenerAdded) {
-      _listenerAdded = true;
-      context.read<DiscoverProvider>().addListener(_onDiscoverChange);
+    final newProvider = context.read<DiscoverProvider>();
+    if (_discoverProvider != newProvider) {
+      _discoverProvider?.removeListener(_onDiscoverChange);
+      _discoverProvider = newProvider;
+      _discoverProvider!.addListener(_onDiscoverChange);
     }
 
     // Update country filter if user changed their location
     final locale = context.read<LocaleProvider>();
     if (_lastCountryCode != locale.country.code) {
       _lastCountryCode = locale.country.code;
-      context.read<DiscoverProvider>().setCountryFilter(locale.country.code);
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          _discoverProvider?.setCountryFilter(locale.country.code);
+
+          final auth = context.read<AuthProvider>();
+          if (auth.user != null) {
+            _discoverProvider?.loadUsers(auth.user!.id);
+          }
+        }
+      });
     }
   }
 
   @override
   void dispose() {
-    try {
-      context.read<DiscoverProvider>().removeListener(_onDiscoverChange);
-    } catch (_) {}
+    _discoverProvider?.removeListener(_onDiscoverChange);
     super.dispose();
   }
 
   void _onDiscoverChange() {
-    final dp = context.read<DiscoverProvider>();
-    final match = dp.lastMatch;
-    if (match == null || !mounted) return;
+    final dp = _discoverProvider;
+    if (dp == null || !mounted) return;
 
-    context.read<MatchesProvider>().addMatch(match);
-    final matchId = context.read<MatchesProvider>().matches.first.id;
-    dp.clearLastMatch();
+    final match = dp.lastMatch;
+    if (match == null) return;
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
+
+      // Access providers via context.read inside the callback
+      final matchesProvider = context.read<MatchesProvider>();
+      matchesProvider.addMatch(match);
+
+      final matchId = matchesProvider.matches.first.id;
+      dp.clearLastMatch();
+
       showModalBottomSheet<void>(
         context: context,
         isScrollControlled: true,
@@ -120,7 +138,15 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
                   location: '${locale.country.flag} ${locale.country.name}',
                 ),
                 _TrialBanner(t: t),
-                Expanded(child: _Deck(provider: discover)),
+                Expanded(
+                  child: discover.isLoading
+                      ? const Center(
+                          child: CircularProgressIndicator(
+                            color: AppColors.violet,
+                          ),
+                        )
+                      : _Deck(provider: discover),
+                ),
                 _ActionRow(provider: discover),
               ],
             ),
@@ -142,71 +168,116 @@ class _Header extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 14, 16, 12),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          // Logo + wordmark
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+    return ClipRect(
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+        child: Container(
+          color: AppColors.bg.withValues(alpha: 0.5),
+          padding: const EdgeInsets.fromLTRB(20, 14, 16, 12),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              Text(
-                'NearMe',
-                style: GoogleFonts.fraunces(
-                  fontSize: 22,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.textPrimary,
-                  letterSpacing: -0.3,
-                ),
-              ),
-              const SizedBox(height: 2),
-              Row(
+              // Logo + wordmark
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Container(
-                    width: 5,
-                    height: 5,
-                    decoration: const BoxDecoration(
-                      color: AppColors.emerald,
-                      shape: BoxShape.circle,
+                  Text(
+                    'NearMe',
+                    style: GoogleFonts.fraunces(
+                      fontSize: 22,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.textPrimary,
+                      letterSpacing: -0.3,
                     ),
                   ),
-                  const SizedBox(width: 5),
-                  Text(
-                    location,
-                    style: GoogleFonts.dmSans(
-                      fontSize: 11,
-                      color: AppColors.textMuted,
-                      fontWeight: FontWeight.w400,
+                  const SizedBox(height: 4),
+                  // Updated Location Pill [ 🇦🇹 Austria ⌵ ]
+                  Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.05),
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(
+                        color: Colors.white.withValues(alpha: 0.1),
+                        width: 1,
+                      ),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          location,
+                          style: GoogleFonts.dmSans(
+                            fontSize: 10,
+                            color: Colors.white.withValues(alpha: 0.8),
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        const SizedBox(width: 4),
+                        Icon(
+                          Icons.keyboard_arrow_down_rounded,
+                          size: 12,
+                          color: Colors.white.withValues(alpha: 0.5),
+                        ),
+                      ],
                     ),
                   ),
                 ],
               ),
+              const Spacer(),
+              // Actions icônes
+              _IconAction(
+                icon: Icons.tune_rounded,
+                onTap: () => showFilterPanel(context),
+              ),
+              const SizedBox(width: 8),
+              // Notification Bell replaced Language icon
+              Consumer<NotificationsProvider>(
+                builder: (context, NotificationsProvider np, _) => Stack(
+                  clipBehavior: Clip.none,
+                  children: [
+                    _IconAction(
+                      icon: Icons.notifications_none_rounded,
+                      onTap: () {
+                        // We need a way to navigate to notifications or change tab
+                        // For now, let's assume we can push the screen or the shell manages it.
+                        // But usually, in a shell, we might want to switch tab.
+                        // If it's a button in header, pushing the screen is common too.
+                        Navigator.of(context).push(
+                          MaterialPageRoute(builder: (_) => NotificationsScreen()),
+                        );
+                      },
+                    ),
+                    if (np.unreadCount > 0)
+                      Positioned(
+                        right: 0,
+                        top: 0,
+                        child: Container(
+                          width: 12,
+                          height: 12,
+                          decoration: const BoxDecoration(
+                            color: AppColors.pink,
+                            shape: BoxShape.circle,
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 8),
+              _IconAction(
+                icon: Icons.logout_rounded,
+                onTap: () async {
+                  await context.read<AuthProvider>().logout();
+                  if (!context.mounted) return;
+                  Navigator.of(context)
+                      .pushReplacementNamed(AppRoutes.landing);
+                },
+              ),
             ],
           ),
-          const Spacer(),
-          // Actions icônes
-          _IconAction(
-            icon: Icons.tune_rounded,
-            onTap: () => showFilterPanel(context),
-          ),
-          const SizedBox(width: 6),
-          _IconAction(
-            icon: Icons.language_rounded,
-            onTap: () =>
-                Navigator.of(context).pushNamed(AppRoutes.langSelect),
-          ),
-          const SizedBox(width: 6),
-          _IconAction(
-            icon: Icons.logout_rounded,
-            onTap: () async {
-              await context.read<AuthProvider>().logout();
-              if (!context.mounted) return;
-              Navigator.of(context)
-                  .pushReplacementNamed(AppRoutes.landing);
-            },
-          ),
-        ],
+        ),
       ),
     );
   }
@@ -302,61 +373,70 @@ class _TrialBanner extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+      margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            AppColors.gold.withValues(alpha: 0.12),
-            AppColors.gold.withValues(alpha: 0.06),
-          ],
-        ),
-        border: Border(
-          top: BorderSide(
-              color: AppColors.gold.withValues(alpha: 0.25), width: 1.2),
-          bottom: BorderSide(
-              color: AppColors.gold.withValues(alpha: 0.25), width: 1.2),
+        color: Colors.white.withValues(alpha: 0.03),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: AppColors.gold.withValues(alpha: 0.15),
+          width: 1,
         ),
       ),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Row(
-            children: [
-              Icon(
-                Icons.card_giftcard_rounded,
-                size: 16,
-                color: AppColors.gold.withValues(alpha: 0.8),
-              ),
-              const SizedBox(width: 8),
-              Text(
-                'Free Trial Active',
-                style: GoogleFonts.dmSans(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.gold.withValues(alpha: 0.85),
-                ),
-              ),
-            ],
+          Container(
+            padding: const EdgeInsets.all(6),
+            decoration: BoxDecoration(
+              color: AppColors.gold.withValues(alpha: 0.1),
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(
+              Icons.stars_rounded,
+              size: 14,
+              color: AppColors.gold,
+            ),
           ),
-          Row(
-            children: [
-              Text(
-                '6 days left',
-                style: GoogleFonts.dmSans(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.gold,
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Free Trial Active',
+                  style: GoogleFonts.dmSans(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.textPrimary,
+                  ),
                 ),
-              ),
-              const SizedBox(width: 6),
-              Icon(
-                Icons.arrow_forward_rounded,
-                size: 14,
-                color: AppColors.gold,
-              ),
-            ],
+                const SizedBox(height: 2),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(2),
+                  child: LinearProgressIndicator(
+                    value: 0.6,
+                    backgroundColor: Colors.white.withValues(alpha: 0.05),
+                    color: AppColors.gold,
+                    minHeight: 2,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 16),
+          Text(
+            '6 days left',
+            style: GoogleFonts.dmSans(
+              fontSize: 11,
+              fontWeight: FontWeight.w600,
+              color: AppColors.gold,
+            ),
+          ),
+          const SizedBox(width: 4),
+          Icon(
+            Icons.chevron_right_rounded,
+            size: 16,
+            color: AppColors.gold.withValues(alpha: 0.5),
           ),
         ],
       ),
@@ -380,105 +460,92 @@ class _Deck extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
+            // Updated Empty State Illustration
             Container(
-              width: 90,
-              height: 90,
+              width: 120,
+              height: 120,
               decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
+                shape: BoxShape.circle,
+                gradient: RadialGradient(
                   colors: [
                     AppColors.violet.withValues(alpha: 0.15),
-                    AppColors.pink.withValues(alpha: 0.1),
+                    Colors.transparent,
                   ],
                 ),
-                shape: BoxShape.circle,
-                border: Border.all(
-                  color: Colors.white.withValues(alpha: 0.1),
-                  width: 1.5,
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: AppColors.violet.withValues(alpha: 0.1),
-                    blurRadius: 20,
-                    spreadRadius: 2,
-                  ),
-                ],
               ),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(45),
-                child: BackdropFilter(
-                  filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-                  child: Center(
-                    child: Icon(
-                      Icons.done_all_rounded,
-                      size: 48,
-                      color: AppColors.violet.withValues(alpha: 0.7),
-                    ),
-                  ),
+              child: Center(
+                child: Icon(
+                  Icons.radar_rounded,
+                  size: 64,
+                  color: AppColors.violet.withValues(alpha: 0.5),
                 ),
               ),
             ),
-            const SizedBox(height: 28),
+            const SizedBox(height: 24),
             Text(
               'All caught up',
-              style: GoogleFonts.fraunces(
-                fontSize: 26,
-                fontWeight: FontWeight.w900,
+              style: GoogleFonts.dmSans(
+                fontSize: 24,
+                fontWeight: FontWeight.w800,
                 color: AppColors.textPrimary,
                 letterSpacing: -0.5,
               ),
             ),
             const SizedBox(height: 12),
-            Text(
-              'No more profiles nearby right now. Come back soon!',
-              style: GoogleFonts.dmSans(
-                fontSize: 14,
-                color: AppColors.textMuted,
-                height: 1.6,
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 40),
+              child: Text(
+                'No more profiles nearby right now. Come back soon!',
+                style: GoogleFonts.dmSans(
+                  fontSize: 15,
+                  color: Colors.white.withValues(alpha: 0.6),
+                  height: 1.5,
+                ),
+                textAlign: TextAlign.center,
               ),
-              textAlign: TextAlign.center,
             ),
-            const SizedBox(height: 28),
+            const SizedBox(height: 32),
             Container(
               decoration: BoxDecoration(
                 gradient: AppColors.violetGradient,
-                borderRadius: BorderRadius.circular(20),
+                borderRadius: BorderRadius.circular(24),
                 boxShadow: [
                   BoxShadow(
-                    color: AppColors.violet.withValues(alpha: 0.3),
-                    blurRadius: 15,
+                    color: AppColors.violet.withValues(alpha: 0.4),
+                    blurRadius: 24,
                     offset: const Offset(0, 8),
                   ),
                 ],
               ),
               child: ElevatedButton(
-                onPressed: provider.reset,
+                onPressed: () {
+                  final auth = context.read<AuthProvider>();
+                  provider.reset(auth.user?.id);
+                },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.transparent,
                   foregroundColor: Colors.white,
                   elevation: 0,
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(20),
+                    borderRadius: BorderRadius.circular(24),
                   ),
                   padding: const EdgeInsets.symmetric(
-                    horizontal: 32,
-                    vertical: 14,
+                    horizontal: 40, vertical: 16,
                   ),
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(
+                    const Icon(
                       Icons.refresh_rounded,
-                      size: 18,
+                      size: 20,
                       color: Colors.white,
                     ),
-                    const SizedBox(width: 8),
+                    const SizedBox(width: 10),
                     Text(
                       'Reset Deck',
                       style: GoogleFonts.dmSans(
-                        fontSize: 14,
+                        fontSize: 15,
                         fontWeight: FontWeight.w700,
                         letterSpacing: 0.5,
                       ),
@@ -502,7 +569,7 @@ class _Deck extends StatelessWidget {
             switchInCurve: Curves.easeOut,
             switchOutCurve: Curves.easeIn,
             child: _SwipeCard(
-              key: ValueKey('${profile.name}-${provider.index}'),
+              key: ValueKey('${profile.id}-${provider.index}'),
               profile: profile,
               index: provider.index,
               provider: provider,
@@ -542,6 +609,7 @@ class _SwipeCardState extends State<_SwipeCard>
   double _startDx = 0;
   double _startDy = 0;
   bool _snapping = false;
+  bool _animatingOut = false;
 
   static const double _swipeThreshold = 100.0;
 
@@ -550,25 +618,63 @@ class _SwipeCardState extends State<_SwipeCard>
     super.initState();
     _ctrl = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 280),
+      duration: const Duration(milliseconds: 350),
     )
       ..addListener(() {
-        if (!_snapping) return;
-        final t = Curves.easeOut.transform(_ctrl.value);
-        setState(() {
-          _dx = _startDx * (1 - t);
-          _dy = _startDy * (1 - t);
-        });
-      })
-      ..addStatusListener((s) {
-        if (s == AnimationStatus.completed && _snapping) {
+        if (_snapping) {
+          final t = Curves.easeOut.transform(_ctrl.value);
           setState(() {
-            _snapping = false;
-            _dx = 0;
-            _dy = 0;
+            _dx = _startDx * (1 - t);
+            _dy = _startDy * (1 - t);
+          });
+        } else if (_animatingOut) {
+          final t = Curves.easeIn.transform(_ctrl.value);
+          setState(() {
+            _dx = _startDx + (_swipeThreshold * 5 * (_startDx > 0 ? 1 : -1) * t);
+            _dy = _startDy + (_startDy * 2 * t);
           });
         }
+      })
+      ..addStatusListener((s) {
+        if (s == AnimationStatus.completed) {
+          if (_snapping) {
+            setState(() {
+              _snapping = false;
+              _dx = 0;
+              _dy = 0;
+            });
+          } else if (_animatingOut) {
+            _performSwipe();
+          }
+        }
       });
+  }
+
+  @override
+  void didUpdateWidget(_SwipeCard oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.provider.pendingAction != null && !_animatingOut) {
+      _triggerProgrammaticSwipe(widget.provider.pendingAction!);
+    }
+  }
+
+  void _triggerProgrammaticSwipe(SwipeAction action) {
+    _animatingOut = true;
+    _snapping = false;
+    _startDx = action == SwipeAction.nope ? -1 : 1;
+    _startDy = 0;
+    _ctrl.forward(from: 0);
+  }
+
+  void _performSwipe() {
+    final auth = context.read<AuthProvider>();
+    final user = auth.user;
+    final uid = user?.id ?? '';
+    final name = user?.name ?? 'NearMe User';
+    final photo = user?.photos?.isNotEmpty == true ? user!.photos!.first : null;
+
+    final action = _dx > 0 ? SwipeAction.like : SwipeAction.nope;
+    widget.provider.swipe(uid, name, photo, action);
   }
 
   @override
@@ -590,18 +696,24 @@ class _SwipeCardState extends State<_SwipeCard>
   }
 
   void _onPanEnd(DragEndDetails d) {
+    if (_animatingOut) return;
+
+    final auth = context.read<AuthProvider>();
+    final user = auth.user;
+    final uid = user?.id ?? '';
+    final name = user?.name ?? 'NearMe User';
+    final photo = user?.photos?.isNotEmpty == true ? user!.photos!.first : null;
+
     if (_dx > _swipeThreshold) {
-      widget.provider.swipe(SwipeAction.like);
-      setState(() {
-        _dx = 0;
-        _dy = 0;
-      });
+      _animatingOut = true;
+      _startDx = _dx;
+      _startDy = _dy;
+      _ctrl.forward(from: 0);
     } else if (_dx < -_swipeThreshold) {
-      widget.provider.swipe(SwipeAction.nope);
-      setState(() {
-        _dx = 0;
-        _dy = 0;
-      });
+      _animatingOut = true;
+      _startDx = _dx;
+      _startDy = _dy;
+      _ctrl.forward(from: 0);
     } else {
       _startDx = _dx;
       _startDy = _dy;
@@ -614,44 +726,65 @@ class _SwipeCardState extends State<_SwipeCard>
   Widget build(BuildContext context) {
     final likeOpacity = (_dx / _swipeThreshold).clamp(0.0, 1.0);
     final nopeOpacity = (-_dx / _swipeThreshold).clamp(0.0, 1.0);
+    final auth = context.watch<AuthProvider>();
 
     return GestureDetector(
-      onPanStart: _onPanStart,
-      onPanUpdate: _onPanUpdate,
+      onPanStart: _animatingOut ? null : _onPanStart,
+      onPanUpdate: _animatingOut ? null : _onPanUpdate,
       onPanEnd: _onPanEnd,
       child: Transform.translate(
         offset: Offset(_dx, _dy),
         child: Transform.rotate(
-          angle: (_dx / 320).clamp(-0.35, 0.35) * 0.15,
+          angle: (_dx / 400).clamp(-0.35, 0.35),
           child: Stack(
             clipBehavior: Clip.none,
             children: [
-              ProfileCard(profile: widget.profile),
+              ProfileCard(
+                profile: widget.profile,
+                isFavorite: auth.user?.favorites.contains(widget.profile.id) ?? false,
+                onFavorite: () {
+                  if (auth.user != null) {
+                    auth.toggleFavorite(widget.profile.id);
+                    context.read<FavoritesProvider>().refresh(auth.user!.id);
+                  }
+                },
+                onDoubleTap: () {
+                  final user = auth.user;
+                  if (user != null) {
+                    final photo = user.photos?.isNotEmpty == true ? user.photos!.first : null;
+                    widget.provider.swipe(user.id, user.name, photo, SwipeAction.like, programmatic: true);
+                  }
+                },
+              ),
               // ── LIKE stamp
-              if (likeOpacity > 0)
+              if (likeOpacity > 0 || (_animatingOut && _dx > 0))
                 Positioned(
-                  top: 24,
+                  top: 40,
                   left: 20,
                   child: Opacity(
-                    opacity: likeOpacity,
+                    opacity: _animatingOut ? 1.0 : likeOpacity,
                     child: Transform.rotate(
-                      angle: -0.35,
+                      angle: -0.2,
                       child: _Stamp(
-                        text: 'LIKE',
-                        color: AppColors.pink,
+                        text: widget.provider.pendingAction == SwipeAction.superLike
+                          ? 'SUPER LIKE'
+                          : 'LIKE',
+                        color: widget.provider.pendingAction == SwipeAction.superLike
+                          ? AppColors.gold
+                          : AppColors.pink,
                       ),
                     ),
                   ),
                 ),
               // ── NOPE stamp
-              if (nopeOpacity > 0)
+              if (nopeOpacity > 0 || (_animatingOut && _dx < 0))
                 Positioned(
-                  top: 24,
+                  top: 40,
                   right: 20,
                   child: Opacity(
-                    opacity: nopeOpacity,
+                    opacity: _animatingOut ? 1.0 : nopeOpacity,
                     child: Transform.rotate(
-                      angle: 0.35,
+                      angle: 0.2,
                       child: _Stamp(
                         text: 'NOPE',
                         color: AppColors.textMuted,
@@ -704,68 +837,70 @@ class _ActionRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ClipRect(
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 14),
-          decoration: BoxDecoration(
-            color: AppColors.bg.withValues(alpha: 0.85),
-            border: Border(
-              top: BorderSide(
-                  color: AppColors.border.withValues(alpha: 0.5)),
-            ),
-          ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            children: [
-              // Nope — grand bouton gauche
-              _ActionBtn(
-                size: 62,
-                onTap: () => provider.swipe(SwipeAction.nope),
-                bg: AppColors.surface,
-                border: AppColors.border,
-                child: const Icon(
-                  Icons.close_rounded,
-                  color: AppColors.textMuted,
-                  size: 26,
-                ),
-              ),
+    final auth = context.read<AuthProvider>();
+    final user = auth.user;
+    final uid = user?.id ?? '';
+    final name = user?.name ?? 'NearMe User';
+    final photo = user?.photos?.isNotEmpty == true ? user!.photos!.first : null;
 
-              // Super Like — bouton central plus petit
-              _ActionBtn(
-                size: 50,
-                onTap: () => provider.swipe(SwipeAction.superLike),
-                bg: AppColors.gold.withValues(alpha: 0.10),
-                border: AppColors.gold.withValues(alpha: 0.20),
-                child: const Icon(
-                  Icons.star_rounded,
-                  color: AppColors.gold,
-                  size: 22,
-                ),
-              ),
-
-              // Like — bouton droit, dominant, glow rose
-              _ActionBtn(
-                size: 62,
-                onTap: () => provider.swipe(SwipeAction.like),
-                bg: AppColors.pink,
-                shadow: AppColors.pink.withValues(alpha: 0.45),
-                child: const Icon(
-                  Icons.favorite_rounded,
-                  color: Colors.white,
-                  size: 26,
-                ),
-              ),
-            ],
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 20),
+      decoration: BoxDecoration(
+        color: AppColors.bg.withValues(alpha: 0.8),
+        border: Border(
+          top: BorderSide(
+            color: Colors.white.withValues(alpha: 0.05),
           ),
         ),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+        children: [
+          // Nope
+          _ActionBtn(
+            size: 56,
+            onTap: () => provider.swipe(uid, name, photo, SwipeAction.nope, programmatic: true),
+            bg: Colors.white.withValues(alpha: 0.05),
+            border: Colors.white.withValues(alpha: 0.1),
+            child: const Icon(
+              Icons.close_rounded,
+              color: Colors.white,
+              size: 24,
+            ),
+          ),
+
+          // Super Like
+          _ActionBtn(
+            size: 56,
+            onTap: () => provider.swipe(uid, name, photo, SwipeAction.superLike, programmatic: true),
+            bg: Colors.white.withValues(alpha: 0.05),
+            border: AppColors.gold.withValues(alpha: 0.3),
+            child: const Icon(
+              Icons.star_rounded,
+              color: AppColors.gold,
+              size: 24,
+            ),
+          ),
+
+          // Like
+          _ActionBtn(
+            size: 56,
+            onTap: () => provider.swipe(uid, name, photo, SwipeAction.like, programmatic: true),
+            bg: AppColors.violet,
+            shadow: AppColors.violet.withValues(alpha: 0.4),
+            child: const Icon(
+              Icons.favorite_rounded,
+              color: Colors.white,
+              size: 24,
+            ),
+          ),
+        ],
       ),
     );
   }
 }
 
-class _ActionBtn extends StatelessWidget {
+class _ActionBtn extends StatefulWidget {
   final double size;
   final VoidCallback onTap;
   final Widget child;
@@ -783,30 +918,64 @@ class _ActionBtn extends StatelessWidget {
   });
 
   @override
+  State<_ActionBtn> createState() => _ActionBtnState();
+}
+
+class _ActionBtnState extends State<_ActionBtn> with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _scaleAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      duration: const Duration(milliseconds: 100),
+      vsync: this,
+    );
+    _scaleAnimation = Tween<double>(begin: 1.0, end: 0.88).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
+    );
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        width: size,
-        height: size,
-        decoration: BoxDecoration(
-          color: bg,
-          shape: BoxShape.circle,
-          border: border != null
-              ? Border.all(color: border!, width: 1.5)
-              : null,
-          boxShadow: shadow != null
-              ? [
-                  BoxShadow(
-                    color: shadow!,
-                    blurRadius: 20,
-                    spreadRadius: -2,
-                    offset: const Offset(0, 6),
-                  ),
-                ]
-              : null,
+      onTapDown: (_) => _controller.forward(),
+      onTapUp: (_) {
+        _controller.reverse();
+        widget.onTap();
+      },
+      onTapCancel: () => _controller.reverse(),
+      child: ScaleTransition(
+        scale: _scaleAnimation,
+        child: Container(
+          width: widget.size,
+          height: widget.size,
+          decoration: BoxDecoration(
+            color: widget.bg,
+            shape: BoxShape.circle,
+            border: widget.border != null
+                ? Border.all(color: widget.border!, width: 1.5)
+                : null,
+            boxShadow: widget.shadow != null
+                ? [
+                    BoxShadow(
+                      color: widget.shadow!,
+                      blurRadius: 20,
+                      spreadRadius: -2,
+                      offset: const Offset(0, 6),
+                    ),
+                  ]
+                : null,
+          ),
+          child: Center(child: widget.child),
         ),
-        child: Center(child: child),
       ),
     );
   }

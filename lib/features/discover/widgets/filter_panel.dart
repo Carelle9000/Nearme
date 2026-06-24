@@ -3,6 +3,8 @@ import 'package:provider/provider.dart';
 
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../data/models/discover_filters.dart';
+import '../../auth/auth_provider.dart';
 import '../discover_provider.dart';
 
 /// Shows the filter panel as a modal bottom sheet.
@@ -35,7 +37,14 @@ class _FilterPanelState extends State<_FilterPanel> {
   }
 
   void _apply() {
-    context.read<DiscoverProvider>().updateFilters(_draft);
+    final dp = context.read<DiscoverProvider>();
+    dp.updateFilters(_draft);
+
+    final auth = context.read<AuthProvider>();
+    if (auth.user != null) {
+      dp.loadUsers(auth.user!.id);
+    }
+
     Navigator.of(context).pop();
   }
 

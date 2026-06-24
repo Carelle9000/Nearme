@@ -9,10 +9,10 @@ class DiscoverFilters {
 
   const DiscoverFilters({
     this.ageMin = 18,
-    this.ageMax = 40,
-    this.radiusKm = 2.0,
+    this.ageMax = 50,
+    this.radiusKm = 10.0,
     this.countryCode,
-    this.verifiedOnly = true,
+    this.verifiedOnly = false,
     this.onlineOnly = false,
     this.sharedOnly = false,
   });

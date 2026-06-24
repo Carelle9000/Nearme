@@ -4,115 +4,117 @@ import 'package:flutter/foundation.dart';
 
 import '../../core/constants/sample_profiles.dart';
 import '../../data/models/profile.dart';
-
-class DiscoverFilters {
-  final int ageMin;
-  final int ageMax;
-  final double radiusKm;
-  final String? countryCode;
-  final bool verifiedOnly;
-  final bool onlineOnly;
-  final bool sharedOnly;
-
-  const DiscoverFilters({
-    this.ageMin = 18,
-    this.ageMax = 40,
-    this.radiusKm = 2.0,
-    this.countryCode,
-    this.verifiedOnly = true,
-    this.onlineOnly = false,
-    this.sharedOnly = false,
-  });
-
-  DiscoverFilters copyWith({
-    int? ageMin,
-    int? ageMax,
-    double? radiusKm,
-    String? countryCode,
-    bool? verifiedOnly,
-    bool? onlineOnly,
-    bool? sharedOnly,
-  }) =>
-      DiscoverFilters(
-        ageMin: ageMin ?? this.ageMin,
-        ageMax: ageMax ?? this.ageMax,
-        radiusKm: radiusKm ?? this.radiusKm,
-        countryCode: countryCode ?? this.countryCode,
-        verifiedOnly: verifiedOnly ?? this.verifiedOnly,
-        onlineOnly: onlineOnly ?? this.onlineOnly,
-        sharedOnly: sharedOnly ?? this.sharedOnly,
-      );
-}
+import '../../data/models/discover_filters.dart';
+import '../../data/services/match_service.dart';
+import '../../data/services/user_service.dart';
 
 class DiscoverProvider extends ChangeNotifier {
+  final UserService? _userService;
+  final MatchService _matchService = MatchService();
   DiscoverFilters _filters = const DiscoverFilters();
-  List<Profile> _deck = [...kSampleProfiles];
+  List<Profile> _deck = [];
   int _index = 0;
+  bool _isLoading = false;
+
+  /// Trigger for programmatic swipe (button clicks)
+  SwipeAction? _pendingAction;
+  SwipeAction? get pendingAction => _pendingAction;
 
   /// Set after a like/superLike that results in a mutual match.
   /// UI should read this, trigger the match modal, then call [clearLastMatch].
   Profile? _lastMatch;
+
+  DiscoverProvider({UserService? userService}) : _userService = userService;
 
   DiscoverFilters get filters => _filters;
   Profile? get current => _index < _deck.length ? _deck[_index] : null;
   int get index => _index;
   int get deckSize => _deck.length;
   Profile? get lastMatch => _lastMatch;
+  bool get isLoading => _isLoading;
 
   void clearLastMatch() {
     _lastMatch = null;
     notifyListeners();
   }
 
+  Future<void> loadUsers(String currentUserId) async {
+    if (_userService == null) return;
+
+    _isLoading = true;
+    notifyListeners();
+
+    try {
+      final users = await _userService!.getPotentialMatches(
+        currentUserId,
+        filters: _filters,
+      );
+      _deck = users;
+      _index = 0;
+    } catch (e) {
+      debugPrint('Error loading users: $e');
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  Future<void> toggleFavorite(String currentUserId, String targetUserId) async {
+    if (_userService == null) return;
+    await _userService!.toggleFavorite(currentUserId, targetUserId);
+    notifyListeners();
+  }
+
   void updateFilters(DiscoverFilters next) {
     _filters = next;
-    _applyFilters();
+    // On ne fait plus _applyFilters localement sur kSampleProfiles,
+    // On recharge depuis Firebase avec les nouveaux filtres.
     notifyListeners();
   }
 
   void setCountryFilter(String? countryCode) {
     _filters = _filters.copyWith(countryCode: countryCode);
-    _applyFilters();
+    _index = 0;
     notifyListeners();
   }
 
-  void _applyFilters() {
-    _deck = kSampleProfiles.where((p) {
-      if (p.age < _filters.ageMin || p.age > _filters.ageMax) return false;
-      if (p.distanceKm > _filters.radiusKm) return false;
-      if (_filters.countryCode != null && p.country != _filters.countryCode) return false;
-      if (_filters.verifiedOnly && !p.verified) return false;
-      if (_filters.onlineOnly && !p.online) return false;
-      if (_filters.sharedOnly && !p.sharedSpots) return false;
-      return true;
-    }).toList();
-    _index = 0;
-  }
-
   /// Swipe the current card.
-  ///
-  /// On [SwipeAction.superLike] → always a match.
-  /// On [SwipeAction.like]      → 45 % chance of mutual match (demo).
-  /// On [SwipeAction.nope]      → never a match.
-  void swipe(SwipeAction action) {
+  Future<void> swipe(String currentUserId, String currentUserName, String? currentUserPhoto, SwipeAction action, {bool programmatic = false}) async {
     if (_index >= _deck.length) return;
+
+    if (programmatic) {
+      _pendingAction = action;
+      notifyListeners();
+      // The _SwipeCard will listen and trigger its own animation,
+      // then it will call swipe(..., programmatic: false) to finish.
+      return;
+    }
+
+    _pendingAction = null;
     final profile = _deck[_index];
     _index++;
     _lastMatch = null;
 
-    if (action == SwipeAction.superLike) {
-      _lastMatch = profile;
-    } else if (action == SwipeAction.like &&
-        math.Random().nextDouble() < 0.45) {
-      _lastMatch = profile;
+    if (action == SwipeAction.like || action == SwipeAction.superLike) {
+      final isMatch = await _matchService.swipeLike(currentUserId, currentUserName, currentUserPhoto, profile);
+      if (isMatch) {
+        _lastMatch = profile;
+      }
+    } else {
+      await _matchService.swipeNope(currentUserId, profile.id);
     }
+
     notifyListeners();
   }
 
-  void reset() {
-    _index = 0;
-    _lastMatch = null;
-    notifyListeners();
+  Future<void> reset(String? currentUserId) async {
+    if (_userService != null && currentUserId != null) {
+      await loadUsers(currentUserId);
+    } else {
+      _index = 0;
+      _lastMatch = null;
+      notifyListeners();
+    }
   }
 }
 
