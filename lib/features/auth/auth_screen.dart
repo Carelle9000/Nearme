@@ -91,12 +91,32 @@ class _AuthScreenState extends State<AuthScreen> {
     return Column(
       children: [
         Container(
-          width: 48, height: 48,
-          decoration: BoxDecoration(shape: BoxShape.circle, gradient: AppColors.violetGradient, boxShadow: [BoxShadow(color: AppColors.violet.withValues(alpha: 0.35), blurRadius: 15, spreadRadius: 2)]),
-          child: const Icon(Icons.near_me_rounded, color: Colors.white, size: 24),
+          width: 56, height: 56,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: [
+              BoxShadow(
+                color: AppColors.violet.withValues(alpha: 0.25),
+                blurRadius: 20,
+                spreadRadius: 1,
+              ),
+            ],
+          ),
+          clipBehavior: Clip.antiAlias,
+          child: Image.asset(
+            'assets/images/logo.jpeg',
+            fit: BoxFit.cover,
+            errorBuilder: (ctx, _, __) => Container(
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                gradient: AppColors.violetGradient,
+              ),
+              child: const Icon(Icons.near_me_rounded, color: Colors.white, size: 24),
+            ),
+          ),
         ),
-        const SizedBox(height: 8),
-        Text('NearMe', style: GoogleFonts.fraunces(fontSize: 18, fontWeight: FontWeight.w900, color: AppColors.textPrimary, letterSpacing: -0.5)),
+        const SizedBox(height: 10),
+        Text('Nearme', style: GoogleFonts.fraunces(fontSize: 18, fontWeight: FontWeight.w900, color: AppColors.textPrimary, letterSpacing: -0.5)),
       ],
     );
   }

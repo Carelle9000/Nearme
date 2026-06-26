@@ -231,10 +231,11 @@ class _VerificationCompleteStepState extends State<VerificationCompleteStep> {
         AppToasts.success(context, widget.t('welcomeToNearme'));
 
         final auth = context.read<AuthProvider>();
-        await auth.logout();
+        await auth.refresh(); // Actualiser le profil au lieu de déconnecter
 
         if (mounted) {
-          Navigator.of(context).pushNamedAndRemoveUntil(AppRoutes.auth, (route) => false);
+          // Naviguer vers Discover directement car l'âge est maintenant vérifié
+          Navigator.of(context).pushNamedAndRemoveUntil(AppRoutes.discover, (route) => false);
         }
       }
     });

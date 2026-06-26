@@ -257,6 +257,22 @@ class AuthService {
     return urls;
   }
 
+  /// Uploads a photo and sets it as the main profile photo (index 0).
+  Future<void> replaceMainPhoto(String uid, String localPath) async {
+    final urls = await PhotoService.uploadAll(uid, [localPath]);
+    if (urls.isEmpty) {
+      throw Exception('Photo upload returned no URL');
+    }
+    final current = _cachedUser?.photos ?? [];
+    final updated = [urls.first, ...current];
+    if (updated.length > 6) updated.removeLast();
+    await _firestore.collection('profiles').doc(uid).set({
+      'photos': updated,
+      'updatedAt': FieldValue.serverTimestamp(),
+    }, SetOptions(merge: true));
+    _cachedUser = _cachedUser?.copyWith(photos: updated);
+  }
+
   Future<void> deletePhoto(String uid, String downloadUrl) async {
     await PhotoService.deleteFromStorage(downloadUrl);
     final updated =

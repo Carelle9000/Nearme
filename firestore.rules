@@ -57,11 +57,55 @@ service cloud.firestore {
 
       // Allow create if user is in the 'users' array being set
       allow create: if isAuth() && request.auth.uid in request.resource.data.users;
+    }
 
+    // ─────────────────────────────────────────────────────────────────────
+    // conversations/{conversationId} — Chat conversations
+    // ─────────────────────────────────────────────────────────────────────
+
+    match /conversations/{conversationId} {
+      // Allow read if user is a participant
+      allow read: if isAuth() && request.auth.uid in resource.data.participants;
+
+      // Allow create only if both users are matched
+      allow create: if isAuth() && 
+        request.auth.uid in request.resource.data.participants &&
+        request.resource.data.participants.size() == 2 &&
+        exists(/databases/$(database)/documents/matches/$(conversationId));
+
+      // Allow update if user is a participant
+      allow update: if isAuth() && request.auth.uid in resource.data.participants;
+
+      // Allow delete if user is a participant
+      allow delete: if isAuth() && request.auth.uid in resource.data.participants;
+
+      // Messages subcollection
       match /messages/{messageId} {
-        allow read: if isAuth() && request.auth.uid in get(/databases/$(database)/documents/matches/$(matchId)).data.users;
-        allow create: if isAuth() && isUser(request.data.senderId);
-        allow update: if isAuth() && request.resource.data.readAt != null;
+        // Allow read if user is a participant in the conversation
+        allow read: if isAuth() && 
+          request.auth.uid in get(/databases/$(database)/documents/conversations/$(conversationId)).data.participants;
+
+        // Allow create if user is authenticated and is the sender
+        allow create: if isAuth() && 
+          request.auth.uid == request.data.senderId &&
+          request.auth.uid in get(/databases/$(database)/documents/conversations/$(conversationId)).data.participants;
+
+        // Allow update if user is the sender (for marking as read)
+        allow update: if isAuth() && 
+          request.auth.uid in get(/databases/$(database)/documents/conversations/$(conversationId)).data.participants;
+      }
+
+      // Typing indicators subcollection
+      match /typing/{userId} {
+        // Allow read if user is a participant
+        allow read: if isAuth() && 
+          request.auth.uid in get(/databases/$(database)/documents/conversations/$(conversationId)).data.participants;
+
+        // Allow create/update if user is the one typing
+        allow create, update: if isAuth() && request.auth.uid == userId;
+
+        // Allow delete if user is the one who created it
+        allow delete: if isAuth() && request.auth.uid == userId;
       }
     }
 
@@ -80,7 +124,15 @@ service cloud.firestore {
 
     match /blocks/{blockId} {
       allow read: if isAuth() && (isUser(resource.data.blockerId) || isUser(resource.data.blockedId));
-      allow create, delete: if isAuth() && isUser(request.data.blockerId);
+      allow create: if isAuth() && isUser(request.data.blockerId);
+      allow delete: if isAuth() && isUser(resource.data.blockerId);
+    }
+
+    match /reports/{reportId} {
+      allow read: if isAuth() && isUser(resource.data.reporterId);
+      allow create: if isAuth() && isUser(request.data.reporterId);
+      // Only admins can update reports (status changes)
+      allow update: if false;
     }
 
     match /subscriptions/{uid} {

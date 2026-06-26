@@ -1,4 +1,6 @@
 import 'dart:io';
+import 'dart:typed_data';
+import 'dart:convert';
 
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
@@ -30,7 +32,12 @@ class PhotoService {
   // ── Local (prévisualisation pendant l'inscription) ────────────────────────
 
   static Future<String> persistLocally(XFile source) async {
-    if (kIsWeb) return source.path;
+    if (kIsWeb) {
+      // Sur le web, convertir en Base64 pour éviter les problèmes de blob URL expirées
+      final bytes = await source.readAsBytes();
+      final base64 = 'data:image/jpeg;base64,${base64Encode(bytes)}';
+      return base64;
+    }
 
     final dir = await _localDir();
     final ext = p.extension(source.name).isEmpty
@@ -62,15 +69,36 @@ class PhotoService {
   // ── Affichage ─────────────────────────────────────────────────────────────
 
   /// Retourne une URL affichable par `Image.network` ou un chemin local
-  /// pour `Image.file`.
+  /// pour `Image.file` / `Image.memory`.
   ///
-  /// • Chemin absolu (commence par `/`)  → fichier local sur l'appareil
-  /// • URL complète (commence par `http`) → passe directement
+  /// • Chemin local absolu (Unix, Windows) → retourné tel quel
+  /// • URL complète (`http`, `https`, `blob:`) → retournée telle quelle
   /// • Chemin relatif serveur (`/photos/...`) → construit l'URL complète
   static String resolveDisplayUrl(String path) {
     if (path.isEmpty) return '';
-    if (path.startsWith('/') && !path.startsWith('/photos')) return path;
+    if (isLocalFilePath(path)) return path;
+    if (isRemoteUrl(path)) return path;
     return AppConfig.photoUrl(path);
+  }
+
+  /// True when [path] points to a file on device (pre-upload preview).
+  static bool isLocalFilePath(String path) {
+    if (path.isEmpty) return false;
+    if (isRemoteUrl(path)) return false;
+    // Unix absolute path (Android/iOS/macOS/Linux)
+    if (path.startsWith('/') && !path.startsWith('/photos')) return true;
+    // Windows absolute path (C:\...) or UNC
+    if (!kIsWeb && (path.contains(':\\') || path.startsWith(r'\\'))) {
+      return true;
+    }
+    return false;
+  }
+
+  /// True when [path] is a remote or blob URL loadable via [Image.network].
+  static bool isRemoteUrl(String path) {
+    return path.startsWith('http://') ||
+        path.startsWith('https://') ||
+        path.startsWith('blob:');
   }
 
   // ── Firebase Storage ──────────────────────────────────────────────────────
@@ -82,7 +110,7 @@ class PhotoService {
     String localPath,
     int index,
   ) async {
-    final bytes = await File(localPath).readAsBytes();
+    final bytes = await _readImageBytes(localPath);
     final ext = p.extension(localPath).isEmpty
         ? '.jpg'
         : p.extension(localPath);
@@ -94,6 +122,25 @@ class PhotoService {
       SettableMetadata(contentType: 'image/jpeg'),
     );
     return ref.getDownloadURL();
+  }
+
+  /// Reads image bytes from a local path or image_picker cache URI.
+  static Future<Uint8List> _readImageBytes(String localPath) async {
+    // Gérer les chaînes Base64 sur le web
+    if (kIsWeb && localPath.startsWith('data:image/')) {
+      final base64Data = localPath.split(',').last;
+      return Uint8List.fromList(base64.decode(base64Data));
+    }
+    
+    if (!kIsWeb) {
+      try {
+        final file = File(localPath);
+        if (await file.exists()) {
+          return file.readAsBytes();
+        }
+      } catch (_) {}
+    }
+    return XFile(localPath).readAsBytes();
   }
 
   /// Uploads multiple photos to Firebase Storage.

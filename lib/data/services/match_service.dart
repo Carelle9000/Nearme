@@ -109,7 +109,7 @@ class MatchService {
   }
 
   Future<void> _createMatch(String user1, String user2) async {
-    final matchId = user1.hashCode <= user2.hashCode
+    final matchId = user1.compareTo(user2) <= 0
         ? '${user1}_$user2'
         : '${user2}_$user1';
 
@@ -117,7 +117,7 @@ class MatchService {
       'users': [user1, user2],
       'matchedAt': FieldValue.serverTimestamp(),
       'lastMessage': null,
-    });
+    }, SetOptions(merge: true));
   }
 
   Stream<List<String>> getMatchesIds(String userId) {

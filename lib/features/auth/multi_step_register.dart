@@ -7,7 +7,7 @@ import 'package:provider/provider.dart';
 
 import '../../core/theme/app_colors.dart';
 import '../../core/utils/toasts.dart';
-import '../../core/widgets/signed_photo_image.dart';
+import '../../core/widgets/profile_photo_tile.dart';
 import '../../data/models/app_user.dart';
 import '../../data/services/photo_service.dart';
 import '../locale/locale_provider.dart';
@@ -477,11 +477,18 @@ class _PhotosStep extends StatelessWidget {
         gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 3, crossAxisSpacing: 10, mainAxisSpacing: 10, childAspectRatio: 0.8),
         itemCount: photoPaths.length + (photoPaths.length < 6 ? 1 : 0),
         itemBuilder: (_, i) {
-          if (i == photoPaths.length) return GestureDetector(onTap: onAddPhoto, child: Container(decoration: BoxDecoration(color: AppColors.surface.withValues(alpha: 0.3), borderRadius: BorderRadius.circular(16), border: Border.all(color: Colors.white12)), child: const Icon(Icons.add_a_photo_outlined, color: AppColors.violet, size: 28)));
-          return Stack(fit: StackFit.expand, children: [
-            ClipRRect(borderRadius: BorderRadius.circular(16), child: SignedPhotoImage(path: photoPaths[i], cacheWidth: 300)),
-            Positioned(top: 4, right: 4, child: GestureDetector(onTap: () => onRemovePhoto(i), child: Container(padding: const EdgeInsets.all(4), decoration: const BoxDecoration(color: Colors.black26, shape: BoxShape.circle), child: const Icon(Icons.close, color: Colors.white, size: 14)))),
-          ]);
+          if (i == photoPaths.length) {
+            return ProfilePhotoAddTile(
+              onTap: onAddPhoto,
+              backgroundColor: AppColors.surface.withValues(alpha: 0.3),
+            );
+          }
+          return ProfilePhotoTile(
+            path: photoPaths[i],
+            allPhotos: photoPaths,
+            photoIndex: i,
+            onDelete: () => onRemovePhoto(i),
+          );
         },
       ),
     ]);

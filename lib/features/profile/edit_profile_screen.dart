@@ -7,8 +7,7 @@ import 'package:provider/provider.dart';
 
 import '../../core/theme/app_colors.dart';
 import '../../core/utils/toasts.dart';
-import '../../core/widgets/signed_photo_image.dart';
-import '../../core/widgets/photo_viewer.dart';
+import '../../core/widgets/profile_photo_tile.dart';
 import '../../data/models/app_user.dart';
 import '../../data/services/photo_service.dart';
 import '../auth/auth_provider.dart';
@@ -107,7 +106,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     setState(() => _busy = true);
     try {
       final auth = context.read<AuthProvider>();
-      final url = await auth.addPhotos([xfile.path]);
+      final localPath = await PhotoService.persistLocally(xfile);
+      await auth.addPhotos([localPath]);
       setState(() {
         _photos = List.from(auth.user?.photos ?? []);
       });
@@ -128,6 +128,30 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       });
     } catch (e) {
       if (mounted) AppToasts.error(context, 'Failed to delete photo');
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  Future<void> _setAsMain(String url) async {
+    if (_photos.isNotEmpty && _photos.first == url) return;
+    setState(() => _busy = true);
+    try {
+      final auth = context.read<AuthProvider>();
+      final currentUser = auth.user;
+      if (currentUser == null) return;
+
+      final updatedPhotos = List<String>.from(_photos);
+      updatedPhotos.remove(url);
+      updatedPhotos.insert(0, url);
+
+      await auth.updateProfile(currentUser.copyWith(photos: updatedPhotos));
+      setState(() {
+        _photos = updatedPhotos;
+      });
+      if (mounted) AppToasts.success(context, 'Main photo updated');
+    } catch (e) {
+      if (mounted) AppToasts.error(context, 'Failed to update main photo');
     } finally {
       if (mounted) setState(() => _busy = false);
     }
@@ -156,7 +180,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             _Label(t('fullName').toUpperCase()),
             _EditField(controller: _nameCtrl, hint: t('fullName')),
@@ -167,6 +191,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
               photos: _photos,
               onAdd: _addPhoto,
               onDelete: _deletePhoto,
+              onSetMain: _setAsMain,
             ),
             const SizedBox(height: 24),
 
@@ -229,6 +254,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 class _Label extends StatelessWidget {
   final String text;
   const _Label(this.text);
+
   @override
   Widget build(BuildContext context) {
     return Padding(
@@ -368,7 +394,11 @@ class _InterestsSelector extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final interests = t('interests_list').split(',').map((e) => e.trim()).toList();
+    final interests = t('interests_list')
+        .split(',')
+        .map((e) => e.trim())
+        .where((e) => e.isNotEmpty)
+        .toList();
     return Wrap(
       spacing: 8, runSpacing: 8,
       children: interests.map((i) {
@@ -388,27 +418,32 @@ class _PhotoGrid extends StatelessWidget {
   final List<String> photos;
   final VoidCallback onAdd;
   final Function(String) onDelete;
-  const _PhotoGrid({required this.photos, required this.onAdd, required this.onDelete});
+  final Function(String) onSetMain;
+  const _PhotoGrid({required this.photos, required this.onAdd, required this.onDelete, required this.onSetMain});
 
   @override
   Widget build(BuildContext context) {
-    return GridView.builder(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 3, crossAxisSpacing: 10, mainAxisSpacing: 10, childAspectRatio: 0.8),
-      itemCount: photos.length + (photos.length < 6 ? 1 : 0),
-      itemBuilder: (_, i) {
-        if (i == photos.length) return GestureDetector(onTap: onAdd, child: Container(decoration: BoxDecoration(color: AppColors.surface, borderRadius: BorderRadius.circular(16), border: Border.all(color: Colors.white12)), child: const Icon(Icons.add_a_photo_outlined, color: AppColors.violet, size: 28)));
-        return Stack(fit: StackFit.expand, children: [
-          GestureDetector(
-            onTap: () => PhotoViewer.show(context, photos: photos, initialIndex: i),
-            child: ClipRRect(borderRadius: BorderRadius.circular(16), child: SignedPhotoImage(path: photos[i], cacheWidth: 300)),
-          ),
-          Positioned(top: 4, right: 4, child: GestureDetector(onTap: () => onDelete(photos[i]), child: Container(padding: const EdgeInsets.all(4), decoration: const BoxDecoration(color: Colors.black26, shape: BoxShape.circle), child: const Icon(Icons.close, color: Colors.white, size: 14)))),
-          if (i == 0)
-            Positioned(bottom: 0, left: 0, right: 0, child: Container(padding: const EdgeInsets.symmetric(vertical: 4), color: Colors.black45, child: Text('Main', textAlign: TextAlign.center, style: GoogleFonts.dmSans(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold)))),
-        ]);
-      },
+    return ConstrainedBox(
+      constraints: const BoxConstraints(minHeight: 100),
+      child: GridView.builder(
+        shrinkWrap: true,
+        physics: const NeverScrollableScrollPhysics(),
+        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 3, crossAxisSpacing: 10, mainAxisSpacing: 10, childAspectRatio: 0.8),
+        itemCount: photos.length + (photos.length < 6 ? 1 : 0),
+        itemBuilder: (_, i) {
+          if (i == photos.length) {
+            return ProfilePhotoAddTile(onTap: onAdd);
+          }
+          return ProfilePhotoTile(
+            path: photos[i],
+            allPhotos: photos,
+            photoIndex: i,
+            onDelete: () => onDelete(photos[i]),
+            onLongPress: () => onSetMain(photos[i]),
+            isMain: i == 0,
+          );
+        },
+      ),
     );
   }
 }

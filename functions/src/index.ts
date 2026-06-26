@@ -399,3 +399,145 @@ export const getVerificationStatus = onCall(
     }
   }
 );
+
+// ─────────────────────────────────────────────────────────────────────────────
+// CHAT NOTIFICATIONS
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Sends a push notification when a new message is sent
+ * Triggered by Firestore onCreate event on messages
+ */
+export const onNewMessage = onCall(
+  {region: "europe-west1", enforceAppCheck: false},
+  async (request) => {
+    const data = request.data as {
+      conversationId: string;
+      senderId: string;
+      senderName: string;
+      senderPhoto?: string;
+      messageContent: string;
+      messageType: string;
+    };
+
+    const {
+      conversationId,
+      senderId,
+      senderName,
+      messageContent,
+      messageType,
+    } = data;
+
+    if (!conversationId || !senderId || !messageContent) {
+      throw new Error("Missing required fields");
+    }
+
+    try {
+      // Get conversation to find recipient
+      const conversationDoc = await db
+        .collection("conversations")
+        .doc(conversationId)
+        .get();
+      if (!conversationDoc.exists) {
+        logger.warn(`[Chat] Conversation not found: ${conversationId}`);
+        return {success: false};
+      }
+
+      const conversation = conversationDoc.data();
+      const participants = conversation?.participants as string[] || [];
+
+      // Find recipient (the other participant)
+      const recipientId = participants.find((id) => id !== senderId);
+      if (!recipientId) {
+        logger.warn("[Chat] No recipient found");
+        return {success: false};
+      }
+
+      // Get recipient's FCM tokens
+      const recipientDoc = await db
+        .collection("profiles")
+        .doc(recipientId)
+        .get();
+      if (!recipientDoc.exists) {
+        logger.warn(`[Chat] Recipient not found: ${recipientId}`);
+        return {success: false};
+      }
+
+      const recipient = recipientDoc.data();
+      const fcmTokens = recipient?.fcmTokens as Record<string, boolean> || {};
+      const tokens = Object.keys(fcmTokens);
+
+      if (tokens.length === 0) {
+        logger.info(`[Chat] No FCM tokens for recipient: ${recipientId}`);
+        return {success: false};
+      }
+
+      // Prepare notification content
+      const title = `New message from ${senderName}`;
+      let body = messageContent;
+
+      if (messageType === "image") {
+        body = "📷 Sent a photo";
+      } else if (messageType === "voice") {
+        body = "🎤 Sent a voice message";
+      }
+
+      // Trim body if too long
+      if (body.length > 100) {
+        body = body.substring(0, 97) + "...";
+      }
+
+      // Send notification
+      const message = {
+        notification: {
+          title,
+          body,
+        },
+        data: {
+          conversationId,
+          senderId,
+          type: "chat_message",
+        },
+        tokens,
+      };
+
+      const response = await admin
+        .messaging()
+        .sendEachForMulticast(message);
+
+      logger.info(
+        `[Chat] Notification sent to ${tokens.length} tokens, ` +
+          `${response.successCount} successful`,
+      );
+
+      // Clean up invalid tokens
+      if (response.failureCount > 0) {
+        const invalidTokens: string[] = [];
+        response.responses.forEach((resp, idx: number) => {
+          if (!resp.success) {
+            invalidTokens.push(tokens[idx]);
+          }
+        });
+
+        if (invalidTokens.length > 0) {
+          const updateData: Record<string, admin.firestore.FieldValue> = {};
+          invalidTokens.forEach((token) => {
+            updateData[
+              `fcmTokens.${token}`
+            ] = admin.firestore.FieldValue.delete();
+          });
+
+          await db.collection("profiles").doc(recipientId).update(updateData);
+          logger.info(
+            `[Chat] Cleaned up ${invalidTokens.length} invalid tokens`,
+          );
+        }
+      }
+
+      return {success: true, sentCount: response.successCount};
+    } catch (error) {
+      logger.error("[Chat] Error sending notification:", error);
+      throw error;
+    }
+  }
+);

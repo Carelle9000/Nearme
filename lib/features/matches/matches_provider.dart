@@ -80,8 +80,9 @@ class MatchesProvider extends ChangeNotifier {
     _subscription = _matchService.getMatchesIds(userId).listen(
       (ids) async {
         final List<MatchEntry> newMatches = [];
+        final uniqueIds = ids.toSet().toList();
 
-        for (final id in ids) {
+        for (final id in uniqueIds) {
           // Find existing match to preserve messages (for now)
           final existing = _matches.where((m) => m.profile.id == id).firstOrNull;
 
@@ -158,24 +159,8 @@ class MatchesProvider extends ChangeNotifier {
     _matches[idx] = updated;
     notifyListeners();
 
-    // Simulate an auto-reply
-    Future.delayed(const Duration(milliseconds: 1800), () {
-      final i = _matches.indexWhere((m) => m.id == matchId);
-      if (i < 0) return;
-      final cur = _matches[i];
-      _matches[i] = cur.copyWith(
-        messages: [
-          ...cur.messages,
-          ChatMessage(
-            text: _autoReply(cur.profile.name),
-            fromMe: false,
-            timestamp: DateTime.now(),
-          ),
-        ],
-        // Do NOT advance readCount — the reply is unread until user opens chat
-      );
-      notifyListeners();
-    });
+    // Auto-reply simulation disabled - using new Firestore chat system instead
+    // The new ChatProvider and ConversationScreen handle real-time messaging
   }
 
   static String _autoReply(String name) {

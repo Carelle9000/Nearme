@@ -1,11 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 
 import '../../core/router/app_routes.dart';
 import '../../core/utils/toasts.dart';
 import '../../core/theme/app_colors.dart';
+import '../../core/widgets/signed_photo_image.dart';
+import '../../core/widgets/photo_viewer.dart';
 import '../../data/models/app_user.dart';
+import '../../data/services/photo_service.dart';
 import '../auth/auth_provider.dart';
 import '../locale/locale_provider.dart';
 
@@ -149,13 +153,101 @@ class ProfileScreen extends StatelessWidget {
 // Sliver header
 // ─────────────────────────────────────────────────────────────────────────────
 
-class _ProfileSliverHeader extends StatelessWidget {
+class _ProfileSliverHeader extends StatefulWidget {
   final AppUser user;
   final String Function(String) t;
   const _ProfileSliverHeader({required this.user, required this.t});
 
   @override
+  State<_ProfileSliverHeader> createState() => _ProfileSliverHeaderState();
+}
+
+class _ProfileSliverHeaderState extends State<_ProfileSliverHeader> {
+  bool _uploading = false;
+  String? _pendingPhotoPath;
+
+  String? _avatarPath(AppUser user) {
+    if (_pendingPhotoPath != null) return _pendingPhotoPath;
+    if (user.photos != null && user.photos!.isNotEmpty) {
+      return user.photos!.first;
+    }
+    return null;
+  }
+
+  void _openAvatarPreview(AppUser user) {
+    final remote = user.photos ?? [];
+    if (_pendingPhotoPath != null) {
+      PhotoViewer.show(
+        context,
+        photos: [_pendingPhotoPath!, ...remote],
+        initialIndex: 0,
+      );
+    } else if (remote.isNotEmpty) {
+      PhotoViewer.show(context, photos: remote, initialIndex: 0);
+    }
+  }
+
+  Future<void> _updateProfilePhoto() async {
+    final source = await showModalBottomSheet<ImageSource>(
+      context: context,
+      backgroundColor: AppColors.surface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.camera_alt_rounded, color: AppColors.violet),
+              title: Text(
+                'Prendre une photo',
+                style: GoogleFonts.dmSans(color: AppColors.textPrimary),
+              ),
+              onTap: () => Navigator.pop(ctx, ImageSource.camera),
+            ),
+            ListTile(
+              leading: const Icon(Icons.photo_library_rounded, color: AppColors.violet),
+              title: Text(
+                'Choisir dans la galerie',
+                style: GoogleFonts.dmSans(color: AppColors.textPrimary),
+              ),
+              onTap: () => Navigator.pop(ctx, ImageSource.gallery),
+            ),
+          ],
+        ),
+      ),
+    );
+    if (source == null || !mounted) return;
+
+    final xfile = await ImagePicker().pickImage(source: source, imageQuality: 80);
+    if (xfile == null || !mounted) return;
+
+    setState(() => _uploading = true);
+    try {
+      final localPath = await PhotoService.persistLocally(xfile);
+      if (mounted) setState(() => _pendingPhotoPath = localPath);
+      await context.read<AuthProvider>().replaceMainPhoto(localPath);
+      if (mounted) {
+        setState(() => _pendingPhotoPath = null);
+        AppToasts.success(context, 'Photo de profil mise à jour');
+      }
+    } catch (e) {
+      debugPrint('replaceMainPhoto failed: $e');
+      if (mounted) {
+        setState(() => _pendingPhotoPath = null);
+        AppToasts.error(context, 'Échec de la mise à jour');
+      }
+    } finally {
+      if (mounted) setState(() => _uploading = false);
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final user = widget.user;
+    final t = widget.t;
+
     return SliverAppBar(
       expandedHeight: 240,
       pinned: true,
@@ -192,19 +284,68 @@ class _ProfileSliverHeader extends StatelessWidget {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Container(
-                    width: 90,
-                    height: 90,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      border: Border.all(
-                          color: AppColors.violet.withValues(alpha: 0.50),
-                          width: 2),
-                      color: AppColors.violet.withValues(alpha: 0.10),
-                    ),
-                    child: const Center(
-                      child: Text('👤', style: TextStyle(fontSize: 44)),
-                    ),
+                  Stack(
+                    children: [
+                      GestureDetector(
+                        onTap: () => _openAvatarPreview(user),
+                        child: Container(
+                        width: 90,
+                        height: 90,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                              color: AppColors.violet.withValues(alpha: 0.50),
+                              width: 2),
+                          color: AppColors.violet.withValues(alpha: 0.10),
+                        ),
+                        clipBehavior: Clip.antiAlias,
+                        child: Stack(
+                          fit: StackFit.expand,
+                          children: [
+                            _avatarPath(user) != null
+                                ? SignedPhotoImage(
+                                    path: _avatarPath(user)!,
+                                    fit: BoxFit.cover,
+                                  )
+                                : const Center(
+                                    child: Text('👤', style: TextStyle(fontSize: 44)),
+                                  ),
+                            if (_uploading)
+                              Container(
+                                color: Colors.black45,
+                                child: const Center(
+                                  child: SizedBox(
+                                    width: 28,
+                                    height: 28,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      color: Colors.white,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                          ],
+                        ),
+                      ),
+                      ),
+                      if (!_uploading)
+                        Positioned(
+                          right: 0,
+                          bottom: 0,
+                          child: GestureDetector(
+                            onTap: _updateProfilePhoto,
+                            child: Container(
+                              padding: const EdgeInsets.all(6),
+                              decoration: const BoxDecoration(
+                                color: AppColors.violet,
+                                shape: BoxShape.circle,
+                              ),
+                              child: const Icon(Icons.camera_alt_rounded,
+                                  color: Colors.white, size: 14),
+                            ),
+                          ),
+                        ),
+                    ],
                   ),
                   const SizedBox(height: 12),
                   Text(

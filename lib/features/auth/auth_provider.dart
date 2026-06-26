@@ -101,6 +101,24 @@ class AuthProvider extends ChangeNotifier {
     }
   }
 
+  Future<void> replaceMainPhoto(String localPath) async {
+    if (_user == null) throw StateError('Not logged in');
+    _uploadingPhotos = true;
+    _error = null;
+    notifyListeners();
+    try {
+      await _service.replaceMainPhoto(_user!.id, localPath);
+      _user = _service.currentUser;
+    } catch (e) {
+      _error = e.toString();
+      rethrow;
+    } finally {
+      _uploadingPhotos = false;
+      await PhotoService.clearLocalPhotos();
+      notifyListeners();
+    }
+  }
+
   Future<void> deletePhoto(String downloadUrl) async {
     if (_user == null) return;
     try {

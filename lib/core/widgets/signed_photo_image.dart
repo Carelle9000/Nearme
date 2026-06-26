@@ -1,21 +1,18 @@
 import 'dart:io';
+import 'dart:typed_data';
+import 'dart:convert';
 
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 
 import '../../data/services/photo_service.dart';
 import '../theme/app_colors.dart';
 
-/// Displays a photo from any of these sources, resolving asynchronously:
+/// Affiche une photo depuis n'importe quelle source :
 ///
-///  • Supabase storage path (e.g. `userId/1748000000.jpg`)
-///    → generates/caches a signed URL then uses [Image.network]
-///  • Local file path (starts with `/`)
-///    → [Image.file] — used during the registration preview
-///  • HTTP URL (starts with `http`)
-///    → [Image.network] directly
-///
-/// Shows a shimmer placeholder while loading and a rose icon on error.
+/// • Fichier local (inscription, preview avant upload) → [Image.file] / [Image.memory]
+/// • URL Firebase / HTTP / blob → [Image.network]
 class SignedPhotoImage extends StatefulWidget {
   final String path;
   final BoxFit fit;
@@ -35,59 +32,134 @@ class SignedPhotoImage extends StatefulWidget {
 }
 
 class _SignedPhotoImageState extends State<SignedPhotoImage> {
-  String? _resolved; // null = loading
+  String? _localPath;
+  String? _remoteUrl;
+  Uint8List? _localBytes;
+  bool _loading = true;
   bool _error = false;
 
   @override
   void initState() {
     super.initState();
-    _resolve();
+    _load();
   }
 
   @override
   void didUpdateWidget(SignedPhotoImage old) {
     super.didUpdateWidget(old);
-    if (old.path != widget.path) _resolve();
+    if (old.path != widget.path) _load();
   }
 
-  void _resolve() {
+  Future<void> _load() async {
+    final path = widget.path;
     if (!mounted) return;
+
     setState(() {
-      _resolved = PhotoService.resolveDisplayUrl(widget.path);
-      _error    = false;
+      _loading = true;
+      _error = false;
+      _localPath = null;
+      _remoteUrl = null;
+      _localBytes = null;
     });
+
+    if (path.isEmpty) {
+      if (mounted) setState(() { _loading = false; _error = true; });
+      return;
+    }
+
+    try {
+      // Gérer les URLs Base64 sur le web
+      if (kIsWeb && path.startsWith('data:image/')) {
+        final bytes = _base64ToBytes(path);
+        if (mounted) {
+          setState(() {
+            _localBytes = bytes;
+            _loading = false;
+          });
+        }
+      } else if (PhotoService.isLocalFilePath(path)) {
+        if (kIsWeb) {
+          final bytes = await XFile(path).readAsBytes();
+          if (mounted) {
+            setState(() {
+              _localBytes = bytes;
+              _loading = false;
+            });
+          }
+        } else {
+          if (mounted) {
+            setState(() {
+              _localPath = path;
+              _loading = false;
+            });
+          }
+        }
+      } else {
+        if (mounted) {
+          setState(() {
+            _remoteUrl = PhotoService.resolveDisplayUrl(path);
+            _loading = false;
+          });
+        }
+      }
+    } catch (_) {
+      if (mounted) setState(() { _loading = false; _error = true; });
+    }
+  }
+
+  Uint8List _base64ToBytes(String base64String) {
+    final base64Data = base64String.split(',').last;
+    return Uint8List.fromList(base64.decode(base64Data));
   }
 
   @override
   Widget build(BuildContext context) {
-    if (_error) return _ErrorTile();
-    if (_resolved == null) return _ShimmerTile();
+    if (_error) return const _ErrorTile();
+    if (_loading) return const _ShimmerTile();
 
-    // Local file (registration flow — still on device)
-    if (!kIsWeb && _resolved!.startsWith('/')) {
-      return Image.file(
-        File(_resolved!),
+    if (_localBytes != null) {
+      return Image.memory(
+        _localBytes!,
         fit: widget.fit,
         cacheWidth: widget.cacheWidth,
         cacheHeight: widget.cacheHeight,
-        errorBuilder: (ctx, err, stack) => _ErrorTile(),
+        errorBuilder: (_, __, ___) => const _ErrorTile(),
       );
     }
 
-    // Remote URL (signed or public)
-    return Image.network(
-      _resolved!,
-      fit: widget.fit,
-      cacheWidth: widget.cacheWidth,
-      cacheHeight: widget.cacheHeight,
-      errorBuilder: (ctx, err, stack) => _ErrorTile(),
-    );
+    if (_localPath != null) {
+      return Image.file(
+        File(_localPath!),
+        fit: widget.fit,
+        cacheWidth: widget.cacheWidth,
+        cacheHeight: widget.cacheHeight,
+        errorBuilder: (_, __, ___) => const _ErrorTile(),
+      );
+    }
+
+    if (_remoteUrl != null) {
+      return Image.network(
+        _remoteUrl!,
+        fit: widget.fit,
+        cacheWidth: widget.cacheWidth,
+        cacheHeight: widget.cacheHeight,
+        loadingBuilder: (_, child, progress) {
+          if (progress == null) return child;
+          return const _ShimmerTile();
+        },
+        errorBuilder: (_, __, ___) => const _ErrorTile(),
+      );
+    }
+
+    return const _ErrorTile();
   }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
 
 class _ShimmerTile extends StatelessWidget {
+  const _ShimmerTile();
+
   @override
   Widget build(BuildContext context) => Container(
         color: AppColors.rose.withValues(alpha: 0.06),
@@ -105,6 +177,8 @@ class _ShimmerTile extends StatelessWidget {
 }
 
 class _ErrorTile extends StatelessWidget {
+  const _ErrorTile();
+
   @override
   Widget build(BuildContext context) => Container(
         color: AppColors.rose.withValues(alpha: 0.06),

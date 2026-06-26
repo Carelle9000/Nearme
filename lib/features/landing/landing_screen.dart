@@ -115,12 +115,33 @@ class _LandingScreenState extends State<LandingScreen> {
                   Column(
                     children: [
                       Container(
-                        width: 72, height: 72,
-                        decoration: BoxDecoration(shape: BoxShape.circle, gradient: AppColors.violetGradient, boxShadow: [BoxShadow(color: AppColors.violet.withValues(alpha: 0.5), blurRadius: 30, spreadRadius: 5)]),
-                        child: const Icon(Icons.near_me_rounded, color: Colors.white, size: 34),
+                        width: 100, height: 100,
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(28),
+                          boxShadow: [
+                            BoxShadow(
+                              color: AppColors.violet.withValues(alpha: 0.35),
+                              blurRadius: 40,
+                              spreadRadius: 2,
+                              offset: const Offset(0, 10),
+                            ),
+                          ],
+                        ),
+                        clipBehavior: Clip.antiAlias,
+                        child: Image.asset(
+                          'assets/images/logo.jpeg',
+                          fit: BoxFit.cover,
+                          errorBuilder: (ctx, _, __) => Container(
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              gradient: AppColors.violetGradient,
+                            ),
+                            child: const Icon(Icons.near_me_rounded, color: Colors.white, size: 34),
+                          ),
+                        ),
                       ),
-                      const SizedBox(height: 20),
-                      Text('NearMe', style: GoogleFonts.fraunces(fontSize: 36, fontWeight: FontWeight.w900, color: Colors.white, letterSpacing: -1.0)),
+                      const SizedBox(height: 24),
+                      Text('Nearme', style: GoogleFonts.fraunces(fontSize: 40, fontWeight: FontWeight.w900, color: Colors.white, letterSpacing: -1.0)),
                       const SizedBox(height: 8),
                       Text(t('meetPeopleNearby'), textAlign: TextAlign.center, style: GoogleFonts.dmSans(fontSize: 13, color: Colors.white.withValues(alpha: 0.7), letterSpacing: 0.2)),
                     ],

@@ -15,6 +15,8 @@ import '../notifications/notifications_screen.dart';
 import '../favorites/favorites_provider.dart';
 import '../favorites/favorites_screen.dart';
 import '../profile/profile_screen.dart';
+import '../chat/chat_provider.dart';
+import '../chat/conversations_list_screen.dart';
 
 class MainShell extends StatefulWidget {
   const MainShell({super.key});
@@ -26,21 +28,32 @@ class MainShell extends StatefulWidget {
 class _MainShellState extends State<MainShell> with WidgetsBindingObserver {
   int _tab = 0;
   Timer? _presenceTimer;
+  String? _lastUserId;
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      final auth = context.read<AuthProvider>();
-      if (auth.user != null) {
-        context.read<MatchesProvider>().init(auth.user!.id);
-        context.read<FavoritesProvider>().loadFavorites(auth.user!.id);
-        context.read<NotificationsProvider>().init(auth.user!.id);
-        auth.updatePresence(true);
-      }
-      _startPresenceTimer();
-    });
+    _startPresenceTimer();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final auth = context.watch<AuthProvider>();
+    final user = auth.user;
+
+    if (user != null && user.id != _lastUserId) {
+      _lastUserId = user.id;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          context.read<MatchesProvider>().init(user.id);
+          context.read<FavoritesProvider>().loadFavorites(user.id);
+          context.read<NotificationsProvider>().init(user.id);
+          auth.updatePresence(true);
+        }
+      });
+    }
   }
 
   void _startPresenceTimer() {
@@ -78,7 +91,7 @@ class _MainShellState extends State<MainShell> with WidgetsBindingObserver {
   static const _screens = [
     DiscoverScreen(),
     MatchesScreen(), // ❤️ Matchs
-    Center(child: Text('Messages Coming Soon', style: TextStyle(color: Colors.white))), // 💬 Messages
+    ConversationsListScreen(), // 💬 Messages (new Firestore chat system)
     FavoritesScreen(), // ⭐ Favoris
     ProfileScreen(), // 👤 Profil
   ];
@@ -87,13 +100,16 @@ class _MainShellState extends State<MainShell> with WidgetsBindingObserver {
   Widget build(BuildContext context) {
     final unreadMatches =
         context.select<MatchesProvider, int>((mp) => mp.unreadCount);
+    final unreadMessages =
+        context.select<ChatProvider, int>((cp) => cp.totalUnreadCount);
 
     return Scaffold(
       extendBody: true,
       body: IndexedStack(index: _tab, children: _screens),
       bottomNavigationBar: _ModernBottomNav(
         currentIndex: _tab,
-        unreadCount: unreadMatches,
+        unreadMatches: unreadMatches,
+        unreadMessages: unreadMessages,
         onTap: (i) => setState(() => _tab = i),
       ),
     );
@@ -106,12 +122,14 @@ class _MainShellState extends State<MainShell> with WidgetsBindingObserver {
 
 class _ModernBottomNav extends StatelessWidget {
   final int currentIndex;
-  final int unreadCount;
+  final int unreadMatches;
+  final int unreadMessages;
   final ValueChanged<int> onTap;
 
   const _ModernBottomNav({
     required this.currentIndex,
-    required this.unreadCount,
+    required this.unreadMatches,
+    required this.unreadMessages,
     required this.onTap,
   });
 
@@ -151,21 +169,22 @@ class _ModernBottomNav extends StatelessWidget {
                     active: currentIndex == 0,
                     onTap: () => onTap(0),
                   ),
-                  _ModernNavItem(
-                    icon: Icons.favorite_outline_rounded,
-                    activeIcon: Icons.favorite_rounded,
-                    label: 'Matches',
-                    active: currentIndex == 1,
-                    onTap: () => onTap(1),
-                  ),
-                  _ModernNavItem(
-                    icon: Icons.chat_bubble_outline_rounded,
-                    activeIcon: Icons.chat_bubble_rounded,
-                    label: 'Messages',
-                    active: currentIndex == 2,
-                    badge: unreadCount > 0 ? unreadCount : null,
-                    onTap: () => onTap(2),
-                  ),
+                   _ModernNavItem(
+                     icon: Icons.favorite_outline_rounded,
+                     activeIcon: Icons.favorite_rounded,
+                     label: 'Matches',
+                     active: currentIndex == 1,
+                     badge: unreadMatches > 0 ? unreadMatches : null,
+                     onTap: () => onTap(1),
+                   ),
+                 _ModernNavItem(
+                   icon: Icons.chat_bubble_outline_rounded,
+                   activeIcon: Icons.chat_bubble_rounded,
+                   label: 'Messages',
+                   active: currentIndex == 2,
+                   badge: unreadMessages > 0 ? unreadMessages : null,
+                   onTap: () => onTap(2),
+                 ),
                   _ModernNavItem(
                     icon: Icons.star_outline_rounded,
                     activeIcon: Icons.star_rounded,

@@ -42,6 +42,7 @@ class DiscoverProvider extends ChangeNotifier {
     if (_userService == null) return;
 
     _isLoading = true;
+    _index = 0;
     notifyListeners();
 
     try {
@@ -50,9 +51,9 @@ class DiscoverProvider extends ChangeNotifier {
         filters: _filters,
       );
       _deck = users;
-      _index = 0;
     } catch (e) {
       debugPrint('Error loading users: $e');
+      rethrow; // On propage l'erreur pour que l'UI puisse afficher un Toast
     } finally {
       _isLoading = false;
       notifyListeners();
@@ -93,18 +94,24 @@ class DiscoverProvider extends ChangeNotifier {
     _pendingAction = null;
     final profile = _deck[_index];
     _index++;
+
+    // Boucle infinie : si on arrive au bout, on recommence à zéro
+    if (_index >= _deck.length && _deck.isNotEmpty) {
+      _index = 0;
+    }
+
     _lastMatch = null;
+    notifyListeners(); // Show next card immediately (looping)
 
     if (action == SwipeAction.like || action == SwipeAction.superLike) {
       final isMatch = await _matchService.swipeLike(currentUserId, currentUserName, currentUserPhoto, profile);
       if (isMatch) {
         _lastMatch = profile;
+        notifyListeners(); // Trigger match modal
       }
     } else {
       await _matchService.swipeNope(currentUserId, profile.id);
     }
-
-    notifyListeners();
   }
 
   Future<void> reset(String? currentUserId) async {

@@ -16,17 +16,18 @@ class UserService {
       final collectionRef = _db.collection('profiles');
       print('DEBUG: Fetching potential matches for $currentUserId');
 
-      // Récupérer les IDs déjà swipés (Likes et Nopes) pour les exclure
+      // Récupérer uniquement mon propre ID pour ne pas me voir moi-même
       Set<String> excludedIds = {currentUserId};
+
+      /*
+      // Commenté pour permettre la boucle infinie demandée par l'utilisateur
       try {
         final sentLikes = await collectionRef.doc(currentUserId).collection('sent_likes').get();
         final nopes = await collectionRef.doc(currentUserId).collection('nopes').get();
         excludedIds.addAll(sentLikes.docs.map((d) => d.id));
         excludedIds.addAll(nopes.docs.map((d) => d.id));
-        print('DEBUG: Excluded ${excludedIds.length} IDs (including self)');
-      } catch (e) {
-        print('DEBUG: Error fetching excluded IDs (likely permission error on subcollections): $e');
-      }
+      } catch (e) {}
+      */
 
       // 1. Si on a une position centrale, on fait une geo-query
       if (center != null && filters != null) {
@@ -72,6 +73,19 @@ class UserService {
       return Profile.fromAppUser(appUser);
     } catch (e) {
       print('Error fetching profile: $e');
+      return null;
+    }
+  }
+
+  Future<AppUser?> getUserById(String userId) async {
+    try {
+      final doc = await _db.collection('profiles').doc(userId).get();
+      if (!doc.exists) return null;
+
+      final data = doc.data() as Map<String, dynamic>;
+      return AppUser.fromFirestore({...data, 'id': doc.id}, null);
+    } catch (e) {
+      print('Error fetching user: $e');
       return null;
     }
   }

@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 
 import '../../core/router/app_routes.dart';
 import '../../core/theme/app_colors.dart';
+import '../../core/utils/toasts.dart';
 import '../../data/models/profile.dart';
 import '../auth/auth_provider.dart';
 import '../locale/locale_provider.dart';
@@ -130,25 +131,26 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
             opacity: 0.08,
           ),
 
-          SafeArea(
-            child: Column(
-              children: [
-                _Header(
-                  t: t,
-                  location: '${locale.country.flag} ${locale.country.name}',
-                ),
-                _TrialBanner(t: t),
-                Expanded(
-                  child: discover.isLoading
-                      ? const Center(
-                          child: CircularProgressIndicator(
-                            color: AppColors.violet,
-                          ),
-                        )
-                      : _Deck(provider: discover),
-                ),
-                _ActionRow(provider: discover),
-              ],
+          Positioned.fill(
+            child: SafeArea(
+              child: Column(
+                children: [
+                  _Header(
+                    t: t,
+                    location: '${locale.country.flag} ${locale.country.name}',
+                  ),
+                  _TrialBanner(t: t),
+                  Expanded(
+                    child: discover.isLoading
+                        ? const Center(
+                            child: CircularProgressIndicator(
+                              color: AppColors.violet,
+                            ),
+                          )
+                        : _Deck(provider: discover),
+                  ),
+                ],
+              ),
             ),
           ),
         ],
@@ -177,12 +179,37 @@ class _Header extends StatelessWidget {
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              // Logo + wordmark
+              // Logo icon + wordmark
+              Container(
+                width: 38, height: 38,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(10),
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppColors.violet.withValues(alpha: 0.2),
+                      blurRadius: 10,
+                    ),
+                  ],
+                ),
+                clipBehavior: Clip.antiAlias,
+                child: Image.asset(
+                  'assets/images/logo.jpeg',
+                  fit: BoxFit.cover,
+                  errorBuilder: (ctx, _, __) => Container(
+                    decoration: const BoxDecoration(
+                      shape: BoxShape.circle,
+                      gradient: AppColors.violetGradient,
+                    ),
+                    child: const Icon(Icons.near_me_rounded, color: Colors.white, size: 18),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'NearMe',
+                    'Nearme',
                     style: GoogleFonts.fraunces(
                       fontSize: 22,
                       fontWeight: FontWeight.w600,
@@ -319,11 +346,9 @@ class _IconActionState extends State<_IconAction>
   Widget build(BuildContext context) {
     return GestureDetector(
       onTapDown: (_) => _controller.forward(),
-      onTapUp: (_) {
-        _controller.reverse();
-        widget.onTap();
-      },
+      onTapUp: (_) => _controller.reverse(),
       onTapCancel: () => _controller.reverse(),
+      onTap: widget.onTap,
       child: ScaleTransition(
         scale: _scaleAnimation,
         child: ClipRRect(
@@ -518,9 +543,14 @@ class _Deck extends StatelessWidget {
                 ],
               ),
               child: ElevatedButton(
-                onPressed: () {
+                onPressed: () async {
                   final auth = context.read<AuthProvider>();
-                  provider.reset(auth.user?.id);
+                  try {
+                    await provider.reset(auth.user?.id);
+                    if (context.mounted) AppToasts.success(context, 'Deck refreshed');
+                  } catch (e) {
+                    if (context.mounted) AppToasts.error(context, 'Failed to refresh deck');
+                  }
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.transparent,
@@ -559,24 +589,38 @@ class _Deck extends StatelessWidget {
       );
     }
 
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-      child: Center(
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 360),
-          child: AnimatedSwitcher(
-            duration: const Duration(milliseconds: 280),
-            switchInCurve: Curves.easeOut,
-            switchOutCurve: Curves.easeIn,
-            child: _SwipeCard(
-              key: ValueKey('${profile.id}-${provider.index}'),
-              profile: profile,
-              index: provider.index,
-              provider: provider,
+    return Column(
+      children: [
+        Expanded(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(14, 6, 14, 0),
+            child: Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 360),
+                child: AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 280),
+                  switchInCurve: Curves.easeOut,
+                  switchOutCurve: Curves.easeIn,
+                  child: _SwipeCard(
+                    key: ValueKey('${profile.id}-${provider.index}'),
+                    profile: profile,
+                    index: provider.index,
+                    provider: provider,
+                    onFavoriteToggle: (isAdded) {
+                      if (isAdded) {
+                        AppToasts.success(context, 'Added to favorites');
+                      } else {
+                        AppToasts.info(context, 'Removed from favorites');
+                      }
+                    },
+                  ),
+                ),
+              ),
             ),
           ),
         ),
-      ),
+        _ActionRow(provider: provider),
+      ],
     );
   }
 }
@@ -589,12 +633,14 @@ class _SwipeCard extends StatefulWidget {
   final Profile profile;
   final int index;
   final DiscoverProvider provider;
+  final Function(bool)? onFavoriteToggle;
 
   const _SwipeCard({
     super.key,
     required this.profile,
     required this.index,
     required this.provider,
+    this.onFavoriteToggle,
   });
 
   @override
@@ -673,7 +719,8 @@ class _SwipeCardState extends State<_SwipeCard>
     final name = user?.name ?? 'NearMe User';
     final photo = user?.photos?.isNotEmpty == true ? user!.photos!.first : null;
 
-    final action = _dx > 0 ? SwipeAction.like : SwipeAction.nope;
+    // Preserve the exact action (especially for Super Like)
+    final action = widget.provider.pendingAction ?? (_dx > 0 ? SwipeAction.like : SwipeAction.nope);
     widget.provider.swipe(uid, name, photo, action);
   }
 
@@ -742,10 +789,14 @@ class _SwipeCardState extends State<_SwipeCard>
               ProfileCard(
                 profile: widget.profile,
                 isFavorite: auth.user?.favorites.contains(widget.profile.id) ?? false,
-                onFavorite: () {
+                onFavorite: () async {
                   if (auth.user != null) {
-                    auth.toggleFavorite(widget.profile.id);
-                    context.read<FavoritesProvider>().refresh(auth.user!.id);
+                    final isRemoving = auth.user!.favorites.contains(widget.profile.id);
+                    await auth.toggleFavorite(widget.profile.id);
+                    if (context.mounted) {
+                      context.read<FavoritesProvider>().refresh(auth.user!.id);
+                      widget.onFavoriteToggle?.call(!isRemoving);
+                    }
                   }
                 },
                 onDoubleTap: () {
@@ -837,7 +888,7 @@ class _ActionRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final auth = context.read<AuthProvider>();
+    final auth = context.watch<AuthProvider>();
     final user = auth.user;
     final uid = user?.id ?? '';
     final name = user?.name ?? 'NearMe User';
@@ -947,11 +998,9 @@ class _ActionBtnState extends State<_ActionBtn> with SingleTickerProviderStateMi
   Widget build(BuildContext context) {
     return GestureDetector(
       onTapDown: (_) => _controller.forward(),
-      onTapUp: (_) {
-        _controller.reverse();
-        widget.onTap();
-      },
+      onTapUp: (_) => _controller.reverse(),
       onTapCancel: () => _controller.reverse(),
+      onTap: widget.onTap,
       child: ScaleTransition(
         scale: _scaleAnimation,
         child: Container(
