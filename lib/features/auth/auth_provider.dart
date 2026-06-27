@@ -2,13 +2,11 @@ import 'package:flutter/foundation.dart';
 
 import '../../data/models/app_user.dart';
 import '../../data/services/auth_service.dart';
-import '../../data/services/photo_service.dart';
 
 class AuthProvider extends ChangeNotifier {
   final AuthService _service;
   AppUser? _user;
   bool _busy = false;
-  bool _uploadingPhotos = false;
   String? _error;
 
   AuthProvider(this._service) {
@@ -18,7 +16,6 @@ class AuthProvider extends ChangeNotifier {
   AppUser? get user             => _user;
   bool get isLoggedIn           => _user != null && _service.isLoggedIn;
   bool get busy                 => _busy;
-  bool get uploadingPhotos      => _uploadingPhotos;
   String? get error             => _error;
   bool get needsAgeVerification   => _service.needsAgeVerification;
   String? get accessToken       => _service.accessToken;
@@ -39,8 +36,6 @@ class AuthProvider extends ChangeNotifier {
             email:     email,
             password:  password,
           ));
-
-  Future<bool> loginWithGoogle() => _run(() => _service.loginWithGoogle());
 
   Future<bool> loginWithApple() => _run(() => _service.loginWithApple());
 
@@ -63,14 +58,8 @@ class AuthProvider extends ChangeNotifier {
     }
   }
 
-  Future<void> updateProfile(AppUser updatedUser) async {
-    await _run(() => _service.updateUser(updatedUser));
-  }
-
-  Future<void> updateBio(String bio) async {
-    if (_user == null) return;
-    await _run(() => _service.updateUser(_user!.copyWith(bio: bio)));
-  }
+  // Note: Profile updates are handled via Firebase directly
+  // Local user cache is maintained in-memory
 
   Future<void> toggleFavorite(String targetUserId) async {
     if (_user == null) return;
@@ -84,52 +73,7 @@ class AuthProvider extends ChangeNotifier {
     }
   }
 
-  Future<void> addPhotos(List<String> localPaths) async {
-    if (_user == null) return;
-    _uploadingPhotos = true;
-    _error = null;
-    notifyListeners();
-    try {
-      await _service.addPhotos(_user!.id, localPaths);
-      _user = _service.currentUser;
-    } catch (e) {
-      _error = e.toString();
-    } finally {
-      _uploadingPhotos = false;
-      await PhotoService.clearLocalPhotos();
-      notifyListeners();
-    }
-  }
-
-  Future<void> replaceMainPhoto(String localPath) async {
-    if (_user == null) throw StateError('Not logged in');
-    _uploadingPhotos = true;
-    _error = null;
-    notifyListeners();
-    try {
-      await _service.replaceMainPhoto(_user!.id, localPath);
-      _user = _service.currentUser;
-    } catch (e) {
-      _error = e.toString();
-      rethrow;
-    } finally {
-      _uploadingPhotos = false;
-      await PhotoService.clearLocalPhotos();
-      notifyListeners();
-    }
-  }
-
-  Future<void> deletePhoto(String downloadUrl) async {
-    if (_user == null) return;
-    try {
-      await _service.deletePhoto(_user!.id, downloadUrl);
-      _user = _service.currentUser;
-      notifyListeners();
-    } catch (e) {
-      _error = e.toString();
-      notifyListeners();
-    }
-  }
+  // Note: Photo management is handled via PhotoService directly
 
   Future<void> logout() async {
     await _service.logout();
@@ -139,12 +83,6 @@ class AuthProvider extends ChangeNotifier {
 
   Future<void> refresh() async {
     await _service.refreshCurrentUser();
-    _user = _service.currentUser;
-    notifyListeners();
-  }
-
-  Future<void> updatePresence(bool isOnline) async {
-    await _service.updatePresence(isOnline);
     _user = _service.currentUser;
     notifyListeners();
   }
