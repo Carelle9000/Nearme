@@ -73,7 +73,27 @@ class AuthProvider extends ChangeNotifier {
     }
   }
 
-  // Note: Photo management is handled via PhotoService directly
+  // Stub methods for compatibility (photo/profile updates handled via Firebase)
+  Future<void> updateProfile(AppUser user) async {
+    _user = user;
+    notifyListeners();
+  }
+
+  Future<void> addPhotos(List<String> localPaths) async {
+    // Photos handled via PhotoService directly
+  }
+
+  Future<void> replaceMainPhoto(String localPath) async {
+    // Photos handled via PhotoService directly
+  }
+
+  Future<void> deletePhoto(String downloadUrl) async {
+    // Photos handled via PhotoService directly
+  }
+
+  Future<void> updatePresence(bool isOnline) async {
+    // Presence tracking handled via backend
+  }
 
   Future<void> logout() async {
     await _service.logout();
