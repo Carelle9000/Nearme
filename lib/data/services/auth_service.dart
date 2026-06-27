@@ -1,21 +1,12 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart' as fb;
-import 'package:google_sign_in/google_sign_in.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 
 import '../models/app_user.dart';
-import 'photo_service.dart';
-
-final _googleSignIn = GoogleSignIn(
-    clientId:
-        '513859324827-q9kec51te7cifs6t3bmvratg69h3et21.apps.googleusercontent.com',
-    scopes: ['email', 'profile']);
 
 class AuthService {
   AuthService();
 
   final _auth = fb.FirebaseAuth.instance;
-  final _firestore = FirebaseFirestore.instance;
 
   AppUser? _cachedUser;
   bool _needsAgeVerification = false;
@@ -36,21 +27,13 @@ class AuthService {
     }
 
     try {
-      final docSnap =
-          await _firestore.collection('profiles').doc(user.uid).get();
-      if (docSnap.exists) {
-        _cachedUser = AppUser.fromFirestore(docSnap.data() ?? {}, user);
-      } else {
-        _cachedUser = AppUser(
-          id: user.uid,
-          name: user.displayName ?? '',
-          email: user.email ?? '',
-          createdAt: DateTime.now(),
-          verified: user.emailVerified,
-        );
-      }
-
-      // ✅ Vérifier si vérification d'âge est nécessaire
+      _cachedUser = AppUser(
+        id: user.uid,
+        name: user.displayName ?? '',
+        email: user.email ?? '',
+        createdAt: DateTime.now(),
+        verified: user.emailVerified,
+      );
       _checkAgeVerificationNeeded();
     } catch (_) {
       _cachedUser = AppUser(
@@ -64,7 +47,6 @@ class AuthService {
     }
   }
 
-  /// Vérifier si la vérification d'âge est nécessaire
   void _checkAgeVerificationNeeded() {
     if (_cachedUser == null) {
       _needsAgeVerification = false;
@@ -80,8 +62,6 @@ class AuthService {
     }
 
     final age = _calculateAge(birthDate);
-
-    // Besoin de vérification si: age < 20 ET pas encore vérifié
     _needsAgeVerification = age < 20 && !isAgeVerified;
   }
 
@@ -106,15 +86,6 @@ class AuthService {
     );
 
     final uid = userCred.user!.uid;
-    await _firestore.collection('profiles').doc(uid).set({
-      'name': name.trim(),
-      'email': email.trim(),
-      'photos': [],
-      'isFaceVerified': false,
-      'isAgeVerified': false,
-      'createdAt': FieldValue.serverTimestamp(),
-      'updatedAt': FieldValue.serverTimestamp(),
-    });
 
     _cachedUser = AppUser(
       id: uid,
@@ -137,36 +108,6 @@ class AuthService {
     return _cachedUser!;
   }
 
-  Future<AppUser> loginWithGoogle() async {
-    final googleAccount = await _googleSignIn.signIn();
-    if (googleAccount == null) throw Exception('Google sign-in cancelled');
-
-    final googleAuth = await googleAccount.authentication;
-    final credential = fb.GoogleAuthProvider.credential(
-      accessToken: googleAuth.accessToken,
-      idToken: googleAuth.idToken,
-    );
-
-    final userCred = await _auth.signInWithCredential(credential);
-    final uid = userCred.user!.uid;
-
-    final docSnap = await _firestore.collection('profiles').doc(uid).get();
-    if (!docSnap.exists) {
-      await _firestore.collection('profiles').doc(uid).set({
-        'name': googleAccount.displayName ?? '',
-        'email': googleAccount.email,
-        'photos': [],
-        'isFaceVerified': false,
-        'isAgeVerified': false,
-        'createdAt': FieldValue.serverTimestamp(),
-        'updatedAt': FieldValue.serverTimestamp(),
-      });
-    }
-
-    await loadCurrentUser();
-    return _cachedUser!;
-  }
-
   Future<AppUser> loginWithApple() async {
     final credential = await SignInWithApple.getAppleIDCredential(
       scopes: [
@@ -180,22 +121,15 @@ class AuthService {
     );
 
     final userCred = await _auth.signInWithCredential(oauthCredential);
-    final uid = userCred.user!.uid;
 
-    final docSnap = await _firestore.collection('profiles').doc(uid).get();
-    if (!docSnap.exists) {
-      await _firestore.collection('profiles').doc(uid).set({
-        'name': credential.givenName ?? credential.familyName ?? '',
-        'email': credential.email ?? '',
-        'photos': [],
-        'isFaceVerified': false,
-        'isAgeVerified': false,
-        'createdAt': FieldValue.serverTimestamp(),
-        'updatedAt': FieldValue.serverTimestamp(),
-      });
-    }
+    _cachedUser = AppUser(
+      id: userCred.user!.uid,
+      name: credential.givenName ?? credential.familyName ?? '',
+      email: credential.email ?? '',
+      createdAt: DateTime.now(),
+      verified: userCred.user!.emailVerified,
+    );
 
-    await loadCurrentUser();
     return _cachedUser!;
   }
 
@@ -203,132 +137,30 @@ class AuthService {
     await _auth.sendPasswordResetEmail(email: email.trim());
   }
 
-  Future<AppUser> updateUser(AppUser user) async {
-    if (_auth.currentUser == null) throw Exception('Not logged in');
-
-    await _firestore
-        .collection('profiles')
-        .doc(user.id)
-        .update(user.toFirestore());
-
-    _cachedUser = user;
-    _checkAgeVerificationNeeded();
-    return user;
-  }
-
   Future<bool> toggleFavorite(String targetUserId) async {
     if (_cachedUser == null) return false;
-
-    final userRef = _firestore.collection('profiles').doc(_cachedUser!.id);
-    final favRef = userRef.collection('favorites').doc(targetUserId);
 
     final currentFavorites = List<String>.from(_cachedUser!.favorites);
     bool isRemoving = currentFavorites.contains(targetUserId);
 
     if (isRemoving) {
       currentFavorites.remove(targetUserId);
-      await favRef.delete();
-      await userRef.update({
-        'favorites': FieldValue.arrayRemove([targetUserId]),
-        'updatedAt': FieldValue.serverTimestamp(),
-      });
     } else {
       currentFavorites.add(targetUserId);
-      await favRef.set({'timestamp': FieldValue.serverTimestamp()});
-      await userRef.update({
-        'favorites': FieldValue.arrayUnion([targetUserId]),
-        'updatedAt': FieldValue.serverTimestamp(),
-      });
     }
 
     _cachedUser = _cachedUser!.copyWith(favorites: currentFavorites);
-    return isRemoving; // Return whether we removed it
-  }
-
-  Future<List<String>> addPhotos(String uid, List<String> localPaths) async {
-    final urls = await PhotoService.uploadAll(uid, localPaths);
-    final current = _cachedUser?.photos ?? [];
-    final merged = [...current, ...urls];
-    await _firestore.collection('profiles').doc(uid).update({
-      'photos': merged,
-      'updatedAt': FieldValue.serverTimestamp(),
-    });
-    _cachedUser = _cachedUser?.copyWith(photos: merged);
-    return urls;
-  }
-
-  /// Uploads a photo and sets it as the main profile photo (index 0).
-  Future<void> replaceMainPhoto(String uid, String localPath) async {
-    final urls = await PhotoService.uploadAll(uid, [localPath]);
-    if (urls.isEmpty) {
-      throw Exception('Photo upload returned no URL');
-    }
-    final current = _cachedUser?.photos ?? [];
-    final updated = [urls.first, ...current];
-    if (updated.length > 6) updated.removeLast();
-    await _firestore.collection('profiles').doc(uid).set({
-      'photos': updated,
-      'updatedAt': FieldValue.serverTimestamp(),
-    }, SetOptions(merge: true));
-    _cachedUser = _cachedUser?.copyWith(photos: updated);
-  }
-
-  Future<void> deletePhoto(String uid, String downloadUrl) async {
-    await PhotoService.deleteFromStorage(downloadUrl);
-    final updated =
-        (_cachedUser?.photos ?? []).where((u) => u != downloadUrl).toList();
-    await _firestore.collection('profiles').doc(uid).update({
-      'photos': updated,
-      'updatedAt': FieldValue.serverTimestamp(),
-    });
-    _cachedUser = _cachedUser?.copyWith(photos: updated);
-  }
-
-  /// Reload user data from Firestore (used after age verification)
-  Future<void> refreshCurrentUser() async {
-    final user = _auth.currentUser;
-    if (user == null) {
-      _cachedUser = null;
-      _needsAgeVerification = false;
-      return;
-    }
-
-    try {
-      final docSnap =
-          await _firestore.collection('profiles').doc(user.uid).get();
-      if (docSnap.exists) {
-        _cachedUser = AppUser.fromFirestore(docSnap.data() ?? {}, user);
-      }
-      _checkAgeVerificationNeeded();
-    } catch (_) {
-      // Silent fail — keep existing cache
-    }
-  }
-
-  Future<void> updatePresence(bool isOnline) async {
-    final user = _auth.currentUser;
-    if (user == null) return;
-
-    await _firestore.collection('profiles').doc(user.uid).update({
-      'isOnline': isOnline,
-      'lastSeen': FieldValue.serverTimestamp(),
-    });
-
-    if (_cachedUser != null && _cachedUser!.id == user.uid) {
-      _cachedUser = _cachedUser!.copyWith(
-        isOnline: isOnline,
-        lastSeen: DateTime.now(),
-      );
-    }
+    return isRemoving;
   }
 
   Future<void> logout() async {
-    try {
-      await updatePresence(false);
-    } catch (_) {}
-    await _googleSignIn.signOut();
     await _auth.signOut();
     _cachedUser = null;
+    _needsAgeVerification = false;
+  }
+
+  Future<void> refreshCurrentUser() async {
+    await loadCurrentUser();
   }
 }
 
