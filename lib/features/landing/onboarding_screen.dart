@@ -1,12 +1,10 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:provider/provider.dart';
 
 import '../../core/router/app_routes.dart';
 import '../../core/theme/app_colors.dart';
-import '../../core/theme/app_spacing.dart';
 import '../locale/locale_provider.dart';
 
 class OnboardingScreen extends StatefulWidget {
@@ -228,7 +226,7 @@ class _OnboardingPage extends StatelessWidget {
                   ),
                 ),
               ),
-              // Cached Network Image with Placeholder
+              // Network Image
               Container(
                 width: 260,
                 height: 260,
@@ -243,45 +241,35 @@ class _OnboardingPage extends StatelessWidget {
                   ],
                 ),
                 clipBehavior: Clip.antiAlias,
-                child: CachedNetworkImage(
-                  imageUrl: data.image,
+                child: Image.network(
+                  data.image,
                   fit: BoxFit.cover,
-                  placeholder: (context, url) => Container(
-                    color: AppColors.surface,
-                    child: Center(
-                      child: SizedBox(
-                        width: 40,
-                        height: 40,
-                        child: CircularProgressIndicator(
-                          color: AppColors.violet.withValues(alpha: 0.5),
-                          strokeWidth: 2,
+                  loadingBuilder: (context, child, loadingProgress) {
+                    if (loadingProgress == null) return child;
+                    return Container(
+                      color: AppColors.surface,
+                      child: const Center(
+                        child: SizedBox(
+                          width: 40,
+                          height: 40,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                          ),
                         ),
                       ),
-                    ),
-                  ),
-                  errorWidget: (context, url, error) => Container(
-                    color: AppColors.surfaceHigh,
-                    child: Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(
-                            Icons.image_not_supported_rounded,
-                            color: AppColors.textMuted,
-                            size: 40,
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            'Image unavailable',
-                            style: GoogleFonts.dmSans(
-                              fontSize: 12,
-                              color: AppColors.textMuted,
-                            ),
-                          ),
-                        ],
+                    );
+                  },
+                  errorBuilder: (context, error, stackTrace) {
+                    return Container(
+                      color: AppColors.surfaceHigh,
+                      child: const Center(
+                        child: Icon(
+                          Icons.image_not_supported_rounded,
+                          size: 40,
+                        ),
                       ),
-                    ),
-                  ),
+                    );
+                  },
                 ),
               ),
               // Icon Badge
