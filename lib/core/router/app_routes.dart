@@ -9,6 +9,7 @@ class AppRoutes {
   static const countrySelect = '/country-select';
   static const identity = '/identity';
   static const discover = '/discover'; // → MainShell
-  static const chat = '/chat'; // arguments: matchId (String)
+  static const chat = '/chat';
+  static const conversation = '/chat/conversation';
   static const editProfile = '/edit-profile';
 }

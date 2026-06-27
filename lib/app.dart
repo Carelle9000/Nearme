@@ -6,7 +6,8 @@ import 'core/theme/app_theme.dart';
 import 'features/auth/auth_provider.dart';
 import 'features/auth/auth_screen.dart';
 import 'features/auth/identity_verification_screen.dart';
-import 'features/chat/chat_screen.dart';
+import 'features/chat/conversation_screen.dart';
+import 'features/chat/conversations_list_screen.dart';
 import 'features/landing/landing_screen.dart';
 import 'features/landing/onboarding_screen.dart';
 import 'features/locale/lang_select_screen.dart';
@@ -55,7 +56,9 @@ class NearMeApp extends StatelessWidget {
         AppRoutes.discover: (_) =>
             const _AuthGuard(child: MainShell()),
         AppRoutes.chat: (_) =>
-            const _AuthGuard(child: ChatScreen()),
+            const _AuthGuard(child: ConversationsListScreen()),
+        AppRoutes.conversation: (_) =>
+            const _AuthGuard(child: ConversationScreen()),
         AppRoutes.editProfile: (_) =>
             const _AuthGuard(child: EditProfileScreen()),
       },

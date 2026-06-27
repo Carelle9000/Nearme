@@ -107,10 +107,13 @@ class _ProfileCardState extends State<ProfileCard> with SingleTickerProviderStat
             children: [
               // ── Photo / fond plein écran ────────────────────────────────────
               if (widget.profile.photos.isNotEmpty)
-                SignedPhotoImage(
-                  path: widget.profile.photos.first,
-                  fit: BoxFit.cover,
-                  cacheWidth: 800,
+                ClipRRect(
+                  child: SignedPhotoImage(
+                    path: widget.profile.photos.first,
+                    fit: BoxFit.cover,
+                    cacheWidth: 1080,
+                    cacheHeight: 1440,
+                  ),
                 )
               else
                 Container(
@@ -256,14 +259,17 @@ class _ProfileCardState extends State<ProfileCard> with SingleTickerProviderStat
                     // Nom + âge + online indicator
                     Row(
                       children: [
-                        Text(
-                          '${widget.profile.name}, ${widget.profile.age}',
-                          style: GoogleFonts.dmSans(
-                            fontSize: 28,
-                            fontWeight: FontWeight.w800,
-                            color: Colors.white,
-                            letterSpacing: -0.5,
-                            height: 1.1,
+                        Expanded(
+                          child: Text(
+                            '${widget.profile.name}, ${widget.profile.age}',
+                            style: GoogleFonts.dmSans(
+                              fontSize: 28,
+                              fontWeight: FontWeight.w800,
+                              color: Colors.white,
+                              letterSpacing: -0.5,
+                              height: 1.1,
+                            ),
+                            overflow: TextOverflow.ellipsis,
                           ),
                         ),
                         if (widget.profile.online) ...[

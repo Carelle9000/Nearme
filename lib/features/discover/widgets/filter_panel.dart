@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 
 import '../../../core/theme/app_colors.dart';
@@ -55,9 +56,16 @@ class _FilterPanelState extends State<_FilterPanel> {
   @override
   Widget build(BuildContext context) {
     return Container(
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            const Color(0xFF1A1625),
+            const Color(0xFF0F0D1A),
+          ],
+        ),
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
       ),
       padding: EdgeInsets.only(
         bottom: MediaQuery.of(context).viewInsets.bottom + 24,
@@ -75,7 +83,7 @@ class _FilterPanelState extends State<_FilterPanel> {
               width: 40,
               height: 4,
               decoration: BoxDecoration(
-                color: AppColors.border,
+                color: Colors.white.withValues(alpha: 0.2),
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
@@ -85,27 +93,37 @@ class _FilterPanelState extends State<_FilterPanel> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text('Filters', style: AppTheme.display(size: 22)),
-              TextButton(
+              Text(
+                'Refine Search',
+                style: GoogleFonts.fraunces(
+                  fontSize: 24,
+                  fontWeight: FontWeight.w700,
+                  color: Colors.white,
+                  letterSpacing: -0.5,
+                ),
+              ),
+              TextButton.icon(
                 onPressed: _reset,
-                child: Text(
+                icon: const Icon(Icons.refresh_rounded, size: 18),
+                label: Text(
                   'Reset',
-                  style: AppTheme.body(
-                    size: 13,
+                  style: GoogleFonts.dmSans(
+                    fontSize: 13,
                     color: AppColors.violet,
-                    weight: FontWeight.w600,
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 24),
 
           // Age range
           _FilterLabel(
             label: 'Age Range',
             value: '${_draft.ageMin}–${_draft.ageMax}',
           ),
+          const SizedBox(height: 10),
           RangeSlider(
             values: RangeValues(
               _draft.ageMin.toDouble(),
@@ -123,13 +141,14 @@ class _FilterPanelState extends State<_FilterPanel> {
                   ageMax: v.end.round(),
                 )),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 20),
 
           // Radius
           _FilterLabel(
-            label: 'Radius',
+            label: 'Distance Radius',
             value: '${_draft.radiusKm.toStringAsFixed(1)} km',
           ),
+          const SizedBox(height: 10),
           Slider(
             value: _draft.radiusKm,
             min: 0.5,
@@ -139,35 +158,62 @@ class _FilterPanelState extends State<_FilterPanel> {
             onChanged: (v) =>
                 setState(() => _draft = _draft.copyWith(radiusKm: v)),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 24),
 
           // Toggle switches
           _FilterSwitch(
-            label: '✅ Verified Only',
+            label: 'Verified Only',
+            icon: Icons.verified_user_rounded,
             value: _draft.verifiedOnly,
             onChanged: (v) =>
                 setState(() => _draft = _draft.copyWith(verifiedOnly: v)),
           ),
+          const SizedBox(height: 12),
           _FilterSwitch(
-            label: '🟢 Online Now',
+            label: 'Online Now',
+            icon: Icons.circle_rounded,
             value: _draft.onlineOnly,
             onChanged: (v) =>
                 setState(() => _draft = _draft.copyWith(onlineOnly: v)),
           ),
+          const SizedBox(height: 12),
           _FilterSwitch(
-            label: '🏠 Shared Spots',
+            label: 'Shared Spots Only',
+            icon: Icons.location_on_rounded,
             value: _draft.sharedOnly,
             onChanged: (v) =>
                 setState(() => _draft = _draft.copyWith(sharedOnly: v)),
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 28),
 
           // Apply button
           SizedBox(
             width: double.infinity,
             child: ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.violet,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
               onPressed: _apply,
-              child: const Text('Apply Filters'),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(Icons.search_rounded, size: 20),
+                  const SizedBox(width: 8),
+                  Text(
+                    'Apply Filters',
+                    style: GoogleFonts.dmSans(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                      letterSpacing: 0.3,
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         ],
@@ -214,26 +260,51 @@ class _FilterLabel extends StatelessWidget {
 
 class _FilterSwitch extends StatelessWidget {
   final String label;
+  final IconData icon;
   final bool value;
   final ValueChanged<bool> onChanged;
   const _FilterSwitch({
     required this.label,
+    required this.icon,
     required this.value,
     required this.onChanged,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      decoration: BoxDecoration(
+        color: value
+            ? AppColors.violet.withValues(alpha: 0.15)
+            : Colors.white.withValues(alpha: 0.05),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: value
+              ? AppColors.violet.withValues(alpha: 0.3)
+              : Colors.white.withValues(alpha: 0.1),
+        ),
+      ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(label,
-              style: AppTheme.body(
-                  size: 14, color: AppColors.textPrimary)),
+          Row(
+            children: [
+              Icon(icon, size: 20, color: value ? AppColors.violet : Colors.white70),
+              const SizedBox(width: 10),
+              Text(
+                label,
+                style: GoogleFonts.dmSans(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                  color: Colors.white,
+                ),
+              ),
+            ],
+          ),
           Switch(
             value: value,
+            activeColor: AppColors.violet,
             onChanged: onChanged,
           ),
         ],

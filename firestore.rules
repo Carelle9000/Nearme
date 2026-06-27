@@ -82,17 +82,31 @@ service cloud.firestore {
       // Messages subcollection
       match /messages/{messageId} {
         // Allow read if user is a participant in the conversation
-        allow read: if isAuth() && 
+        allow read: if isAuth() &&
           request.auth.uid in get(/databases/$(database)/documents/conversations/$(conversationId)).data.participants;
 
-        // Allow create if user is authenticated and is the sender
-        allow create: if isAuth() && 
-          request.auth.uid == request.data.senderId &&
-          request.auth.uid in get(/databases/$(database)/documents/conversations/$(conversationId)).data.participants;
+        // Allow create if:
+        // 1. User is authenticated
+        // 2. User is the sender (senderId == currentUser)
+        // 3. User is a participant in the conversation
+        // 4. Message has required fields
+        // 5. Rate limit: max 10 messages per minute (checked on client)
+        allow create: if isAuth() &&
+          request.auth.uid == request.resource.data.senderId &&
+          request.auth.uid in get(/databases/$(database)/documents/conversations/$(conversationId)).data.participants &&
+          request.resource.data.content is string &&
+          request.resource.data.type is string &&
+          request.resource.data.status is string;
 
-        // Allow update if user is the sender (for marking as read)
-        allow update: if isAuth() && 
-          request.auth.uid in get(/databases/$(database)/documents/conversations/$(conversationId)).data.participants;
+        // Allow update if:
+        // 1. User is a participant
+        // 2. Only specific fields can be updated (read status, delivery status)
+        allow update: if isAuth() &&
+          request.auth.uid in get(/databases/$(database)/documents/conversations/$(conversationId)).data.participants &&
+          (
+            request.resource.data.diff(resource.data).affectedKeys()
+              .hasOnly(['status', 'readAt', 'deliveredAt', 'errorMessage'])
+          );
       }
 
       // Typing indicators subcollection
@@ -124,13 +138,13 @@ service cloud.firestore {
 
     match /blocks/{blockId} {
       allow read: if isAuth() && (isUser(resource.data.blockerId) || isUser(resource.data.blockedId));
-      allow create: if isAuth() && isUser(request.data.blockerId);
+      allow create: if isAuth() && isUser(request.resource.data.blockerId);
       allow delete: if isAuth() && isUser(resource.data.blockerId);
     }
 
     match /reports/{reportId} {
       allow read: if isAuth() && isUser(resource.data.reporterId);
-      allow create: if isAuth() && isUser(request.data.reporterId);
+      allow create: if isAuth() && isUser(request.resource.data.reporterId);
       // Only admins can update reports (status changes)
       allow update: if false;
     }

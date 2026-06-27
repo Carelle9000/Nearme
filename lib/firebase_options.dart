@@ -33,6 +33,7 @@ class DefaultFirebaseOptions {
     messagingSenderId: '513859324827',
     projectId: 'nearme-bd95a',
     storageBucket: 'nearme-bd95a.firebasestorage.app',
+    databaseURL: 'https://nearme-bd95a.firebaseio.com',
   );
 
   static const FirebaseOptions ios = FirebaseOptions(
@@ -41,6 +42,7 @@ class DefaultFirebaseOptions {
     messagingSenderId: '513859324827',
     projectId: 'nearme-bd95a',
     storageBucket: 'nearme-bd95a.firebasestorage.app',
+    databaseURL: 'https://nearme-bd95a.firebaseio.com',
   );
 
   static const FirebaseOptions web = FirebaseOptions(
@@ -50,5 +52,6 @@ class DefaultFirebaseOptions {
     messagingSenderId: '513859324827',
     projectId: 'nearme-bd95a',
     storageBucket: 'nearme-bd95a.firebasestorage.app',
+    databaseURL: 'https://nearme-bd95a.firebaseio.com',
   );
 }

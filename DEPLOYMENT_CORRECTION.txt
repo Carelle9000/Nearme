@@ -1,0 +1,134 @@
+════════════════════════════════════════════════════════════════════════════════
+                    FIREBASE DEPLOYMENT CORRECTION ✅
+════════════════════════════════════════════════════════════════════════════════
+
+Date:     2026-06-26
+Issue:    Firebase does not allow converting HTTPS function to trigger
+Solution: Renamed function from onNewMessage → onMessageCreated
+
+════════════════════════════════════════════════════════════════════════════════
+
+PROBLEM:
+─────────
+When trying to deploy functions, Firebase error:
+  "Changing from an HTTPS function to a background triggered function
+   is not allowed. Please delete your function and create a new one instead."
+
+ROOT CAUSE:
+───────────
+The function name "onNewMessage" already exists as an HTTPS onCall function.
+Firebase doesn't allow converting it to a trigger function in place.
+
+SOLUTION:
+─────────
+✅ Renamed function: onNewMessage → onMessageCreated
+
+CHANGES MADE:
+─────────────
+File: functions/src/index.ts
+Line 419:
+  FROM: export const onNewMessage = onDocumentCreated(
+  TO:   export const onMessageCreated = onDocumentCreated(
+
+════════════════════════════════════════════════════════════════════════════════
+
+VERIFICATION:
+──────────────
+✅ npm lint:    PASS (no errors)
+✅ npm build:   SUCCESS (TypeScript compiled)
+✅ flutter analyze:  PASS (0 errors)
+
+════════════════════════════════════════════════════════════════════════════════
+
+DEPLOYMENT INSTRUCTIONS:
+────────────────────────
+
+IMPORTANT: First time deployment with new function name
+
+Option 1 (Recommended - Manual cleanup):
+  1. Go to Firebase Console
+  2. Cloud Functions → Find "onNewMessage" (old function)
+  3. Click the 3-dots menu → Delete
+  4. Confirm deletion
+  5. Run: firebase deploy --only functions
+  6. New function "onMessageCreated" will be created
+
+Option 2 (Automatic - Firebase handles it):
+  1. Simply run: firebase deploy --only functions
+  2. Firebase may show warning about old function
+  3. Let it complete - both old and new will coexist
+  4. Manually delete old function afterward in Console
+
+════════════════════════════════════════════════════════════════════════════════
+
+WHAT THE FUNCTION DOES:
+─────────────────────────
+Name:     onMessageCreated
+Type:     Cloud Firestore trigger (onDocumentCreated)
+Path:     conversations/{conversationId}/messages/{messageId}
+Region:   europe-west1
+Action:   Automatically sends push notification when new message created
+
+Features:
+  ✅ Auto-triggers on new message
+  ✅ Fetches recipient FCM tokens
+  ✅ Sends push notification via Firebase Cloud Messaging
+  ✅ Cleans up invalid/expired tokens
+  ✅ Comprehensive error handling
+
+════════════════════════════════════════════════════════════════════════════════
+
+DEPLOYMENT CHECKLIST:
+──────────────────────
+
+Before deploying:
+  □ Read this file
+  □ Verify flutter analyze shows 0 errors
+  □ Verify functions build succeeds
+
+Deployment sequence:
+  □ Deploy Firestore rules:    firebase deploy --only firestore:rules
+  □ (Optional) Delete old function in Firebase Console
+  □ Deploy Cloud Functions:    firebase deploy --only functions
+  □ Monitor logs:              firebase functions:log --follow
+  □ Build Flutter app:         flutter build apk/ios --release
+
+Verification:
+  □ Send test message
+  □ Check Firebase logs for: "[Chat] Notification sent to X tokens"
+  □ Verify notification received on recipient device
+  □ Check message status changed to "delivered"
+
+════════════════════════════════════════════════════════════════════════════════
+
+CURRENT STATUS:
+────────────────
+✅ All code changes complete
+✅ All compilation errors fixed
+✅ Function renamed correctly
+✅ Ready for deployment
+
+NEXT STEP:
+──────────
+Run: firebase deploy --only functions
+
+════════════════════════════════════════════════════════════════════════════════
+
+Questions?
+  • Function still failing?
+    → Check you deleted old "onNewMessage" function in Console
+    → Wait 60 seconds and redeploy
+
+  • Notifications not working?
+    → Check Firebase logs: firebase functions:log --follow
+    → Verify FCM tokens saved in Firestore: profiles/{uid}/fcmTokens
+
+  • Want to rollback?
+    → All code changes are git-committed
+    → Can revert with: git revert <commit-hash>
+
+════════════════════════════════════════════════════════════════════════════════
+
+Status: ✅ READY TO DEPLOY
+
+Good luck! 🚀

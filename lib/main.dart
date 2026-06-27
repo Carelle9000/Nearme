@@ -8,12 +8,14 @@ import 'app.dart';
 import 'data/services/auth_service.dart';
 import 'data/services/face_compare_service.dart';
 import 'data/services/locale_service.dart';
+import 'data/services/push_notification_service.dart';
 import 'data/services/stripe_identity_service.dart' show StripeIdentityService, StripeIdentityServiceStub;
 import 'data/services/stripe_service.dart';
 import 'data/services/user_service.dart';
 import 'features/auth/auth_provider.dart';
+import 'features/chat/chat_provider.dart';
 import 'features/discover/discover_provider.dart';
-import 'features/favorites/favorites_provider.dart';
+import 'features/likes/likes_provider.dart';
 import 'features/identity/identity_verification_provider.dart';
 import 'features/locale/locale_provider.dart';
 import 'features/matches/matches_provider.dart';
@@ -39,6 +41,12 @@ Future<void> main() async {
 
   final localeService = await LocaleService.create();
 
+  // Initialize push notifications for current user
+  final pushNotificationService = PushNotificationService();
+  if (authService.isLoggedIn) {
+    await pushNotificationService.init();
+  }
+
   runApp(
     MultiProvider(
       providers: [
@@ -47,6 +55,7 @@ Future<void> main() async {
         Provider<StripeService>(create: (_) => StripeService()),
         Provider<StripeIdentityService>(create: (_) => StripeIdentityServiceStub()),
         Provider<FaceCompareService>(create: (_) => FacePlusPlusService()),
+        Provider<PushNotificationService>.value(value: pushNotificationService),
         ChangeNotifierProvider(create: (_) => AuthProvider(authService)),
         ChangeNotifierProvider(create: (_) => LocaleProvider(localeService)),
         ChangeNotifierProvider(
@@ -55,7 +64,8 @@ Future<void> main() async {
           ),
         ),
         ChangeNotifierProvider(create: (_) => MatchesProvider()),
-        ChangeNotifierProvider(create: (_) => FavoritesProvider()),
+        ChangeNotifierProvider(create: (_) => ChatProvider()),
+        ChangeNotifierProvider(create: (_) => LikesProvider()),
         ChangeNotifierProvider(create: (_) => NotificationsProvider()),
         ChangeNotifierProvider(
           create: (context) => IdentityVerificationProvider(

@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:provider/provider.dart';
 
 import '../../../core/widgets/signed_photo_image.dart';
 import '../../../core/widgets/photo_viewer.dart';
 import '../../../core/router/app_routes.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../core/utils/toasts.dart';
 import '../../../data/models/profile.dart';
+import '../../chat/chat_provider.dart';
 
 class MatchModal extends StatelessWidget {
   final Profile profile;
@@ -114,10 +117,26 @@ class MatchModal extends StatelessWidget {
                 ),
                 elevation: 0,
               ),
-              onPressed: () {
-                Navigator.of(context).pop();
-                Navigator.of(context)
-                    .pushNamed(AppRoutes.chat, arguments: matchId);
+              onPressed: () async {
+                final navigator = Navigator.of(context);
+                final conversationId =
+                    await context.read<ChatProvider>().createConversation(matchId);
+
+                if (!context.mounted) return;
+
+                if (conversationId == null) {
+                  AppToasts.error(context, 'Unable to open this conversation');
+                  return;
+                }
+
+                navigator.pop();
+                navigator.pushNamed(
+                  AppRoutes.conversation,
+                  arguments: {
+                    'conversationId': conversationId,
+                    'otherUserId': matchId,
+                  },
+                );
               },
               child: Text(
                 'Send a Message',

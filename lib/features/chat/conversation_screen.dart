@@ -9,6 +9,7 @@ import '../../core/widgets/signed_photo_image.dart';
 import '../../core/utils/toasts.dart';
 import '../../data/models/conversation.dart';
 import '../../data/models/app_user.dart';
+import '../../data/services/user_service.dart';
 import '../auth/auth_provider.dart';
 import 'chat_provider.dart';
 
@@ -24,6 +25,7 @@ class _ConversationScreenState extends State<ConversationScreen> {
   final _controller = TextEditingController();
   final _scrollController = ScrollController();
   final ImagePicker _imagePicker = ImagePicker();
+  final UserService _userService = UserService();
 
   String? _conversationId;
   String? _otherUserId;
@@ -54,6 +56,12 @@ class _ConversationScreenState extends State<ConversationScreen> {
     final user = chatProvider.getUserProfile(_otherUserId!);
     if (user != null) {
       setState(() => _otherUser = user);
+      return;
+    }
+
+    final fetchedUser = await _userService.getUserById(_otherUserId!);
+    if (mounted && fetchedUser != null) {
+      setState(() => _otherUser = fetchedUser);
     }
   }
 
@@ -82,8 +90,11 @@ class _ConversationScreenState extends State<ConversationScreen> {
     
     if (xfile == null) return;
     
-    final success = await context.read<ChatProvider>()
-        .sendImageMessage(_conversationId!, xfile.path);
+    final success = await context.read<ChatProvider>().sendImageMessage(
+          _conversationId!,
+          await xfile.readAsBytes(),
+          xfile.name,
+        );
     
     if (!success && mounted) {
       AppToasts.error(context, 'Failed to send image');
@@ -528,9 +539,9 @@ class _MessageBubble extends StatelessWidget {
                   if (fromMe) ...[
                     const SizedBox(width: 4),
                     Icon(
-                      message.read ? Icons.done_all : Icons.done,
+                      message.isRead ? Icons.done_all : Icons.done,
                       size: 12,
-                      color: message.read
+                      color: message.isRead
                           ? Colors.white.withValues(alpha: 0.8)
                           : Colors.white.withValues(alpha: 0.4),
                     ),

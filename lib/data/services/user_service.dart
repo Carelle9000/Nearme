@@ -14,51 +14,58 @@ class UserService {
   }) async {
     try {
       final collectionRef = _db.collection('profiles');
-      print('DEBUG: Fetching potential matches for $currentUserId');
 
       // Récupérer uniquement mon propre ID pour ne pas me voir moi-même
       Set<String> excludedIds = {currentUserId};
 
-      /*
-      // Commenté pour permettre la boucle infinie demandée par l'utilisateur
-      try {
-        final sentLikes = await collectionRef.doc(currentUserId).collection('sent_likes').get();
-        final nopes = await collectionRef.doc(currentUserId).collection('nopes').get();
-        excludedIds.addAll(sentLikes.docs.map((d) => d.id));
-        excludedIds.addAll(nopes.docs.map((d) => d.id));
-      } catch (e) {}
-      */
-
-      // 1. Si on a une position centrale, on fait une geo-query
-      if (center != null && filters != null) {
-        // ... (code existant pour geo-query)
-      }
-
-      // 2. Fallback sans geo-query (Récupère tout le monde pour débugger)
-      print('DEBUG: Running fallback query on "profiles" collection...');
-
-      // On enlève temporairement le filtre verifiedOnly pour être sûr de voir des profils
-      Query query = collectionRef.limit(50);
-
-      final querySnapshot = await query.get();
-      print('DEBUG: Found ${querySnapshot.docs.length} total documents in "profiles"');
+      // Récupérer tout et appliquer les filtres côté client
+      final querySnapshot = await collectionRef.limit(100).get();
 
       final results = querySnapshot.docs
           .where((doc) {
-            final isExcluded = excludedIds.contains(doc.id);
-            if (isExcluded) print('DEBUG: Filtering out excluded doc: ${doc.id}');
-            return !isExcluded;
+            if (excludedIds.contains(doc.id)) return false;
+            return true;
           })
           .map((doc) {
-            final data = doc.data() as Map<String, dynamic>;
+            final data = doc.data();
             final appUser = AppUser.fromFirestore({...data, 'id': doc.id}, null);
             return Profile.fromAppUser(appUser);
-          }).toList();
+          })
+          .where((profile) {
+            // Appliquer les filtres
+            if (filters == null) return true;
 
-      print('DEBUG: Returning ${results.length} profiles to the UI');
+            // Filtre par âge
+            if (profile.age < filters.ageMin || profile.age > filters.ageMax) {
+              return false;
+            }
+
+            // Filtre par distance (approximatif sans géolocalisation)
+            // À améliorer avec une vraie géolocalisation
+            // if (profile.distanceKm > filters.radiusKm) return false;
+
+            // Filtre par vérification
+            if (filters.verifiedOnly && !profile.verified) {
+              return false;
+            }
+
+            // Filtre par statut en ligne
+            if (filters.onlineOnly && !profile.online) {
+              return false;
+            }
+
+            // Filtre par spots partagés
+            if (filters.sharedOnly && !profile.sharedSpots) {
+              return false;
+            }
+
+            return true;
+          })
+          .toList();
+
       return results;
     } catch (e) {
-      print('Error fetching users (Global Catch): $e');
+      print('Error fetching users: $e');
       return [];
     }
   }
@@ -135,6 +142,34 @@ class UserService {
 
   Future<List<Profile>> getFavorites(String currentUserId) async {
     final snapshot = await _db.collection('profiles').doc(currentUserId).collection('favorites').get();
+    final ids = snapshot.docs.map((doc) => doc.id).toList();
+
+    if (ids.isEmpty) return [];
+
+    final profilesSnapshot = await _db.collection('profiles').where(FieldPath.documentId, whereIn: ids).get();
+    return profilesSnapshot.docs.map((doc) {
+      final data = doc.data();
+      final appUser = AppUser.fromFirestore({...data, 'id': doc.id}, null);
+      return Profile.fromAppUser(appUser);
+    }).toList();
+  }
+
+  Future<List<Profile>> getLikes(String currentUserId) async {
+    final snapshot = await _db.collection('profiles').doc(currentUserId).collection('received_likes').get();
+    final ids = snapshot.docs.map((doc) => doc.id).toList();
+
+    if (ids.isEmpty) return [];
+
+    final profilesSnapshot = await _db.collection('profiles').where(FieldPath.documentId, whereIn: ids).get();
+    return profilesSnapshot.docs.map((doc) {
+      final data = doc.data();
+      final appUser = AppUser.fromFirestore({...data, 'id': doc.id}, null);
+      return Profile.fromAppUser(appUser);
+    }).toList();
+  }
+
+  Future<List<Profile>> getSentLikes(String currentUserId) async {
+    final snapshot = await _db.collection('profiles').doc(currentUserId).collection('sent_likes').get();
     final ids = snapshot.docs.map((doc) => doc.id).toList();
 
     if (ids.isEmpty) return [];

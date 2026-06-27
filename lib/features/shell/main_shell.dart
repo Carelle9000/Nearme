@@ -12,8 +12,8 @@ import '../matches/matches_provider.dart';
 import '../matches/matches_screen.dart';
 import '../notifications/notifications_provider.dart';
 import '../notifications/notifications_screen.dart';
-import '../favorites/favorites_provider.dart';
-import '../favorites/favorites_screen.dart';
+import '../likes/likes_provider.dart';
+import '../likes/likes_screen.dart';
 import '../profile/profile_screen.dart';
 import '../chat/chat_provider.dart';
 import '../chat/conversations_list_screen.dart';
@@ -48,7 +48,8 @@ class _MainShellState extends State<MainShell> with WidgetsBindingObserver {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) {
           context.read<MatchesProvider>().init(user.id);
-          context.read<FavoritesProvider>().loadFavorites(user.id);
+          context.read<ChatProvider>().init(user.id);
+          context.read<LikesProvider>().loadLikes(user.id);
           context.read<NotificationsProvider>().init(user.id);
           auth.updatePresence(true);
         }
@@ -92,7 +93,7 @@ class _MainShellState extends State<MainShell> with WidgetsBindingObserver {
     DiscoverScreen(),
     MatchesScreen(), // ❤️ Matchs
     ConversationsListScreen(), // 💬 Messages (new Firestore chat system)
-    FavoritesScreen(), // ⭐ Favoris
+    LikesScreen(), // 💖 Likes
     ProfileScreen(), // 👤 Profil
   ];
 
@@ -186,9 +187,9 @@ class _ModernBottomNav extends StatelessWidget {
                    onTap: () => onTap(2),
                  ),
                   _ModernNavItem(
-                    icon: Icons.star_outline_rounded,
-                    activeIcon: Icons.star_rounded,
-                    label: 'Favorites',
+                    icon: Icons.favorite_outline_rounded,
+                    activeIcon: Icons.favorite_rounded,
+                    label: 'Likes',
                     active: currentIndex == 3,
                     onTap: () => onTap(3),
                   ),

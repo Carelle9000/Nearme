@@ -2,7 +2,7 @@ import 'dart:io';
 import 'dart:typed_data';
 import 'dart:convert';
 
-import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:flutter/foundation.dart' show debugPrint, kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 
@@ -69,7 +69,7 @@ class _SignedPhotoImageState extends State<SignedPhotoImage> {
 
     try {
       // Gérer les URLs Base64 sur le web
-      if (kIsWeb && path.startsWith('data:image/')) {
+      if (path.startsWith('data:image/')) {
         final bytes = _base64ToBytes(path);
         if (mounted) {
           setState(() {
@@ -79,12 +79,16 @@ class _SignedPhotoImageState extends State<SignedPhotoImage> {
         }
       } else if (PhotoService.isLocalFilePath(path)) {
         if (kIsWeb) {
-          final bytes = await XFile(path).readAsBytes();
-          if (mounted) {
-            setState(() {
-              _localBytes = bytes;
-              _loading = false;
-            });
+          try {
+            final bytes = await XFile(path).readAsBytes();
+            if (mounted) {
+              setState(() {
+                _localBytes = bytes;
+                _loading = false;
+              });
+            }
+          } catch (_) {
+            if (mounted) setState(() { _loading = false; _error = true; });
           }
         } else {
           if (mounted) {
@@ -95,14 +99,19 @@ class _SignedPhotoImageState extends State<SignedPhotoImage> {
           }
         }
       } else {
-        if (mounted) {
-          setState(() {
-            _remoteUrl = PhotoService.resolveDisplayUrl(path);
-            _loading = false;
-          });
+        final displayUrl = PhotoService.resolveDisplayUrl(path);
+        if (displayUrl.isNotEmpty) {
+          if (mounted) {
+            setState(() {
+              _remoteUrl = displayUrl;
+              _loading = false;
+            });
+          }
+        } else {
+          if (mounted) setState(() { _loading = false; _error = true; });
         }
       }
-    } catch (_) {
+    } catch (e) {
       if (mounted) setState(() { _loading = false; _error = true; });
     }
   }
@@ -143,11 +152,15 @@ class _SignedPhotoImageState extends State<SignedPhotoImage> {
         fit: widget.fit,
         cacheWidth: widget.cacheWidth,
         cacheHeight: widget.cacheHeight,
+        headers: const {'Cache-Control': 'max-age=604800'},
         loadingBuilder: (_, child, progress) {
           if (progress == null) return child;
           return const _ShimmerTile();
         },
-        errorBuilder: (_, __, ___) => const _ErrorTile(),
+        errorBuilder: (_, exception, stackTrace) {
+          debugPrint('Image load error: $exception');
+          return const _ErrorTile();
+        },
       );
     }
 

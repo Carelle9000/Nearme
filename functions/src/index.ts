@@ -404,118 +404,170 @@ export const getVerificationStatus = onCall(
 // CHAT NOTIFICATIONS
 // ─────────────────────────────────────────────────────────────────────────────
 
+// ─────────────────────────────────────────────────────────────────────────────
+// CHAT NOTIFICATIONS - Auto-triggered on new message
+// ─────────────────────────────────────────────────────────────────────────────
+
+import {onDocumentCreated} from "firebase-functions/v2/firestore";
+
 /**
- * Sends a push notification when a new message is sent
- * Triggered by Firestore onCreate event on messages
+ * Sends push notifications when a new message is created
+ * Automatically triggered by Firestore onCreate event
+ *
+ * Firestore path: conversations/{conversationId}/messages/{messageId}
  */
-export const onNewMessage = onCall(
-  {region: "europe-west1", enforceAppCheck: false},
-  async (request) => {
-    const data = request.data as {
-      conversationId: string;
-      senderId: string;
-      senderName: string;
-      senderPhoto?: string;
-      messageContent: string;
-      messageType: string;
-    };
-
-    const {
-      conversationId,
-      senderId,
-      senderName,
-      messageContent,
-      messageType,
-    } = data;
-
-    if (!conversationId || !senderId || !messageContent) {
-      throw new Error("Missing required fields");
-    }
-
+export const onMessageCreated = onDocumentCreated(
+  {
+    document: "conversations/{conversationId}/messages/{messageId}",
+    region: "europe-west1",
+  },
+  async (event) => {
     try {
-      // Get conversation to find recipient
+      const snapshot = event.data;
+      if (!snapshot) {
+        logger.error("[Chat] No document data in event");
+        return;
+      }
+
+      const messageData = snapshot.data();
+      const conversationId = event.params.conversationId;
+      const messageId = event.params.messageId;
+
+      // Validate message data
+      const senderId = messageData.senderId as string | undefined;
+      const content = messageData.content as string | undefined;
+      const type = messageData.type as string | undefined;
+
+      if (!conversationId || !senderId || !content) {
+        logger.warn("[Chat] Invalid message data", {
+          conversationId,
+          senderId,
+          messageId,
+        });
+        return;
+      }
+
+      // Get conversation document to find recipient
       const conversationDoc = await db
         .collection("conversations")
         .doc(conversationId)
         .get();
+
       if (!conversationDoc.exists) {
         logger.warn(`[Chat] Conversation not found: ${conversationId}`);
-        return {success: false};
+        return;
       }
 
       const conversation = conversationDoc.data();
-      const participants = conversation?.participants as string[] || [];
+      if (!conversation) {
+        logger.warn(`[Chat] No conversation data: ${conversationId}`);
+        return;
+      }
+
+      const participants = (conversation.participants as string[]) || [];
+      if (!Array.isArray(participants) || participants.length < 2) {
+        logger.warn(
+          `[Chat] Invalid participants in conversation: ${conversationId}`,
+        );
+        return;
+      }
 
       // Find recipient (the other participant)
       const recipientId = participants.find((id) => id !== senderId);
       if (!recipientId) {
-        logger.warn("[Chat] No recipient found");
-        return {success: false};
+        logger.warn("[Chat] No recipient found", {
+          conversationId,
+          participants,
+          senderId,
+        });
+        return;
       }
 
-      // Get recipient's FCM tokens
+      // Get sender profile for name
+      const senderDoc = await db.collection("profiles").doc(senderId).get();
+      const senderName = senderDoc.data()?.name || "Unknown";
+
+      // Get recipient profile and FCM tokens
       const recipientDoc = await db
         .collection("profiles")
         .doc(recipientId)
         .get();
+
       if (!recipientDoc.exists) {
-        logger.warn(`[Chat] Recipient not found: ${recipientId}`);
-        return {success: false};
+        logger.warn(`[Chat] Recipient profile not found: ${recipientId}`);
+        return;
       }
 
-      const recipient = recipientDoc.data();
-      const fcmTokens = recipient?.fcmTokens as Record<string, boolean> || {};
-      const tokens = Object.keys(fcmTokens);
+      const recipientData = recipientDoc.data();
+      const fcmTokens = (recipientData?.fcmTokens as Record<string, boolean>) ||
+        {};
+      const tokens = Object.keys(fcmTokens).filter((token) => fcmTokens[token]);
 
       if (tokens.length === 0) {
         logger.info(`[Chat] No FCM tokens for recipient: ${recipientId}`);
-        return {success: false};
+        return;
       }
 
       // Prepare notification content
-      const title = `New message from ${senderName}`;
-      let body = messageContent;
+      const notificationTitle = `Message from ${senderName}`;
+      let notificationBody = content;
 
-      if (messageType === "image") {
-        body = "📷 Sent a photo";
-      } else if (messageType === "voice") {
-        body = "🎤 Sent a voice message";
+      // Handle different message types
+      if (type === "image") {
+        notificationBody = "📷 Sent a photo";
+      } else if (type === "voice") {
+        notificationBody = "🎤 Sent a voice message";
       }
 
-      // Trim body if too long
-      if (body.length > 100) {
-        body = body.substring(0, 97) + "...";
+      // Truncate body if too long
+      if (notificationBody.length > 100) {
+        notificationBody = notificationBody.substring(0, 97) + "...";
       }
 
-      // Send notification
-      const message = {
+      // Prepare FCM message
+      const fcmMessage = {
         notification: {
-          title,
-          body,
+          title: notificationTitle,
+          body: notificationBody,
         },
         data: {
-          conversationId,
-          senderId,
+          conversationId: conversationId,
+          senderId: senderId,
+          messageId: messageId,
           type: "chat_message",
         },
-        tokens,
+        tokens: tokens,
       };
 
-      const response = await admin
-        .messaging()
-        .sendEachForMulticast(message);
+      // Send multicast notification
+      const response = await admin.messaging().sendEachForMulticast(fcmMessage);
 
-      logger.info(
-        `[Chat] Notification sent to ${tokens.length} tokens, ` +
-          `${response.successCount} successful`,
-      );
+      logger.info("[Chat] Notification sent", {
+        conversationId,
+        recipientId,
+        tokensCount: tokens.length,
+        successCount: response.successCount,
+        failureCount: response.failureCount,
+      });
 
-      // Clean up invalid tokens
+      // Clean up invalid/expired tokens
       if (response.failureCount > 0) {
         const invalidTokens: string[] = [];
-        response.responses.forEach((resp, idx: number) => {
+        response.responses.forEach((resp, idx) => {
           if (!resp.success) {
-            invalidTokens.push(tokens[idx]);
+            const error = resp.error;
+            // Only delete tokens with specific errors
+            if (
+              error &&
+              (error.code === "messaging/invalid-registration-token" ||
+                error.code === "messaging/registration-token-not-registered")
+            ) {
+              invalidTokens.push(tokens[idx]);
+              logger.warn("[Chat] Invalid token to clean up", {
+                token: tokens[idx].substring(0, 10) + "...",
+                error: error.code,
+              });
+            }
           }
         });
 
@@ -527,17 +579,28 @@ export const onNewMessage = onCall(
             ] = admin.firestore.FieldValue.delete();
           });
 
-          await db.collection("profiles").doc(recipientId).update(updateData);
-          logger.info(
-            `[Chat] Cleaned up ${invalidTokens.length} invalid tokens`,
-          );
+          await db
+            .collection("profiles")
+            .doc(recipientId)
+            .update(updateData)
+            .catch((err) => {
+              logger.warn("[Chat] Failed to clean up invalid tokens", {
+                error: err,
+                recipientId,
+              });
+            });
+
+          logger.info("[Chat] Cleaned up invalid tokens", {
+            count: invalidTokens.length,
+            recipientId,
+          });
         }
       }
-
-      return {success: true, sentCount: response.successCount};
     } catch (error) {
-      logger.error("[Chat] Error sending notification:", error);
-      throw error;
+      logger.error("[Chat] Error sending notification", {
+        error: error instanceof Error ? error.message : String(error),
+      });
+      // Don't rethrow - allow function to complete gracefully
     }
-  }
+  },
 );

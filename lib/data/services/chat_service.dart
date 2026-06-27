@@ -1,258 +1,328 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
+import 'dart:typed_data';
+
+import 'package:firebase_database/firebase_database.dart';
+import 'package:firebase_storage/firebase_storage.dart';
+import 'package:flutter/foundation.dart';
+
 import '../models/conversation.dart';
 
-/// Service de messagerie pour NearMe
-/// Gère les conversations et messages avec Firestore
+/// Service de chat pour Realtime Database
+/// Structure: matches/{matchId}/messages/{messageId}
 class ChatService {
-  final FirebaseFirestore _db = FirebaseFirestore.instance;
+  final FirebaseDatabase _db = FirebaseDatabase.instance;
 
-  /// Génère un ID de conversation unique basé sur les IDs des participants
-  String _generateConversationId(String user1, String user2) {
+  String _generateMatchId(String user1, String user2) {
     return user1.compareTo(user2) <= 0 ? '${user1}_$user2' : '${user2}_$user1';
   }
 
-  /// Vérifie si un match existe entre deux utilisateurs
-  Future<bool> checkMatchExists(String user1, String user2) async {
-    final matchId = _generateConversationId(user1, user2);
-    final matchDoc = await _db.collection('matches').doc(matchId).get();
-    return matchDoc.exists;
-  }
-
-  /// Crée une nouvelle conversation entre deux utilisateurs
-  /// Vérifie d'abord si un match existe
+  /// Crée ou récupère une conversation (match) entre deux utilisateurs
   Future<String?> createConversation(String user1, String user2) async {
-    // Vérifier si le match existe
-    final matchExists = await checkMatchExists(user1, user2);
-    if (!matchExists) {
-      throw Exception('No match exists between these users');
+    try {
+      final matchId = _generateMatchId(user1, user2);
+      final matchRef = _db.ref('matches/$matchId');
+
+      final snapshot = await matchRef.get();
+
+      if (!snapshot.exists) {
+        // Créer le match
+        await matchRef.set({
+          'userId1': user1,
+          'userId2': user2,
+          'matchedAt': DateTime.now().millisecondsSinceEpoch,
+        });
+      }
+
+      return matchId;
+    } catch (e) {
+      debugPrint('❌ Error creating conversation: $e');
+      return null;
     }
-
-    final conversationId = _generateConversationId(user1, user2);
-    
-    // Vérifier si la conversation existe déjà
-    final existingConv = await _db.collection('conversations').doc(conversationId).get();
-    if (existingConv.exists) {
-      return conversationId;
-    }
-
-    // Créer la conversation
-    await _db.collection('conversations').doc(conversationId).set({
-      'participants': [user1, user2],
-      'lastMessage': null,
-      'lastMessageAt': FieldValue.serverTimestamp(),
-      'createdAt': FieldValue.serverTimestamp(),
-      'unreadCount': {user1: 0, user2: 0},
-    });
-
-    return conversationId;
   }
 
   /// Envoie un message texte
   Future<void> sendTextMessage(
-    String conversationId,
+    String matchId,
     String senderId,
     String content,
   ) async {
-    final messageRef = _db
-        .collection('conversations')
-        .doc(conversationId)
-        .collection('messages')
-        .doc();
+    try {
+      final messageRef = _db.ref('matches/$matchId/messages').push();
 
-    final message = ChatMessage(
-      id: messageRef.id,
-      senderId: senderId,
-      content: content,
-      type: MessageType.text,
-      createdAt: DateTime.now(),
-    );
+      await messageRef.set({
+        'senderId': senderId,
+        'text': content,
+        'sentAt': DateTime.now().millisecondsSinceEpoch,
+        'type': 'text',
+      });
 
-    await messageRef.set(message.toFirestore());
-
-    // Mettre à jour la conversation
-    await _db.collection('conversations').doc(conversationId).update({
-      'lastMessage': content,
-      'lastMessageAt': FieldValue.serverTimestamp(),
-      'unreadCount': FieldValue.increment(1),
-    });
+      if (kDebugMode) {
+        debugPrint('✓ Message sent: ${messageRef.key}');
+      }
+    } catch (e) {
+      debugPrint('❌ Error sending message: $e');
+      rethrow;
+    }
   }
 
   /// Envoie un message image
-  /// Note: Pour l'instant, cette méthode est simplifiée. 
-  /// En production, utiliser le service d'upload existant ou implémenter l'upload Firebase Storage complet.
   Future<void> sendImageMessage(
-    String conversationId,
+    String matchId,
     String senderId,
-    String imageUrl,
+    Uint8List bytes,
+    String fileName,
   ) async {
-    final messageRef = _db
-        .collection('conversations')
-        .doc(conversationId)
-        .collection('messages')
-        .doc();
+    try {
+      if (bytes.isEmpty) {
+        throw Exception('Image bytes are empty');
+      }
 
-    final message = ChatMessage(
-      id: messageRef.id,
-      senderId: senderId,
-      content: '📷 Photo',
-      type: MessageType.image,
-      createdAt: DateTime.now(),
-      imageUrl: imageUrl,
-    );
+      // Upload l'image
+      final imageUrl = await _uploadChatImage(
+        matchId,
+        senderId,
+        bytes,
+        fileName,
+      );
 
-    await messageRef.set(message.toFirestore());
+      final messageRef = _db.ref('matches/$matchId/messages').push();
 
-    // Mettre à jour la conversation
-    await _db.collection('conversations').doc(conversationId).update({
-      'lastMessage': '📷 Photo',
-      'lastMessageAt': FieldValue.serverTimestamp(),
-      'unreadCount': FieldValue.increment(1),
-    });
+      await messageRef.set({
+        'senderId': senderId,
+        'text': 'Photo',
+        'imageUrl': imageUrl,
+        'sentAt': DateTime.now().millisecondsSinceEpoch,
+        'type': 'image',
+        'fileSize': bytes.length,
+      });
+
+      if (kDebugMode) {
+        debugPrint('✓ Image message sent: ${messageRef.key}');
+      }
+    } catch (e) {
+      debugPrint('❌ Error sending image: $e');
+      rethrow;
+    }
   }
 
-  /// Marque les messages comme lus pour un utilisateur
+  /// Marque les messages comme lus
   Future<void> markMessagesAsRead(
-    String conversationId,
+    String matchId,
     String userId,
   ) async {
-    // Réinitialiser le compteur de non-lus pour cet utilisateur
-    await _db.collection('conversations').doc(conversationId).update({
-      'unreadCount.$userId': 0,
-    });
+    try {
+      final messagesRef = _db.ref('matches/$matchId/messages');
+      final snapshot = await messagesRef.get();
 
-    // Marquer tous les messages non lus de l'autre utilisateur comme lus
-    final messagesSnapshot = await _db
-        .collection('conversations')
-        .doc(conversationId)
-        .collection('messages')
-        .where('read', isEqualTo: false)
-        .where('senderId', isNotEqualTo: userId)
-        .get();
+      if (!snapshot.exists) return;
 
-    final batch = _db.batch();
-    for (final doc in messagesSnapshot.docs) {
-      batch.update(doc.reference, {'read': true});
+      final messages = snapshot.value as Map<dynamic, dynamic>?;
+      if (messages == null) return;
+
+      // Marquer tous les messages non-lus reçus comme lus
+      for (final messageId in messages.keys) {
+        final msg = messages[messageId] as Map<dynamic, dynamic>;
+        final senderId = msg['senderId'] as String?;
+
+        // Marquer comme lu si c'est un message reçu (pas du sender)
+        if (senderId != null && senderId != userId && msg['readAt'] == null) {
+          await messagesRef.child(messageId).update({
+            'readAt': DateTime.now().millisecondsSinceEpoch,
+          });
+        }
+      }
+
+      if (kDebugMode) {
+        debugPrint('✓ Messages marked as read');
+      }
+    } catch (e) {
+      debugPrint('❌ Error marking messages as read: $e');
     }
-    await batch.commit();
   }
 
   /// Supprime une conversation
-  Future<void> deleteConversation(String conversationId) async {
-    // Supprimer tous les messages
-    final messagesSnapshot = await _db
-        .collection('conversations')
-        .doc(conversationId)
-        .collection('messages')
-        .get();
+  Future<void> deleteConversation(String matchId) async {
+    try {
+      await _db.ref('matches/$matchId/messages').remove();
+      await _db.ref('matches/$matchId').remove();
 
-    final batch = _db.batch();
-    for (final doc in messagesSnapshot.docs) {
-      batch.delete(doc.reference);
+      if (kDebugMode) {
+        debugPrint('✓ Conversation deleted: $matchId');
+      }
+    } catch (e) {
+      debugPrint('❌ Error deleting conversation: $e');
+      rethrow;
     }
-    await batch.commit();
-
-    // Supprimer la conversation
-    await _db.collection('conversations').doc(conversationId).delete();
-  }
-
-  /// Stream des conversations d'un utilisateur
-  Stream<List<Conversation>> getUserConversations(String userId) {
-    return _db
-        .collection('conversations')
-        .where('participants', arrayContains: userId)
-        .orderBy('lastMessageAt', descending: true)
-        .snapshots()
-        .map((snapshot) => snapshot.docs
-            .map((doc) => Conversation.fromFirestore(doc.data(), doc.id))
-            .toList());
   }
 
   /// Stream des messages d'une conversation
-  Stream<List<ChatMessage>> getConversationMessages(String conversationId) {
+  Stream<List<ChatMessage>> getConversationMessages(String matchId) {
     return _db
-        .collection('conversations')
-        .doc(conversationId)
-        .collection('messages')
-        .orderBy('createdAt', descending: false)
-        .snapshots()
-        .map((snapshot) => snapshot.docs
-            .map((doc) => ChatMessage.fromFirestore(doc.data(), doc.id))
-            .toList());
+        .ref('matches/$matchId/messages')
+        .onValue
+        .map((event) {
+          if (!event.snapshot.exists) return <ChatMessage>[];
+
+          final messages = <ChatMessage>[];
+          final data = event.snapshot.value as Map<dynamic, dynamic>;
+
+          data.forEach((key, value) {
+            if (value is Map<dynamic, dynamic>) {
+              try {
+                messages.add(_parseMessage(key as String, value));
+              } catch (e) {
+                debugPrint('Error parsing message: $e');
+              }
+            }
+          });
+
+          // Trier par timestamp
+          messages.sort((a, b) => a.createdAt.compareTo(b.createdAt));
+          return messages;
+        })
+        .handleError((error) {
+          debugPrint('❌ Error loading messages: $error');
+          return <ChatMessage>[];
+        });
   }
 
-  /// Récupère une conversation spécifique
-  Future<Conversation?> getConversation(String conversationId) async {
-    final doc = await _db.collection('conversations').doc(conversationId).get();
-    if (!doc.exists) return null;
-    final data = doc.data();
-    if (data == null) return null;
-    return Conversation.fromFirestore(data, doc.id);
+  /// Récupère une conversation
+  Future<Conversation?> getConversation(String matchId) async {
+    try {
+      final snapshot = await _db.ref('matches/$matchId').get();
+      if (!snapshot.exists) return null;
+
+      final data = snapshot.value as Map<dynamic, dynamic>;
+      return _parseConversation(matchId, data);
+    } catch (e) {
+      debugPrint('❌ Error getting conversation: $e');
+      return null;
+    }
   }
 
-  /// Met à jour le statut "en train d'écrire"
+  /// Stream des conversations de l'utilisateur
+  Stream<List<Conversation>> getUserConversations(String userId) {
+    return _db
+        .ref('matches')
+        .onValue
+        .map((event) {
+          if (!event.snapshot.exists) return <Conversation>[];
+
+          final conversations = <Conversation>[];
+          final data = event.snapshot.value as Map<dynamic, dynamic>;
+
+          data.forEach((key, value) {
+            if (value is Map<dynamic, dynamic>) {
+              try {
+                final userId1 = value['userId1'] as String?;
+                final userId2 = value['userId2'] as String?;
+
+                // Inclure seulement les matches où l'utilisateur participe
+                if (userId1 == userId || userId2 == userId) {
+                  conversations.add(_parseConversation(key as String, value));
+                }
+              } catch (e) {
+                debugPrint('Error parsing conversation: $e');
+              }
+            }
+          });
+
+          return conversations;
+        })
+        .handleError((error) {
+          debugPrint('❌ Error loading conversations: $error');
+          return <Conversation>[];
+        });
+  }
+
+  /// Définit le statut "en train d'écrire"
   Future<void> setTypingStatus(
-    String conversationId,
+    String matchId,
     String userId,
     bool isTyping,
   ) async {
-    await _db
-        .collection('conversations')
-        .doc(conversationId)
-        .collection('typing')
-        .doc(userId)
-        .set({
-      'isTyping': isTyping,
-      'timestamp': FieldValue.serverTimestamp(),
-    });
+    try {
+      if (isTyping) {
+        await _db.ref('matches/$matchId/typing/$userId').set(
+          DateTime.now().millisecondsSinceEpoch,
+        );
+      } else {
+        await _db.ref('matches/$matchId/typing/$userId').remove();
+      }
+    } catch (e) {
+      debugPrint('❌ Error setting typing status: $e');
+    }
   }
 
-  /// Stream du statut "en train d'écrire" pour une conversation
-  Stream<Map<String, bool>> getTypingStatus(String conversationId) {
+  /// Stream du statut "en train d'écrire"
+  Stream<Map<String, bool>> getTypingStatus(String matchId) {
     return _db
-        .collection('conversations')
-        .doc(conversationId)
-        .collection('typing')
-        .snapshots()
-        .map((snapshot) {
-      final Map<String, bool> typingUsers = {};
-      for (final doc in snapshot.docs) {
-        final data = doc.data();
-        final isTyping = data['isTyping'] as bool? ?? false;
-        final timestamp = data['timestamp'] as Timestamp?;
-        
-        // Ne considérer comme "en train d'écrire" que si c'est il y a moins de 10 secondes
-        if (isTyping && timestamp != null) {
-          final timeDiff = DateTime.now().difference(timestamp.toDate());
-          if (timeDiff.inSeconds < 10) {
-            typingUsers[doc.id] = true;
-          }
-        }
-      }
-      return typingUsers;
-    });
+        .ref('matches/$matchId/typing')
+        .onValue
+        .map((event) {
+          final typingUsers = <String, bool>{};
+          if (!event.snapshot.exists) return typingUsers;
+
+          final data = event.snapshot.value as Map<dynamic, dynamic>;
+          final now = DateTime.now().millisecondsSinceEpoch;
+
+          data.forEach((userId, timestamp) {
+            if (timestamp is int) {
+              final timeDiff = now - timestamp;
+              // Expire après 10 secondes
+              if (timeDiff < 10000) {
+                typingUsers[userId as String] = true;
+              }
+            }
+          });
+
+          return typingUsers;
+        });
   }
 
   /// Bloque un utilisateur
   Future<void> blockUser(String blockerId, String blockedId) async {
-    final blockId = _generateConversationId(blockerId, blockedId);
-    await _db.collection('blocks').doc(blockId).set({
-      'blockerId': blockerId,
-      'blockedId': blockedId,
-      'createdAt': FieldValue.serverTimestamp(),
-    });
+    try {
+      final blockId = _generateMatchId(blockerId, blockedId);
+      await _db.ref('blocks/$blockId').set({
+        'blockerId': blockerId,
+        'blockedId': blockedId,
+        'createdAt': DateTime.now().millisecondsSinceEpoch,
+      });
+
+      if (kDebugMode) {
+        debugPrint('✓ User blocked: $blockedId');
+      }
+    } catch (e) {
+      debugPrint('❌ Error blocking user: $e');
+      rethrow;
+    }
   }
 
   /// Débloque un utilisateur
   Future<void> unblockUser(String blockerId, String blockedId) async {
-    final blockId = _generateConversationId(blockerId, blockedId);
-    await _db.collection('blocks').doc(blockId).delete();
+    try {
+      final blockId = _generateMatchId(blockerId, blockedId);
+      await _db.ref('blocks/$blockId').remove();
+
+      if (kDebugMode) {
+        debugPrint('✓ User unblocked: $blockedId');
+      }
+    } catch (e) {
+      debugPrint('❌ Error unblocking user: $e');
+      rethrow;
+    }
   }
 
   /// Vérifie si un utilisateur est bloqué
   Future<bool> isBlocked(String userId1, String userId2) async {
-    final blockId = _generateConversationId(userId1, userId2);
-    final doc = await _db.collection('blocks').doc(blockId).get();
-    return doc.exists;
+    try {
+      final blockId = _generateMatchId(userId1, userId2);
+      final snapshot = await _db.ref('blocks/$blockId').get();
+      return snapshot.exists;
+    } catch (e) {
+      debugPrint('❌ Error checking if blocked: $e');
+      return false;
+    }
   }
 
   /// Signale un utilisateur
@@ -261,23 +331,150 @@ class ChatService {
     String reportedUserId,
     String reason,
   ) async {
-    await _db.collection('reports').add({
-      'reporterId': reporterId,
-      'reportedUserId': reportedUserId,
-      'reason': reason,
-      'createdAt': FieldValue.serverTimestamp(),
-      'status': 'pending',
-    });
+    try {
+      await _db.ref('reports').push().set({
+        'reporterId': reporterId,
+        'reportedUserId': reportedUserId,
+        'reason': reason,
+        'createdAt': DateTime.now().millisecondsSinceEpoch,
+        'status': 'pending',
+      });
+
+      if (kDebugMode) {
+        debugPrint('✓ User reported: $reportedUserId');
+      }
+    } catch (e) {
+      debugPrint('❌ Error reporting user: $e');
+      rethrow;
+    }
   }
 
-  /// Récupère la liste des utilisateurs bloqués
+  /// Stream des utilisateurs bloqués
   Stream<List<String>> getBlockedUsers(String userId) {
     return _db
-        .collection('blocks')
-        .where('blockerId', isEqualTo: userId)
-        .snapshots()
-        .map((snapshot) => snapshot.docs
-            .map((doc) => doc.data()['blockedId'] as String)
-            .toList());
+        .ref('blocks')
+        .onValue
+        .map((event) {
+          if (!event.snapshot.exists) return <String>[];
+
+          final blockedUsers = <String>[];
+          final data = event.snapshot.value as Map<dynamic, dynamic>;
+
+          data.forEach((key, value) {
+            if (value is Map<dynamic, dynamic>) {
+              final blockerId = value['blockerId'] as String?;
+              final blockedId = value['blockedId'] as String?;
+
+              if (blockerId == userId && blockedId != null) {
+                blockedUsers.add(blockedId);
+              }
+            }
+          });
+
+          return blockedUsers;
+        });
+  }
+
+  /// Upload une image de chat
+  Future<String> _uploadChatImage(
+    String matchId,
+    String senderId,
+    Uint8List bytes,
+    String fileName,
+  ) async {
+    try {
+      const maxFileSize = 5 * 1024 * 1024; // 5MB
+      if (bytes.length > maxFileSize) {
+        throw Exception('Image too large (max 5MB)');
+      }
+
+      final safeName = fileName.replaceAll(RegExp(r'[^A-Za-z0-9._-]'), '_');
+      final timestamp = DateTime.now().millisecondsSinceEpoch;
+      final storagePath = 'chat_images/$matchId/$senderId/${timestamp}_$safeName';
+
+      final ref = FirebaseStorage.instance.ref(storagePath);
+      await ref.putData(
+        bytes,
+        SettableMetadata(
+          contentType: 'image/jpeg',
+          cacheControl: 'public, max-age=86400',
+        ),
+      );
+
+      final downloadUrl = await ref.getDownloadURL();
+
+      if (kDebugMode) {
+        debugPrint('✓ Image uploaded: $storagePath');
+      }
+
+      return downloadUrl;
+    } catch (e) {
+      debugPrint('❌ Error uploading chat image: $e');
+      rethrow;
+    }
+  }
+
+  /// Parse un message depuis les données Realtime DB
+  ChatMessage _parseMessage(String messageId, Map<dynamic, dynamic> data) {
+    final senderId = data['senderId'] as String? ?? '';
+    final text = data['text'] as String? ?? '';
+    final sentAt = data['sentAt'] as int? ?? DateTime.now().millisecondsSinceEpoch;
+    final readAt = data['readAt'] as int?;
+    final type = data['type'] as String? ?? 'text';
+    final imageUrl = data['imageUrl'] as String?;
+    final fileSize = data['fileSize'] as int?;
+
+    return ChatMessage(
+      id: messageId,
+      senderId: senderId,
+      content: text,
+      type: type == 'image' ? MessageType.image : MessageType.text,
+      createdAt: DateTime.fromMillisecondsSinceEpoch(sentAt),
+      imageUrl: imageUrl,
+      fileSize: fileSize,
+      readAt: readAt != null ? DateTime.fromMillisecondsSinceEpoch(readAt) : null,
+      status: readAt != null ? MessageStatus.read : MessageStatus.sent,
+    );
+  }
+
+  /// Parse une conversation depuis les données Realtime DB
+  Conversation _parseConversation(
+    String matchId,
+    Map<dynamic, dynamic> data,
+  ) {
+    final userId1 = data['userId1'] as String? ?? '';
+    final userId2 = data['userId2'] as String? ?? '';
+    final matchedAt = data['matchedAt'] as int?;
+    final messagesData = data['messages'] as Map<dynamic, dynamic>?;
+
+    String? lastMessage;
+    DateTime? lastMessageAt;
+
+    if (messagesData != null && messagesData.isNotEmpty) {
+      final messages = <int, String>{};
+      messagesData.forEach((key, value) {
+        if (value is Map<dynamic, dynamic>) {
+          final sentAt = value['sentAt'] as int? ?? 0;
+          final text = value['text'] as String? ?? '';
+          messages[sentAt] = text;
+        }
+      });
+
+      if (messages.isNotEmpty) {
+        final latestTime = messages.keys.reduce((a, b) => a > b ? a : b);
+        lastMessage = messages[latestTime];
+        lastMessageAt = DateTime.fromMillisecondsSinceEpoch(latestTime);
+      }
+    }
+
+    return Conversation(
+      id: matchId,
+      participants: [userId1, userId2],
+      lastMessage: lastMessage,
+      lastMessageAt: lastMessageAt,
+      createdAt: matchedAt != null
+          ? DateTime.fromMillisecondsSinceEpoch(matchedAt)
+          : DateTime.now(),
+    );
   }
 }

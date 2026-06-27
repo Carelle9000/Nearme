@@ -20,6 +20,16 @@ service firebase.storage {
                        request.auth.uid == userId;
     }
 
+    match /chat_images/{conversationId}/{userId}/{fileName} {
+      allow read: if request.auth != null;
+      allow create, update: if request.auth != null &&
+                      request.auth.uid == userId &&
+                      request.resource.size < 5 * 1024 * 1024 &&
+                      request.resource.contentType.matches('image/.*');
+      allow delete: if request.auth != null &&
+                       request.auth.uid == userId;
+    }
+
     // Deny everything else by default
     match /{allPaths=**} {
       allow read, write: if false;

@@ -43,17 +43,26 @@ class NotificationsScreen extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Padding(
-                  padding: const EdgeInsets.fromLTRB(24, 20, 24, 10),
+                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 10),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text(
-                        'Notifications',
-                        style: GoogleFonts.fraunces(
-                          fontSize: 32,
-                          fontWeight: FontWeight.w600,
-                          color: Colors.white,
-                        ),
+                      Row(
+                        children: [
+                          IconButton(
+                            icon: const Icon(Icons.arrow_back_ios_rounded, color: Colors.white),
+                            onPressed: () => Navigator.of(context).pop(),
+                          ),
+                          Text(
+                            'Notifications',
+                            style: GoogleFonts.fraunces(
+                              fontSize: 28,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.white,
+                              letterSpacing: -0.5,
+                            ),
+                          ),
+                        ],
                       ),
                       if (provider.unreadCount > 0)
                         TextButton(
@@ -63,6 +72,7 @@ class NotificationsScreen extends StatelessWidget {
                             style: GoogleFonts.dmSans(
                               color: AppColors.violet,
                               fontWeight: FontWeight.w600,
+                              fontSize: 12,
                             ),
                           ),
                         ),

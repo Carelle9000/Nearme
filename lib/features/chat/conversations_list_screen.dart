@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 
 import '../../core/theme/app_colors.dart';
+import '../../core/router/app_routes.dart';
 import '../../core/widgets/signed_photo_image.dart';
 import '../../data/models/conversation.dart';
 import '../../data/models/app_user.dart';
@@ -93,7 +94,7 @@ class _ConversationsListScreenState extends State<ConversationsListScreen> {
 
     // Naviguer vers l'écran de conversation
     Navigator.of(context).pushNamed(
-      '/chat/conversation',
+      AppRoutes.conversation,
       arguments: {
         'conversationId': conversation.id,
         'otherUserId': otherUserId,
