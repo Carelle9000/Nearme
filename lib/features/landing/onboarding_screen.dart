@@ -1,12 +1,13 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:cached_network_image/cached_network_image.dart';
+import 'package:provider/provider.dart';
 
 import '../../core/router/app_routes.dart';
 import '../../core/theme/app_colors.dart';
-
+import '../../core/theme/app_spacing.dart';
 import '../locale/locale_provider.dart';
-import 'package:provider/provider.dart';
 
 class OnboardingScreen extends StatefulWidget {
   const OnboardingScreen({super.key});
@@ -47,8 +48,12 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         curve: Curves.easeInOutCubic,
       );
     } else {
-      Navigator.of(context).pushNamed(AppRoutes.languageSelect);
+      Navigator.of(context).pushNamed(AppRoutes.langSelect);
     }
+  }
+
+  void _skip() {
+    Navigator.of(context).pushReplacementNamed(AppRoutes.langSelect);
   }
 
   @override
@@ -98,6 +103,26 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             itemBuilder: (context, index) {
               return _OnboardingPage(data: pages[index]);
             },
+          ),
+
+          // Top Skip Button
+          Positioned(
+            top: 20,
+            right: 20,
+            child: SafeArea(
+              child: TextButton(
+                onPressed: _skip,
+                child: Text(
+                  'Skip',
+                  style: GoogleFonts.dmSans(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.white.withValues(alpha: 0.6),
+                    letterSpacing: 0.5,
+                  ),
+                ),
+              ),
+            ),
           ),
 
           // Navigation and Dots
@@ -191,7 +216,7 @@ class _OnboardingPage extends StatelessWidget {
           Stack(
             alignment: Alignment.center,
             children: [
-              // Rotating decorative ring (static for now)
+              // Rotating decorative ring
               Container(
                 width: 300,
                 height: 300,
@@ -203,15 +228,12 @@ class _OnboardingPage extends StatelessWidget {
                   ),
                 ),
               ),
+              // Cached Network Image with Placeholder
               Container(
                 width: 260,
                 height: 260,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  image: DecorationImage(
-                    image: NetworkImage(data.image),
-                    fit: BoxFit.cover,
-                  ),
                   boxShadow: [
                     BoxShadow(
                       color: Colors.black.withValues(alpha: 0.3),
@@ -219,6 +241,47 @@ class _OnboardingPage extends StatelessWidget {
                       offset: const Offset(0, 10),
                     ),
                   ],
+                ),
+                clipBehavior: Clip.antiAlias,
+                child: CachedNetworkImage(
+                  imageUrl: data.image,
+                  fit: BoxFit.cover,
+                  placeholder: (context, url) => Container(
+                    color: AppColors.surface,
+                    child: Center(
+                      child: SizedBox(
+                        width: 40,
+                        height: 40,
+                        child: CircularProgressIndicator(
+                          color: AppColors.violet.withValues(alpha: 0.5),
+                          strokeWidth: 2,
+                        ),
+                      ),
+                    ),
+                  ),
+                  errorWidget: (context, url, error) => Container(
+                    color: AppColors.surfaceHigh,
+                    child: Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.image_not_supported_rounded,
+                            color: AppColors.textMuted,
+                            size: 40,
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            'Image unavailable',
+                            style: GoogleFonts.dmSans(
+                              fontSize: 12,
+                              color: AppColors.textMuted,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
                 ),
               ),
               // Icon Badge

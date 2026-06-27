@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import 'app_colors.dart';
+import 'app_spacing.dart';
 
 class AppTheme {
   AppTheme._();
@@ -92,19 +93,26 @@ class AppTheme {
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
         fillColor: AppColors.surface,
-        contentPadding:
-            const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
+        contentPadding: AppSpacing.inputContentPadding,
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: BorderRadius.circular(AppSpacing.inputBorderRadius),
           borderSide: BorderSide.none,
         ),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: BorderRadius.circular(AppSpacing.inputBorderRadius),
           borderSide: const BorderSide(color: AppColors.border, width: 1),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: BorderRadius.circular(AppSpacing.inputBorderRadius),
           borderSide: const BorderSide(color: AppColors.violet, width: 1.5),
+        ),
+        errorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(AppSpacing.inputBorderRadius),
+          borderSide: const BorderSide(color: Color(0xFFEF4444), width: 1),
+        ),
+        focusedErrorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(AppSpacing.inputBorderRadius),
+          borderSide: const BorderSide(color: Color(0xFFEF4444), width: 1.5),
         ),
         hintStyle:
             const TextStyle(color: AppColors.textMuted, fontSize: 15),
@@ -115,9 +123,10 @@ class AppTheme {
           backgroundColor: AppColors.violet,
           foregroundColor: Colors.white,
           elevation: 0,
-          padding: const EdgeInsets.symmetric(vertical: 18),
+          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg, vertical: AppSpacing.lg),
+          minimumSize: const Size.fromHeight(AppSpacing.buttonHeight),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(28),
+            borderRadius: BorderRadius.circular(AppSpacing.radiusPrimary),
           ),
           textStyle: GoogleFonts.dmSans(
             fontSize: 15,
@@ -129,9 +138,9 @@ class AppTheme {
       chipTheme: ChipThemeData(
         backgroundColor: AppColors.surface,
         selectedColor: AppColors.violet,
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.sm),
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: BorderRadius.circular(AppSpacing.radiusPrimary),
         ),
         side: const BorderSide(color: AppColors.border),
         labelStyle: GoogleFonts.dmSans(
@@ -140,9 +149,9 @@ class AppTheme {
         ),
       ),
       dialogTheme: DialogThemeData(
-        shape:
-            RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppSpacing.radiusPrimary)),
         backgroundColor: AppColors.surfaceHigh,
+        elevation: 0,
         titleTextStyle: GoogleFonts.dmSans(
           fontSize: 18,
           fontWeight: FontWeight.w600,
