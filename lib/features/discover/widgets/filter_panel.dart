@@ -304,7 +304,6 @@ class _FilterSwitch extends StatelessWidget {
           ),
           Switch(
             value: value,
-            activeColor: AppColors.violet,
             onChanged: onChanged,
           ),
         ],
