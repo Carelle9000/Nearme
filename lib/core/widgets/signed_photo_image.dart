@@ -152,7 +152,6 @@ class _SignedPhotoImageState extends State<SignedPhotoImage> {
         fit: widget.fit,
         cacheWidth: widget.cacheWidth,
         cacheHeight: widget.cacheHeight,
-        headers: const {'Cache-Control': 'max-age=604800'},
         loadingBuilder: (_, child, progress) {
           if (progress == null) return child;
           return const _ShimmerTile();
