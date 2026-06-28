@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
+import 'package:firebase_auth/firebase_auth.dart' as auth;
 
 import '../../core/theme/app_colors.dart';
+import '../../data/models/conversation.dart' as conv;
 import '../matches/matches_provider.dart';
+import 'chat_provider.dart';
 
 class ChatScreen extends StatefulWidget {
   const ChatScreen({super.key});
@@ -29,7 +32,8 @@ class _ChatScreenState extends State<ChatScreen> {
       _idResolved = true;
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) {
-          context.read<MatchesProvider>().markAsRead(_matchId);
+          context.read<ChatProvider>().loadConversationMessages(_matchId);
+          context.read<ChatProvider>().markAsRead(_matchId);
         }
       });
     }
@@ -42,11 +46,11 @@ class _ChatScreenState extends State<ChatScreen> {
     super.dispose();
   }
 
-  void _send() {
+  void _send() async {
     final text = _controller.text.trim();
     if (text.isEmpty) return;
-    context.read<MatchesProvider>().sendMessage(_matchId, text);
     _controller.clear();
+    await context.read<ChatProvider>().sendTextMessage(_matchId, text);
   }
 
   void _scrollToBottomIfNeeded(int messageCount) {
@@ -64,9 +68,11 @@ class _ChatScreenState extends State<ChatScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final cp = context.watch<ChatProvider>();
     final mp = context.watch<MatchesProvider>();
-    final idx = mp.matches.indexWhere((m) => m.id == _matchId);
 
+    // Trouver le match pour obtenir le profil
+    final idx = mp.matches.indexWhere((m) => m.id == _matchId);
     if (idx < 0) {
       return const Scaffold(
         backgroundColor: AppColors.bg,
@@ -77,13 +83,8 @@ class _ChatScreenState extends State<ChatScreen> {
     }
 
     final entry = mp.matches[idx];
-    final messageCount = entry.messages.length;
-
-    if (entry.hasUnread) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) context.read<MatchesProvider>().markAsRead(_matchId);
-      });
-    }
+    final messages = cp.getMessages(_matchId);
+    final messageCount = messages.length;
 
     _scrollToBottomIfNeeded(messageCount);
 
@@ -171,14 +172,14 @@ class _ChatScreenState extends State<ChatScreen> {
       body: Column(
         children: [
           Expanded(
-            child: entry.messages.isEmpty
+            child: messages.isEmpty
                 ? _MatchedHero(entry: entry)
                 : ListView.builder(
                     controller: _scrollController,
                     padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
                     itemCount: messageCount,
                     itemBuilder: (context, i) =>
-                        _MessageBubble(msg: entry.messages[i]),
+                        _MessageBubble(msg: messages[i]),
                   ),
           ),
           _InputBar(controller: _controller, onSend: _send),
@@ -258,12 +259,14 @@ class _MatchedHero extends StatelessWidget {
 // ─────────────────────────────────────────────────────────────────────────────
 
 class _MessageBubble extends StatelessWidget {
-  final ChatMessage msg;
+  final conv.ChatMessage msg;
   const _MessageBubble({required this.msg});
 
   @override
   Widget build(BuildContext context) {
-    final fromMe = msg.fromMe;
+    final currentUserId = auth.FirebaseAuth.instance.currentUser?.uid ?? '';
+    final fromMe = msg.senderId == currentUserId;
+
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
       child: Align(
@@ -292,7 +295,7 @@ class _MessageBubble extends StatelessWidget {
                 : CrossAxisAlignment.start,
             children: [
               Text(
-                msg.text,
+                msg.content,
                 style: GoogleFonts.dmSans(
                   fontSize: 14,
                   color: fromMe
@@ -303,7 +306,7 @@ class _MessageBubble extends StatelessWidget {
               ),
               const SizedBox(height: 3),
               Text(
-                _fmt(msg.timestamp),
+                _fmt(msg.createdAt),
                 style: GoogleFonts.dmSans(
                   fontSize: 10,
                   color: fromMe

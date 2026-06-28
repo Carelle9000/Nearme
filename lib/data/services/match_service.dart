@@ -16,8 +16,10 @@ class MatchService {
       if (authenticatedUid == null) throw Exception('User not authenticated');
 
       final uid = authenticatedUid;
+      print('DEBUG: swipeLike - uid=$uid, targetId=${targetProfile.id}');
 
       // 1. Enregistrer le like envoyé
+      print('DEBUG: Writing to sent_likes');
       await _db
           .collection('profiles')
           .doc(uid)
@@ -27,8 +29,10 @@ class MatchService {
         'targetId': targetProfile.id,
         'createdAt': FieldValue.serverTimestamp(),
       });
+      print('DEBUG: sent_likes written successfully');
 
       // 2. Enregistrer le like reçu chez la cible
+      print('DEBUG: Writing to received_likes');
       await _db
           .collection('profiles')
           .doc(targetProfile.id)
@@ -38,6 +42,7 @@ class MatchService {
         'senderId': uid,
         'createdAt': FieldValue.serverTimestamp(),
       });
+      print('DEBUG: received_likes written successfully');
 
       // 3. Vérifier si l'autre m'a déjà liké (match)
       final otherLike = await _db

@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 
 import '../../data/models/app_user.dart';
 import '../../data/services/auth_service.dart';
+import '../../data/services/photo_service.dart';
 
 class AuthProvider extends ChangeNotifier {
   final AuthService _service;
@@ -73,26 +74,65 @@ class AuthProvider extends ChangeNotifier {
     }
   }
 
-  // Stub methods for compatibility (photo/profile updates handled via Firebase)
   Future<void> updateProfile(AppUser user) async {
     _user = user;
     notifyListeners();
   }
 
   Future<void> addPhotos(List<String> localPaths) async {
-    // Photos handled via PhotoService directly
+    if (_user == null) return;
+    try {
+      final uploadedUrls = await PhotoService.uploadAll(_user!.id, localPaths);
+      final currentPhotos = List<String>.from(_user?.photos ?? []);
+      currentPhotos.addAll(uploadedUrls);
+
+      _user = _user!.copyWith(photos: currentPhotos);
+      notifyListeners();
+    } catch (e) {
+      _error = 'Failed to upload photos: $e';
+      notifyListeners();
+      rethrow;
+    }
   }
 
   Future<void> replaceMainPhoto(String localPath) async {
-    // Photos handled via PhotoService directly
+    if (_user == null) return;
+    try {
+      final newPhotoUrl = await PhotoService.uploadToStorage(_user!.id, localPath, 0);
+      final currentPhotos = List<String>.from(_user?.photos ?? []);
+
+      currentPhotos.removeWhere((url) => url == newPhotoUrl);
+      currentPhotos.insert(0, newPhotoUrl);
+
+      _user = _user!.copyWith(photos: currentPhotos);
+      notifyListeners();
+    } catch (e) {
+      _error = 'Failed to update main photo: $e';
+      notifyListeners();
+      rethrow;
+    }
   }
 
   Future<void> deletePhoto(String downloadUrl) async {
-    // Photos handled via PhotoService directly
+    if (_user == null) return;
+    try {
+      await PhotoService.deleteFromStorage(downloadUrl);
+      final currentPhotos = List<String>.from(_user?.photos ?? []);
+      currentPhotos.remove(downloadUrl);
+
+      _user = _user!.copyWith(photos: currentPhotos);
+      notifyListeners();
+    } catch (e) {
+      _error = 'Failed to delete photo: $e';
+      notifyListeners();
+      rethrow;
+    }
   }
 
   Future<void> updatePresence(bool isOnline) async {
-    // Presence tracking handled via backend
+    if (_user == null) return;
+    _user = _user!.copyWith(isOnline: isOnline);
+    notifyListeners();
   }
 
   Future<void> logout() async {

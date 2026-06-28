@@ -46,12 +46,12 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         curve: Curves.easeInOutCubic,
       );
     } else {
-      Navigator.of(context).pushNamed(AppRoutes.langSelect);
+      Navigator.of(context).pushNamed(AppRoutes.langSelect, arguments: true);
     }
   }
 
   void _skip() {
-    Navigator.of(context).pushReplacementNamed(AppRoutes.langSelect);
+    Navigator.of(context).pushReplacementNamed(AppRoutes.langSelect, arguments: true);
   }
 
   @override

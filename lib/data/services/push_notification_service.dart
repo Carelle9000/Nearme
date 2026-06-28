@@ -39,9 +39,15 @@ class PushNotificationService {
       }
 
       // Récupérer et sauvegarder le token initial
-      final token = await _messaging.getToken();
-      if (token != null) {
-        await _saveTokenToFirestore(token, currentUser.uid);
+      // Sur Flutter Web, getToken() peut échouer si le service worker n'est pas disponible
+      try {
+        final token = await _messaging.getToken();
+        if (token != null) {
+          await _saveTokenToFirestore(token, currentUser.uid);
+        }
+      } catch (tokenError) {
+        // Service worker not available on web dev environment
+        debugPrint('⚠️ Warning: Could not get FCM token (likely a web development issue): $tokenError');
       }
 
       // Écouter les changements de token
