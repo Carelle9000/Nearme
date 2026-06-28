@@ -19,21 +19,13 @@ class NotificationsScreen extends StatelessWidget {
     final userId = auth.user?.id ?? '';
 
     return Scaffold(
-      backgroundColor: Colors.transparent,
       body: Stack(
         children: [
           // Background
           Positioned.fill(
             child: Container(
               decoration: const BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [
-                    Color(0xFF09090E),
-                    Color(0xFF0F172A),
-                  ],
-                ),
+                gradient: AppColors.midnightGradient,
               ),
             ),
           ),

@@ -28,24 +28,13 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
     final user = auth.user;
 
     return Scaffold(
-      backgroundColor: Colors.transparent,
       body: Stack(
         children: [
           // Premium Gradient Background
           Positioned.fill(
             child: Container(
               decoration: const BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [
-                    Color(0xFF09090E),
-                    Color(0xFF0F172A),
-                    Color(0xFF1E1B4B),
-                    Color(0xFF09090E),
-                  ],
-                  stops: [0.0, 0.3, 0.7, 1.0],
-                ),
+                gradient: AppColors.midnightGradient,
               ),
             ),
           ),

@@ -47,24 +47,13 @@ class _CountrySelectionScreenState extends State<CountrySelectionScreen> {
         .toList();
 
     return Scaffold(
-      backgroundColor: Colors.transparent,
       body: Stack(
         children: [
           // Modern Gradient Background
           Positioned.fill(
             child: Container(
               decoration: const BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topRight,
-                  end: Alignment.bottomLeft,
-                  colors: [
-                    Color(0xFF09090E),
-                    Color(0xFF1A0F2E),
-                    Color(0xFF0F172A),
-                    Color(0xFF09090E),
-                  ],
-                  stops: [0.0, 0.3, 0.7, 1.0],
-                ),
+                gradient: AppColors.midnightGradient,
               ),
             ),
           ),

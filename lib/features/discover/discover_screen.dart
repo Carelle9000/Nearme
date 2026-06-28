@@ -3,9 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 
-import '../../core/router/app_routes.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/utils/toasts.dart';
+import '../../core/utils/logout_helper.dart';
 import '../../data/models/profile.dart';
 import '../auth/auth_provider.dart';
 import '../locale/locale_provider.dart';
@@ -95,24 +95,13 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
     final locale = context.watch<LocaleProvider>();
 
     return Scaffold(
-      backgroundColor: Colors.transparent,
       body: Stack(
         children: [
           // Modern Gradient Background
           Positioned.fill(
             child: Container(
               decoration: const BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [
-                    Color(0xFF09090E),
-                    Color(0xFF0F172A),
-                    Color(0xFF1E1B4B),
-                    Color(0xFF09090E),
-                  ],
-                  stops: [0.0, 0.3, 0.7, 1.0],
-                ),
+                gradient: AppColors.midnightGradient,
               ),
             ),
           ),
@@ -295,12 +284,7 @@ class _Header extends StatelessWidget {
               const SizedBox(width: 8),
               _IconAction(
                 icon: Icons.logout_rounded,
-                onTap: () async {
-                  await context.read<AuthProvider>().logout();
-                  if (!context.mounted) return;
-                  Navigator.of(context)
-                      .pushReplacementNamed(AppRoutes.landing);
-                },
+                onTap: () => confirmLogout(context),
               ),
             ],
           ),
@@ -804,6 +788,27 @@ class _SwipeCardState extends State<_SwipeCard>
                   if (user != null) {
                     final photo = user.photos?.isNotEmpty == true ? user.photos!.first : null;
                     widget.provider.swipe(user.id, user.name, photo, SwipeAction.like, programmatic: true);
+                  }
+                },
+                onNope: () {
+                  final user = auth.user;
+                  if (user != null) {
+                    final photo = user.photos?.isNotEmpty == true ? user.photos!.first : null;
+                    widget.provider.swipe(user.id, user.name, photo, SwipeAction.nope, programmatic: true);
+                  }
+                },
+                onLike: () {
+                  final user = auth.user;
+                  if (user != null) {
+                    final photo = user.photos?.isNotEmpty == true ? user.photos!.first : null;
+                    widget.provider.swipe(user.id, user.name, photo, SwipeAction.like, programmatic: true);
+                  }
+                },
+                onSuperLike: () {
+                  final user = auth.user;
+                  if (user != null) {
+                    final photo = user.photos?.isNotEmpty == true ? user.photos!.first : null;
+                    widget.provider.swipe(user.id, user.name, photo, SwipeAction.superLike, programmatic: true);
                   }
                 },
               ),

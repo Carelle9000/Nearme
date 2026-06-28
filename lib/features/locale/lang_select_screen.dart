@@ -54,7 +54,6 @@ class _LangSelectScreenState extends State<LangSelectScreen> {
         .toList();
 
     return Scaffold(
-      backgroundColor: Colors.transparent,
       body: Stack(
         children: [
           // Modern Background
