@@ -20,22 +20,28 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
   List<OnboardingData> _getPages(String Function(String) t) => [
     OnboardingData(
-      title: t('realProximityTitle'),
-      description: t('realProximityDesc'),
-      image: 'https://images.unsplash.com/photo-1516738901171-8eb4fc13bd20?q=80&w=2070&auto=format&fit=crop',
-      icon: Icons.location_on_rounded,
+      title: 'Créez un profil sincère',
+      description: 'Quelques photos, vos centres d\'intérêt, une vraie présentation. La vérification d\'identité renforce la confiance.',
+      image: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?q=80&w=2070&auto=format&fit=crop',
+      icon: Icons.person_add_rounded,
     ),
     OnboardingData(
-      title: t('maxSafetyTitle'),
-      description: t('maxSafetyDesc'),
-      image: 'https://images.unsplash.com/photo-1557200134-90327ee9fafa?q=80&w=2070&auto=format&fit=crop',
-      icon: Icons.verified_user_rounded,
+      title: 'Découvrez avec attention',
+      description: 'Pas d\'avalanche de profils : on vous propose des personnes qui correspondent à vos critères et à votre énergie.',
+      image: 'https://images.unsplash.com/photo-1518895949257-7621c3c786d7?q=80&w=2070&auto=format&fit=crop',
+      icon: Icons.search_rounded,
     ),
     OnboardingData(
-      title: t('instantConnectionsTitle'),
-      description: t('instantConnectionsDesc'),
-      image: 'https://images.unsplash.com/photo-1521737604893-d14cc237f11d?q=80&w=2070&auto=format&fit=crop',
-      icon: Icons.bolt_rounded,
+      title: 'Discutez en confiance',
+      description: 'Vous échangez uniquement après accord mutuel. Outils anti-spam, blocage et signalement à portée de main.',
+      image: 'https://images.unsplash.com/photo-1516981169035-fa3817265eed?q=80&w=2070&auto=format&fit=crop',
+      icon: Icons.message_rounded,
+    ),
+    OnboardingData(
+      title: 'Une communauté protégée',
+      description: 'Modération humaine, conseils de sécurité avant chaque rencontre, contrôle complet sur votre visibilité.',
+      image: 'https://images.unsplash.com/photo-1529156069898-49953e39b3ac?q=80&w=2070&auto=format&fit=crop',
+      icon: Icons.verified_rounded,
     ),
   ];
 
@@ -66,15 +72,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
           Positioned.fill(
             child: Container(
               decoration: const BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [
-                    Color(0xFF09090E), // Deep black-blue
-                    Color(0xFF0F172A), // Slate 900
-                    Color(0xFF1E1B4B), // Indigo/Midnight (AppColors.purple)
-                  ],
-                ),
+                gradient: AppColors.midnightGradient,
               ),
             ),
           ),

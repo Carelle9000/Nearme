@@ -8,91 +8,97 @@ class AppTheme {
   AppTheme._();
 
   static ThemeData light() {
-    final base = ThemeData.dark(useMaterial3: true);
+    final base = ThemeData.light(useMaterial3: true);
+    return _buildTheme(base, appColorsLight, isLight: true);
+  }
 
-    // Body → DM Sans (clean geometric, excellent lisibilité sur dark)
+  static ThemeData dark() {
+    final base = ThemeData.dark(useMaterial3: true);
+    return _buildTheme(base, appColorsDark, isLight: false);
+  }
+
+  static ThemeData _buildTheme(ThemeData base, ColorPalette colors, {required bool isLight}) {
     final bodyBase = GoogleFonts.dmSansTextTheme(base.textTheme);
 
-    // Fusion : titres Fraunces (Serif éditorial moderne), corps DM Sans
     final textTheme = bodyBase
         .copyWith(
           displayLarge: GoogleFonts.fraunces(
             fontSize: 48,
             fontWeight: FontWeight.w700,
-            color: AppColors.textPrimary,
+            color: colors.textPrimary,
             letterSpacing: -1.5,
             height: 1.05,
           ),
           displayMedium: GoogleFonts.fraunces(
             fontSize: 38,
             fontWeight: FontWeight.w600,
-            color: AppColors.textPrimary,
+            color: colors.textPrimary,
             letterSpacing: -1.0,
             height: 1.1,
           ),
           headlineLarge: GoogleFonts.fraunces(
             fontSize: 30,
             fontWeight: FontWeight.w600,
-            color: AppColors.textPrimary,
+            color: colors.textPrimary,
             height: 1.2,
           ),
           headlineMedium: GoogleFonts.fraunces(
             fontSize: 24,
             fontWeight: FontWeight.w500,
-            color: AppColors.textPrimary,
+            color: colors.textPrimary,
             height: 1.2,
           ),
           headlineSmall: GoogleFonts.fraunces(
             fontSize: 20,
             fontWeight: FontWeight.w500,
-            color: AppColors.textPrimary,
+            color: colors.textPrimary,
           ),
           titleLarge: GoogleFonts.dmSans(
             fontSize: 18,
             fontWeight: FontWeight.w600,
-            color: AppColors.textPrimary,
+            color: colors.textPrimary,
           ),
           titleMedium: GoogleFonts.dmSans(
             fontSize: 16,
             fontWeight: FontWeight.w600,
-            color: AppColors.textPrimary,
+            color: colors.textPrimary,
           ),
           bodyLarge: GoogleFonts.dmSans(
             fontSize: 16,
-            color: AppColors.textSecondary,
+            color: colors.textSecondary,
             height: 1.6,
           ),
           bodyMedium: GoogleFonts.dmSans(
             fontSize: 14,
-            color: AppColors.textSecondary,
+            color: colors.textSecondary,
             height: 1.6,
           ),
         )
         .apply(
-          bodyColor: AppColors.textPrimary,
-          displayColor: AppColors.textPrimary,
+          bodyColor: colors.textPrimary,
+          displayColor: colors.textPrimary,
           fontFamilyFallback: ['Noto Color Emoji'],
         );
 
     return base.copyWith(
-      scaffoldBackgroundColor: AppColors.bg,
+      scaffoldBackgroundColor: colors.bg,
       colorScheme: base.colorScheme.copyWith(
-        primary: AppColors.violet,
-        secondary: AppColors.pink,
-        surface: AppColors.surface,
-        onSurface: AppColors.textPrimary,
-        error: const Color(0xFFEF4444),
+        primary: colors.violet,
+        secondary: colors.pink,
+        surface: colors.surface,
+        onSurface: colors.textPrimary,
+        error: colors.error,
       ),
       textTheme: textTheme,
-      appBarTheme: const AppBarTheme(
-        backgroundColor: AppColors.bg,
-        foregroundColor: AppColors.textPrimary,
+      appBarTheme: AppBarTheme(
+        backgroundColor: colors.bg,
+        foregroundColor: colors.textPrimary,
         elevation: 0,
         surfaceTintColor: Colors.transparent,
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: AppColors.surface,
+        fillColor: colors.surface,
         contentPadding: AppSpacing.inputContentPadding,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(AppSpacing.inputBorderRadius),
@@ -100,27 +106,26 @@ class AppTheme {
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(AppSpacing.inputBorderRadius),
-          borderSide: const BorderSide(color: AppColors.border, width: 1),
+          borderSide: BorderSide(color: colors.border, width: 1),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(AppSpacing.inputBorderRadius),
-          borderSide: const BorderSide(color: AppColors.violet, width: 1.5),
+          borderSide: BorderSide(color: colors.violet, width: 1.5),
         ),
         errorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(AppSpacing.inputBorderRadius),
-          borderSide: const BorderSide(color: Color(0xFFEF4444), width: 1),
+          borderSide: BorderSide(color: colors.error, width: 1),
         ),
         focusedErrorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(AppSpacing.inputBorderRadius),
-          borderSide: const BorderSide(color: Color(0xFFEF4444), width: 1.5),
+          borderSide: BorderSide(color: colors.error, width: 1.5),
         ),
-        hintStyle:
-            const TextStyle(color: AppColors.textMuted, fontSize: 15),
-        labelStyle: const TextStyle(color: AppColors.textSecondary),
+        hintStyle: TextStyle(color: colors.textMuted, fontSize: 15),
+        labelStyle: TextStyle(color: colors.textSecondary),
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
-          backgroundColor: AppColors.violet,
+          backgroundColor: colors.violet,
           foregroundColor: Colors.white,
           elevation: 0,
           padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg, vertical: AppSpacing.lg),
@@ -136,53 +141,53 @@ class AppTheme {
         ),
       ),
       chipTheme: ChipThemeData(
-        backgroundColor: AppColors.surface,
-        selectedColor: AppColors.violet,
+        backgroundColor: colors.surface,
+        selectedColor: colors.violet,
         padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.sm),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(AppSpacing.radiusPrimary),
         ),
-        side: const BorderSide(color: AppColors.border),
+        side: BorderSide(color: colors.border),
         labelStyle: GoogleFonts.dmSans(
           fontSize: 13,
-          color: AppColors.textSecondary,
+          color: colors.textSecondary,
         ),
       ),
       dialogTheme: DialogThemeData(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppSpacing.radiusPrimary)),
-        backgroundColor: AppColors.surfaceHigh,
+        backgroundColor: colors.surfaceHigh,
         elevation: 0,
         titleTextStyle: GoogleFonts.dmSans(
           fontSize: 18,
           fontWeight: FontWeight.w600,
-          color: AppColors.textPrimary,
+          color: colors.textPrimary,
         ),
         contentTextStyle: GoogleFonts.dmSans(
           fontSize: 14,
-          color: AppColors.textSecondary,
+          color: colors.textSecondary,
           height: 1.5,
         ),
       ),
       switchTheme: SwitchThemeData(
         thumbColor: WidgetStateProperty.resolveWith(
           (s) => s.contains(WidgetState.selected)
-              ? AppColors.violet
-              : AppColors.textMuted,
+              ? colors.violet
+              : colors.textMuted,
         ),
         trackColor: WidgetStateProperty.resolveWith(
           (s) => s.contains(WidgetState.selected)
-              ? AppColors.violet.withValues(alpha: 0.30)
-              : AppColors.surface,
+              ? colors.violet.withValues(alpha: 0.30)
+              : colors.surface,
         ),
       ),
       sliderTheme: SliderThemeData(
-        activeTrackColor: AppColors.violet,
-        thumbColor: AppColors.violet,
-        inactiveTrackColor: AppColors.border,
-        overlayColor: AppColors.violet.withValues(alpha: 0.15),
+        activeTrackColor: colors.violet,
+        thumbColor: colors.violet,
+        inactiveTrackColor: colors.border,
+        overlayColor: colors.violet.withValues(alpha: 0.15),
       ),
-      bottomSheetTheme: const BottomSheetThemeData(
-        backgroundColor: AppColors.surfaceHigh,
+      bottomSheetTheme: BottomSheetThemeData(
+        backgroundColor: colors.surfaceHigh,
         surfaceTintColor: Colors.transparent,
       ),
     );

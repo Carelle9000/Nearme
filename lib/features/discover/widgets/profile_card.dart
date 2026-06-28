@@ -13,6 +13,9 @@ class ProfileCard extends StatefulWidget {
   final bool isFavorite;
   final VoidCallback? onFavorite;
   final VoidCallback? onDoubleTap;
+  final VoidCallback? onNope;
+  final VoidCallback? onLike;
+  final VoidCallback? onSuperLike;
   final double? height;
 
   const ProfileCard({
@@ -21,6 +24,9 @@ class ProfileCard extends StatefulWidget {
     this.isFavorite = false,
     this.onFavorite,
     this.onDoubleTap,
+    this.onNope,
+    this.onLike,
+    this.onSuperLike,
     this.height,
   });
 
@@ -117,11 +123,11 @@ class _ProfileCardState extends State<ProfileCard> with SingleTickerProviderStat
                 )
               else
                 Container(
-                  decoration: const BoxDecoration(
+                  decoration: BoxDecoration(
                     gradient: LinearGradient(
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
-                      colors: [Color(0xFF1E0A38), Color(0xFF0A0A1C)],
+                      colors: [AppColors.purple, AppColors.bg],
                     ),
                   ),
                   child: Center(
@@ -212,147 +218,210 @@ class _ProfileCardState extends State<ProfileCard> with SingleTickerProviderStat
                     ),
 
                     // Badge intention
-                    Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        if (widget.onFavorite != null)
-                          _FrostedChip(
-                            padding: const EdgeInsets.all(8),
-                            color: widget.isFavorite
-                                ? AppColors.pink.withValues(alpha: 0.3)
-                                : Colors.black.withValues(alpha: 0.4),
-                            child: AnimatedFavoriteButton(
-                              isFavorite: widget.isFavorite,
-                              onTap: widget.onFavorite!,
-                              size: 18,
+                    Flexible(
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          if (widget.onFavorite != null)
+                            _FrostedChip(
+                              padding: const EdgeInsets.all(8),
+                              color: widget.isFavorite
+                                  ? AppColors.pink.withValues(alpha: 0.3)
+                                  : Colors.black.withValues(alpha: 0.4),
+                              child: AnimatedFavoriteButton(
+                                isFavorite: widget.isFavorite,
+                                onTap: widget.onFavorite!,
+                                size: 18,
+                              ),
                             ),
-                          ),
-                        const SizedBox(width: 8),
-                        _FrostedChip(
-                          color: AppColors.violet.withValues(alpha: 0.38),
-                          borderColor:
-                              AppColors.violetGlow.withValues(alpha: 0.28),
-                          child: Text(
-                            widget.profile.badge,
-                            style: GoogleFonts.dmSans(
-                              fontSize: 10,
-                              fontWeight: FontWeight.w600,
-                              color: Colors.white,
-                              letterSpacing: 0.4,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-
-              // ── Infos bas de carte ────────────────────────────────────────
-              Positioned(
-                left: 20,
-                right: 20,
-                bottom: 20,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Nom + âge + online indicator
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Text(
-                            '${widget.profile.name}, ${widget.profile.age}',
-                            style: GoogleFonts.dmSans(
-                              fontSize: 28,
-                              fontWeight: FontWeight.w800,
-                              color: Colors.white,
-                              letterSpacing: -0.5,
-                              height: 1.1,
-                            ),
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                        if (widget.profile.online) ...[
-                          const SizedBox(width: 10),
-                          Container(
-                            width: 10,
-                            height: 10,
-                            decoration: BoxDecoration(
-                              color: AppColors.emerald,
-                              shape: BoxShape.circle,
-                              boxShadow: [
-                                BoxShadow(
-                                  color: AppColors.emerald.withValues(alpha: 0.5),
-                                  blurRadius: 8,
-                                  spreadRadius: 2,
+                          const SizedBox(width: 8),
+                          Flexible(
+                            child: _FrostedChip(
+                              color: AppColors.violet.withValues(alpha: 0.38),
+                              borderColor:
+                                  AppColors.violetGlow.withValues(alpha: 0.28),
+                              child: Text(
+                                widget.profile.badge,
+                                style: GoogleFonts.dmSans(
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w600,
+                                  color: Colors.white,
+                                  letterSpacing: 0.4,
                                 ),
-                              ],
+                                overflow: TextOverflow.ellipsis,
+                              ),
                             ),
                           ),
                         ],
-                      ],
-                    ),
-                    const SizedBox(height: 5),
-
-                    // Quartier
-                    Text(
-                      widget.profile.hood,
-                      style: GoogleFonts.dmSans(
-                        fontSize: 13,
-                        color: Colors.white.withValues(alpha: 0.60),
-                        fontWeight: FontWeight.w400,
                       ),
                     ),
-                    const SizedBox(height: 14),
-
-                    // Tags
-                    Wrap(
-                      spacing: 7,
-                      runSpacing: 7,
-                      children: widget.profile.tags.take(3).map((tag) {
-                        return _FrostedChip(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 11, vertical: 5),
-                          child: Text(
-                            tag,
-                            style: GoogleFonts.dmSans(
-                              fontSize: 11,
-                              fontWeight: FontWeight.w500,
-                              color: Colors.white.withValues(alpha: 0.90),
-                            ),
-                          ),
-                        );
-                      }).toList(),
-                    ),
-
-                    // Bio — prompt éditorial style Hinge
-                    if (widget.profile.bio.isNotEmpty) ...[
-                      const SizedBox(height: 14),
-                      Container(
-                        width: double.infinity,
-                        padding: const EdgeInsets.all(13),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.07),
-                          borderRadius: BorderRadius.circular(14),
-                          border: Border.all(
-                            color: Colors.white.withValues(alpha: 0.10),
-                          ),
-                        ),
-                        child: Text(
-                          widget.profile.bio,
-                          style: GoogleFonts.dmSans(
-                            fontSize: 12.5,
-                            color: Colors.white.withValues(alpha: 0.72),
-                            height: 1.55,
-                          ),
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                    ],
                   ],
                 ),
               ),
+
+              // ── Action Buttons Row (bottom) ────────────────────────────────────
+              if (widget.onNope != null || widget.onLike != null || widget.onSuperLike != null)
+                Positioned(
+                  left: 16,
+                  right: 16,
+                  bottom: 16,
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: [
+                      // Nope
+                      _CardActionBtn(
+                        icon: Icons.close_rounded,
+                        onTap: widget.onNope,
+                        bg: Colors.white.withValues(alpha: 0.05),
+                        border: Colors.white.withValues(alpha: 0.1),
+                        iconColor: Colors.white,
+                      ),
+                      // Super Like
+                      _CardActionBtn(
+                        icon: Icons.star_rounded,
+                        onTap: widget.onSuperLike,
+                        bg: Colors.white.withValues(alpha: 0.05),
+                        border: AppColors.gold.withValues(alpha: 0.3),
+                        iconColor: AppColors.gold,
+                      ),
+                      // Like
+                      _CardActionBtn(
+                        icon: Icons.favorite_rounded,
+                        onTap: widget.onLike,
+                        bg: AppColors.violet,
+                        shadow: AppColors.violet.withValues(alpha: 0.4),
+                        iconColor: Colors.white,
+                      ),
+                    ],
+                  ),
+                )
+              else
+                // Fallback: Infos bas de carte when no action buttons
+                Positioned(
+                  left: 20,
+                  right: 20,
+                  bottom: 20,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Nom + âge + online indicator
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              '${widget.profile.name}, ${widget.profile.age}',
+                              style: GoogleFonts.dmSans(
+                                fontSize: 28,
+                                fontWeight: FontWeight.w800,
+                                color: Colors.white,
+                                letterSpacing: -0.5,
+                                height: 1.1,
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          if (widget.profile.online) ...[
+                            const SizedBox(width: 10),
+                            Tooltip(
+                              message: 'En ligne',
+                              child: Container(
+                                width: 10,
+                                height: 10,
+                                decoration: BoxDecoration(
+                                  color: AppColors.emerald,
+                                  shape: BoxShape.circle,
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: AppColors.emerald.withValues(alpha: 0.5),
+                                      blurRadius: 8,
+                                      spreadRadius: 2,
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+
+                      // Localisation : Ville, Pays
+                      Text(
+                        '${widget.profile.hood}, ${widget.profile.country}',
+                        style: GoogleFonts.dmSans(
+                          fontSize: 14,
+                          color: Colors.white.withValues(alpha: 0.70),
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+
+                      // Intention
+                      if (widget.profile.goal.isNotEmpty)
+                        _FrostedChip(
+                          color: AppColors.violet.withValues(alpha: 0.25),
+                          borderColor: AppColors.violetGlow.withValues(alpha: 0.2),
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                          child: Text(
+                            widget.profile.goal,
+                            style: GoogleFonts.dmSans(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.white.withValues(alpha: 0.95),
+                              letterSpacing: 0.3,
+                            ),
+                          ),
+                        ),
+                      const SizedBox(height: 12),
+
+                      // Tags
+                      Wrap(
+                        spacing: 7,
+                        runSpacing: 7,
+                        children: widget.profile.tags.take(3).map((tag) {
+                          return _FrostedChip(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 11, vertical: 5),
+                            child: Text(
+                              tag,
+                              style: GoogleFonts.dmSans(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w500,
+                                color: Colors.white.withValues(alpha: 0.90),
+                              ),
+                            ),
+                          );
+                        }).toList(),
+                      ),
+
+                      // Bio — prompt éditorial style Hinge
+                      if (widget.profile.bio.isNotEmpty) ...[
+                        const SizedBox(height: 14),
+                        Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.all(13),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.07),
+                            borderRadius: BorderRadius.circular(14),
+                            border: Border.all(
+                              color: Colors.white.withValues(alpha: 0.10),
+                            ),
+                          ),
+                          child: Text(
+                            widget.profile.bio,
+                            style: GoogleFonts.dmSans(
+                              fontSize: 12.5,
+                              color: Colors.white.withValues(alpha: 0.72),
+                              height: 1.55,
+                            ),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
             ],
           ),
         ),
@@ -394,6 +463,96 @@ class _FrostedChip extends StatelessWidget {
             ),
           ),
           child: child,
+        ),
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Card action button
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _CardActionBtn extends StatefulWidget {
+  final IconData icon;
+  final VoidCallback? onTap;
+  final Color bg;
+  final Color? border;
+  final Color? shadow;
+  final Color iconColor;
+
+  const _CardActionBtn({
+    required this.icon,
+    required this.bg,
+    required this.iconColor,
+    this.onTap,
+    this.border,
+    this.shadow,
+  });
+
+  @override
+  State<_CardActionBtn> createState() => _CardActionBtnState();
+}
+
+class _CardActionBtnState extends State<_CardActionBtn>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _scaleAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      duration: const Duration(milliseconds: 100),
+      vsync: this,
+    );
+    _scaleAnimation = Tween<double>(begin: 1.0, end: 0.88).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
+    );
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTapDown: (_) => _controller.forward(),
+      onTapUp: (_) => _controller.reverse(),
+      onTapCancel: () => _controller.reverse(),
+      onTap: widget.onTap,
+      child: ScaleTransition(
+        scale: _scaleAnimation,
+        child: Container(
+          width: 48,
+          height: 48,
+          decoration: BoxDecoration(
+            color: widget.bg,
+            shape: BoxShape.circle,
+            border: widget.border != null
+                ? Border.all(color: widget.border!, width: 1.5)
+                : null,
+            boxShadow: widget.shadow != null
+                ? [
+                    BoxShadow(
+                      color: widget.shadow!,
+                      blurRadius: 16,
+                      spreadRadius: -2,
+                      offset: const Offset(0, 4),
+                    ),
+                  ]
+                : null,
+          ),
+          child: Center(
+            child: Icon(
+              widget.icon,
+              color: widget.iconColor,
+              size: 20,
+            ),
+          ),
         ),
       ),
     );
