@@ -1,70 +1,74 @@
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, StyleSheet, ActivityIndicator, Alert } from 'react-native';
 import { useAuth } from '../../context/auth-context';
-import { useRouter } from 'expo-router';
+import { useDiscover } from '../../context/discover-context';
+import { ProfileCard } from '../../components/profile-card';
+import { locationService } from '../../services/location.service';
+import { useEffect, useState } from 'react';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function DiscoverScreen() {
-  const { user, logout } = useAuth();
-  const router = useRouter();
+  const { user } = useAuth();
+  const { profiles, currentIndex, isLoading, loadNearbyProfiles, like, nope, favorite, favoriteIds } =
+    useDiscover();
+  const [isLoadingLocation, setIsLoadingLocation] = useState(false);
 
-  const handleLogout = async () => {
-    await logout();
-    router.replace('/auth/login');
+  useEffect(() => {
+    loadProfiles();
+  }, []);
+
+  const loadProfiles = async () => {
+    setIsLoadingLocation(true);
+    try {
+      const location = await locationService.getCurrentLocation();
+      if (location) {
+        await loadNearbyProfiles(location.latitude, location.longitude);
+      } else {
+        Alert.alert('Permission Denied', 'Please enable location services to discover people');
+      }
+    } catch (error) {
+      console.error('Error loading profiles:', error);
+      Alert.alert('Error', 'Failed to load profiles');
+    } finally {
+      setIsLoadingLocation(false);
+    }
   };
 
-  return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Welcome, {user?.name}!</Text>
-      <Text style={styles.subtitle}>Find people near you</Text>
+  const currentProfile = profiles[currentIndex] || null;
+  const isFavorite = currentProfile ? favoriteIds.has(currentProfile.uid) : false;
 
-      <View style={styles.placeholder}>
-        <Text style={styles.placeholderText}>🔥 Discover Screen Coming Soon</Text>
+  if (isLoading || isLoadingLocation) {
+    return (
+      <View style={styles.loaderContainer}>
+        <ActivityIndicator size="large" color="#FF1744" />
       </View>
+    );
+  }
 
-      <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
-        <Text style={styles.logoutButtonText}>Logout</Text>
-      </TouchableOpacity>
-    </View>
+  return (
+    <SafeAreaView style={styles.container}>
+      <ProfileCard
+        profile={currentProfile}
+        isFavorite={isFavorite}
+        onNope={() => currentProfile && nope(currentProfile.uid)}
+        onLike={() => currentProfile && like(currentProfile.uid)}
+        onFavorite={() => currentProfile && favorite(currentProfile.uid)}
+        onViewProfile={() => {
+          // TODO: Navigate to profile detail view
+        }}
+      />
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 20,
+    backgroundColor: '#fff',
+  },
+  loaderContainer: {
+    flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: '#fff',
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    marginBottom: 8,
-    color: '#000',
-  },
-  subtitle: {
-    fontSize: 16,
-    color: '#666',
-    marginBottom: 32,
-  },
-  placeholder: {
-    padding: 40,
-    backgroundColor: '#f5f5f5',
-    borderRadius: 12,
-    marginBottom: 32,
-  },
-  placeholderText: {
-    fontSize: 24,
-    textAlign: 'center',
-  },
-  logoutButton: {
-    backgroundColor: '#FF1744',
-    paddingHorizontal: 24,
-    paddingVertical: 12,
-    borderRadius: 8,
-  },
-  logoutButtonText: {
-    color: 'white',
-    fontWeight: '600',
-    fontSize: 16,
   },
 });
