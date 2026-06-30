@@ -141,11 +141,17 @@ class AuthService {
   async logout(): Promise<void> {
     try {
       await signOut(auth);
-    } finally {
       this.cachedUser = null;
       this.needsAgeVerification = false;
       this.loginAttempts = 0;
       this.lastLoginAttempt = 0;
+    } catch (error: any) {
+      console.error('Error signing out:', error);
+      this.cachedUser = null;
+      this.needsAgeVerification = false;
+      this.loginAttempts = 0;
+      this.lastLoginAttempt = 0;
+      throw new Error(this.getErrorMessage(error.code || 'unknown'));
     }
   }
 
@@ -244,7 +250,9 @@ class AuthService {
       'auth/operation-not-allowed': 'La réinitialisation de mot de passe n\'est pas activée.',
       'auth/weak-password': 'Le nouveau mot de passe est trop faible.',
       'auth/too-many-requests': 'Trop de tentatives. Veuillez réessayer plus tard.',
+      'auth/requires-recent-login': 'Veuillez vous déconnecter et reconnecter avant de supprimer votre compte.',
       'PERMISSION_DENIED': 'Vous n\'avez pas la permission de modifier votre profil. Veuillez vous reconnecter.',
+      'unknown': 'Une erreur inconnue s\'est produite. Veuillez réessayer.',
     };
 
     return errorMessages[code] || 'Une erreur s\'est produite. Veuillez réessayer.';

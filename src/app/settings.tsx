@@ -67,19 +67,19 @@ export default function SettingsScreen() {
 
     setIsDeleting(true);
     try {
-      // Delete Firestore profile
+      // Delete Firebase Auth user first (requires recent login)
+      const currentUser = auth.currentUser;
+      if (currentUser) {
+        await deleteUser(currentUser);
+      }
+
+      // Delete profile from Realtime Database
       if (user.id) {
         try {
           await remove(ref(rtdb, `profiles/${user.id}`));
         } catch (error) {
-          console.error('Error deleting profile from Firestore:', error);
+          console.error('Error deleting profile from database:', error);
         }
-      }
-
-      // Delete Firebase Auth user
-      const currentUser = auth.currentUser;
-      if (currentUser) {
-        await deleteUser(currentUser);
       }
 
       Alert.alert(
@@ -90,7 +90,9 @@ export default function SettingsScreen() {
             text: 'OK',
             onPress: async () => {
               await logout();
-              router.replace('/auth/login');
+              setTimeout(() => {
+                router.replace('/auth/login');
+              }, 100);
             },
           },
         ]
@@ -100,8 +102,11 @@ export default function SettingsScreen() {
       let errorMessage = 'Une erreur est survenue lors de la suppression du compte';
 
       if (error.code === 'auth/requires-recent-login') {
-        errorMessage =
-          'Veuillez vous déconnecter et vous reconnecter avant de supprimer votre compte.';
+        errorMessage = 'Veuillez vous déconnecter et vous reconnecter avant de supprimer votre compte.';
+      } else if (error.code === 'auth/user-not-found') {
+        errorMessage = 'Utilisateur non trouvé.';
+      } else if (error.message) {
+        errorMessage = error.message;
       }
 
       Alert.alert('Erreur', errorMessage);

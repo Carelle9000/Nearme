@@ -26,10 +26,13 @@ export default function ProfileScreen() {
           onPress: async () => {
             try {
               await logout();
-              router.replace('/auth/login');
-            } catch (error) {
+              setTimeout(() => {
+                router.replace('/auth/login');
+              }, 100);
+            } catch (error: any) {
               console.error('Logout error:', error);
-              Alert.alert('Erreur', 'Une erreur est survenue lors de la déconnexion');
+              const errorMessage = error?.message || 'Une erreur est survenue lors de la déconnexion';
+              Alert.alert('Erreur de déconnexion', errorMessage);
             }
           },
         },
@@ -114,7 +117,11 @@ export default function ProfileScreen() {
             <Text style={styles.actionButtonText}>Paramètres</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity style={[styles.actionButton, styles.logoutButton]} onPress={handleLogout}>
+          <TouchableOpacity
+            style={[styles.actionButton, styles.logoutButton]}
+            onPress={handleLogout}
+            disabled={false}
+          >
             <Ionicons name="log-out-outline" size={20} color={Colors.text} />
             <Text style={[styles.actionButtonText, styles.logoutButtonText]}>Déconnexion</Text>
           </TouchableOpacity>
