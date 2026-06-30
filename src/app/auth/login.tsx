@@ -9,12 +9,25 @@ import { signupService } from '../../services/signup.service';
 export default function LoginScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [rememberMe, setRememberMe] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const { login } = useAuth();
+  const { login, getRememberedEmail } = useAuth();
   const router = useRouter();
 
   const loginAttemptsRef = useRef(0);
   const lastLoginAttemptRef = useRef(0);
+
+  // Load remembered email on mount
+  React.useEffect(() => {
+    const loadRememberedEmail = async () => {
+      const remembered = await getRememberedEmail();
+      if (remembered) {
+        setEmail(remembered);
+        setRememberMe(true);
+      }
+    };
+    loadRememberedEmail();
+  }, [getRememberedEmail]);
 
   const handleLogin = async () => {
     if (!email || !password) {
@@ -32,7 +45,7 @@ export default function LoginScreen() {
 
     setIsLoading(true);
     try {
-      await login(email, password);
+      await login(email, password, rememberMe);
       loginAttemptsRef.current = 0;
       lastLoginAttemptRef.current = 0;
       router.replace('/(tabs)/discover');
@@ -71,6 +84,17 @@ export default function LoginScreen() {
           secureTextEntry
         />
 
+        <View style={styles.rememberMeContainer}>
+          <TouchableOpacity
+            style={[styles.checkbox, rememberMe && styles.checkboxChecked]}
+            onPress={() => setRememberMe(!rememberMe)}
+            disabled={isLoading}
+          >
+            {rememberMe && <Text style={styles.checkmarkText}>✓</Text>}
+          </TouchableOpacity>
+          <Text style={styles.rememberMeText}>Se souvenir de moi</Text>
+        </View>
+
         <TouchableOpacity
           style={[styles.button, isLoading && styles.buttonDisabled]}
           onPress={handleLogin}
@@ -85,8 +109,16 @@ export default function LoginScreen() {
       </View>
 
       <View style={styles.footer}>
+        <Link href="/auth/forgot-password" asChild>
+          <TouchableOpacity disabled={isLoading}>
+            <Text style={styles.forgotPasswordLink}>Mot de passe oublié?</Text>
+          </TouchableOpacity>
+        </Link>
+      </View>
+
+      <View style={styles.footerSignup}>
         <Text style={styles.footerText}>Don't have an account? </Text>
-        <Link href="/auth/register" asChild>
+        <Link href="/auth/signup-step1" asChild>
           <TouchableOpacity disabled={isLoading}>
             <Text style={styles.link}>Sign up</Text>
           </TouchableOpacity>
@@ -128,6 +160,34 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.secondary,
     color: Colors.text,
   },
+  rememberMeContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  checkbox: {
+    width: 20,
+    height: 20,
+    borderRadius: 4,
+    borderWidth: 2,
+    borderColor: Colors.border,
+    marginRight: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  checkboxChecked: {
+    backgroundColor: Colors.primary,
+    borderColor: Colors.primary,
+  },
+  checkmarkText: {
+    color: Colors.text,
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  rememberMeText: {
+    color: Colors.textSecondary,
+    fontSize: 14,
+  },
   button: {
     backgroundColor: Colors.primary,
     padding: 14,
@@ -147,9 +207,21 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
+    marginTop: 16,
+  },
+  footerSignup: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: 16,
   },
   footerText: {
     color: Colors.textSecondary,
+  },
+  forgotPasswordLink: {
+    color: Colors.primary,
+    fontWeight: '600',
+    textDecorationLine: 'underline',
   },
   link: {
     color: Colors.primary,

@@ -7,6 +7,9 @@ import {
   signInWithCredential,
   GoogleAuthProvider,
   OAuthProvider,
+  sendPasswordResetEmail,
+  confirmPasswordReset,
+  verifyPasswordResetCode,
 } from 'firebase/auth';
 import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { auth, db } from '../config/firebase';
@@ -166,6 +169,59 @@ class AuthService {
     if (this.cachedUser?.id === uid) {
       await this.loadCurrentUser();
     }
+  }
+
+  async sendPasswordReset(email: string): Promise<void> {
+    try {
+      await sendPasswordResetEmail(auth, email);
+    } catch (error: any) {
+      throw new Error(this.getErrorMessage(error.code));
+    }
+  }
+
+  async resetPassword(oobCode: string, newPassword: string): Promise<void> {
+    try {
+      await confirmPasswordReset(auth, oobCode, newPassword);
+    } catch (error: any) {
+      throw new Error(this.getErrorMessage(error.code));
+    }
+  }
+
+  async verifyResetCode(oobCode: string): Promise<string | null> {
+    try {
+      return await verifyPasswordResetCode(auth, oobCode);
+    } catch (error: any) {
+      throw new Error(this.getErrorMessage(error.code));
+    }
+  }
+
+  async saveRememberMe(email: string, remember: boolean): Promise<void> {
+    if (remember) {
+      await AsyncStorage.setItem('rememberMe_email', email);
+    } else {
+      await AsyncStorage.removeItem('rememberMe_email');
+    }
+  }
+
+  async getRememberedEmail(): Promise<string | null> {
+    return await AsyncStorage.getItem('rememberMe_email');
+  }
+
+  async clearRememberMe(): Promise<void> {
+    await AsyncStorage.removeItem('rememberMe_email');
+  }
+
+  private getErrorMessage(code: string): string {
+    const errorMessages: { [key: string]: string } = {
+      'auth/invalid-email': 'Adresse email invalide.',
+      'auth/user-not-found': 'Aucun compte trouvé avec cette adresse.',
+      'auth/invalid-oob-code': 'Le lien de réinitialisation est invalide ou expiré.',
+      'auth/operation-not-allowed': 'La réinitialisation de mot de passe n\'est pas activée.',
+      'auth/weak-password': 'Le nouveau mot de passe est trop faible.',
+      'auth/too-many-requests': 'Trop de tentatives. Veuillez réessayer plus tard.',
+    };
+
+    return errorMessages[code] || 'Une erreur s\'est produite. Veuillez réessayer.';
   }
 }
 

@@ -7,10 +7,15 @@ interface AuthContextType {
   isLoading: boolean;
   isLoggedIn: boolean;
   needsAgeVerification: boolean;
-  login: (email: string, password: string) => Promise<void>;
+  login: (email: string, password: string, rememberMe?: boolean) => Promise<void>;
   register: (email: string, password: string, name: string) => Promise<void>;
   logout: () => Promise<void>;
   updateProfile: (updates: Partial<AppUser>) => Promise<void>;
+  sendPasswordReset: (email: string) => Promise<void>;
+  resetPassword: (oobCode: string, newPassword: string) => Promise<void>;
+  verifyResetCode: (oobCode: string) => Promise<string | null>;
+  getRememberedEmail: () => Promise<string | null>;
+  clearRememberMe: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -40,10 +45,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return unsubscribe;
   }, []);
 
-  const login = async (email: string, password: string) => {
+  const login = async (email: string, password: string, rememberMe: boolean = false) => {
     setIsLoading(true);
     try {
       await authService.login(email, password);
+      if (rememberMe) {
+        await authService.saveRememberMe(email, true);
+      } else {
+        await authService.clearRememberMe();
+      }
       setUser(authService.currentUser);
       setNeedsAgeVerif(authService.needsAgeVerify);
     } finally {
@@ -80,6 +90,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setNeedsAgeVerif(authService.needsAgeVerify);
   };
 
+  const sendPasswordReset = async (email: string) => {
+    await authService.sendPasswordReset(email);
+  };
+
+  const resetPassword = async (oobCode: string, newPassword: string) => {
+    await authService.resetPassword(oobCode, newPassword);
+  };
+
+  const verifyResetCode = async (oobCode: string) => {
+    return await authService.verifyResetCode(oobCode);
+  };
+
+  const getRememberedEmail = async () => {
+    return await authService.getRememberedEmail();
+  };
+
+  const clearRememberMe = async () => {
+    await authService.clearRememberMe();
+  };
+
   return (
     <AuthContext.Provider
       value={{
@@ -91,6 +121,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         register,
         logout,
         updateProfile,
+        sendPasswordReset,
+        resetPassword,
+        verifyResetCode,
+        getRememberedEmail,
+        clearRememberMe,
       }}
     >
       {children}
