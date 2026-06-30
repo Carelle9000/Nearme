@@ -16,6 +16,8 @@ export const Colors = {
   text: '#FFFFFF',
   textSecondary: '#D0D0D0',
   border: '#3D2B2B',
+  success: '#10B981', // green for success
+  warning: '#F59E0B', // amber for warning
 } as const;
 
 // Gradient definitions

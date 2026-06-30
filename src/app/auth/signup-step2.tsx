@@ -133,15 +133,10 @@ export default function SignupStep2() {
         </Text>
       </TouchableOpacity>
 
-      {/* Document Upload Section - Show after checkbox */}
       {data.rulesAccepted && (
         <View style={styles.documentSection}>
           <Text style={styles.sectionTitle}>Télécharger un document d&apos;identité</Text>
-          <Text style={styles.documentSubtitle}>
-            Acceptés: Carte d&apos;identité, Passeport, Permis de conduire
-          </Text>
-
-          {/* Upload Button */}
+          <Text style={styles.documentSubtitle}>Acceptés: Carte d&apos;identité, Passeport, Permis de conduire</Text>
           <LinearGradient
             colors={[Colors.primary, '#C82E42']}
             start={{ x: 0, y: 0 }}
@@ -165,13 +160,11 @@ export default function SignupStep2() {
               )}
             </TouchableOpacity>
           </LinearGradient>
-
-          {/* Status Message */}
-          {verificationStatus && (
+          {verificationStatus ? (
             <Text style={[styles.statusMessage, { color: verificationStatus.includes('réussie') ? Colors.success : Colors.warning }]}>
               {verificationStatus}
             </Text>
-          )}
+          ) : null}
         </View>
       )}
 
