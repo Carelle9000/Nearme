@@ -23,12 +23,12 @@ export default function SignupStep1() {
 
   const handleCreateAccount = async () => {
     if (!data.email || !data.password) {
-      Alert.alert('Error', 'Please fill in all fields');
+      Alert.alert('Erreur', 'Veuillez remplir tous les champs');
       return;
     }
 
     if (data.password.length < 6) {
-      Alert.alert('Error', 'Password must be at least 6 characters');
+      Alert.alert('Erreur', 'Le mot de passe doit contenir au moins 6 caractères');
       return;
     }
 
@@ -39,7 +39,7 @@ export default function SignupStep1() {
       // Move to next step
       nextStep();
     } catch (error: any) {
-      Alert.alert('Error', error.message);
+      Alert.alert('Erreur', error.message);
     } finally {
       setIsLoading(false);
     }
@@ -155,22 +155,6 @@ export default function SignupStep1() {
           </TouchableOpacity>
         </LinearGradient>
 
-        {/* Or Divider */}
-        <View style={styles.divider}>
-          <View style={styles.dividerLine} />
-          <Text style={styles.dividerText}>ou</Text>
-          <View style={styles.dividerLine} />
-        </View>
-
-        {/* Google Button */}
-        <TouchableOpacity
-          style={[styles.googleButton, Shadows.soft]}
-          onPress={() => Alert.alert('Coming Soon', 'Google Sign-up will be available soon')}
-          disabled={isLoading}
-        >
-          <Ionicons name="logo-google" size={20} color={Colors.text} />
-          <Text style={styles.googleButtonText}>Continuer avec Google</Text>
-        </TouchableOpacity>
       </View>
     </View>
   );
@@ -300,37 +284,6 @@ const styles = StyleSheet.create({
   buttonText: {
     fontSize: 16,
     fontWeight: '700',
-    color: Colors.text,
-  },
-  divider: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginVertical: 16,
-    gap: 12,
-  },
-  dividerLine: {
-    flex: 1,
-    height: 1,
-    backgroundColor: Colors.border,
-  },
-  dividerText: {
-    color: Colors.textSecondary,
-    fontSize: 14,
-  },
-  googleButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 14,
-    backgroundColor: Colors.cardSurface,
-    borderRadius: BorderRadius.base,
-    borderWidth: 1,
-    borderColor: Colors.border,
-    gap: 12,
-  },
-  googleButtonText: {
-    fontSize: 16,
-    fontWeight: '600',
     color: Colors.text,
   },
 });
