@@ -1,5 +1,5 @@
 import * as admin from 'firebase-admin';
-import * as functions from 'firebase-functions';
+import { onRequest } from 'firebase-functions/v2/https';
 import Stripe from 'stripe';
 import { db } from './firebase';
 
@@ -7,7 +7,8 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', {
   apiVersion: '2023-10-16',
 });
 
-export const stripeWebhook = functions.https.onRequest(
+export const stripeWebhook = onRequest(
+  { region: 'europe-west1' },
   async (req, res) => {
     const sig = req.headers['stripe-signature'] as string;
     const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET || '';
@@ -18,7 +19,7 @@ export const stripeWebhook = functions.https.onRequest(
       // Construire l'événement Stripe
       event = stripe.webhooks.constructEvent(req.rawBody, sig, webhookSecret);
     } catch (error) {
-      functions.logger.error('Webhook signature verification failed:', error);
+      console.error('Webhook signature verification failed:', error);
       res.status(400).send(`Webhook Error: ${(error as Error).message}`);
       return;
     }
@@ -48,7 +49,7 @@ export const stripeWebhook = functions.https.onRequest(
               documentType: (verifiedOutputs as any).document?.type,
             });
 
-            functions.logger.info('User verified via webhook', { userId });
+            console.log('User verified via webhook', { userId });
           }
 
           break;
@@ -70,7 +71,7 @@ export const stripeWebhook = functions.https.onRequest(
               verificationStatus: 'canceled',
             });
 
-            functions.logger.info('Verification canceled', { userId });
+            console.log('Verification canceled', { userId });
           }
 
           break;
@@ -94,19 +95,19 @@ export const stripeWebhook = functions.https.onRequest(
                 session.last_error?.code || 'unknown_error',
             });
 
-            functions.logger.warn('Verification requires input', { userId });
+            console.warn('Verification requires input', { userId });
           }
 
           break;
         }
 
         default:
-          functions.logger.info('Unhandled event type:', event.type);
+          console.log('Unhandled event type:', event.type);
       }
 
       res.json({ received: true });
     } catch (error) {
-      functions.logger.error('Error processing webhook:', error);
+      console.error('Error processing webhook:', error);
       res.status(500).json({ error: 'Internal server error' });
     }
   }

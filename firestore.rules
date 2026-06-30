@@ -1,40 +1,122 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Default deny all
-    match /{document=**} {
-      allow read, write: if false;
+    // Helper functions
+    function isAuth() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return request.auth.uid == userId;
     }
 
     // Users collection
     match /users/{userId} {
-      // Users can read their own document
-      allow read: if request.auth.uid == userId;
-
-      // Users can create their own document during signup
-      // ageVerified field must NOT be present in creation
-      // Email validation and age validation done by Cloud Functions
-      allow create: if request.auth.uid == userId &&
-                       !('ageVerified' in request.resource.data) &&
-                       !('age' in request.resource.data) &&
-                       request.resource.data.birthYear != null &&
-                       request.resource.data.firstName != null;
-
-      // Users can update their own document, but NOT ageVerified, email, or age fields
-      allow update: if request.auth.uid == userId &&
-                       !('ageVerified' in request.resource.data) &&
-                       !('email' in request.resource.data) &&
-                       !('age' in request.resource.data);
-
-      // Cloud Functions ONLY can write (set ageVerified after verification)
-      allow write: if false;
+      allow read: if isOwner(userId);
+      allow create: if isOwner(userId);
+      allow update: if isOwner(userId);
+      allow delete: if isOwner(userId);
     }
 
-    // Verification sessions - restricted to owner only
+    // Profiles collection
+    match /profiles/{userId} {
+      allow read: if isOwner(userId) || isAuth();
+      allow create: if isOwner(userId);
+      allow update: if isOwner(userId);
+      allow delete: if isOwner(userId);
+    }
+
+    // Conversations collection
+    match /conversations/{conversationId} {
+      allow read: if isAuth() && (
+        get(/databases/$(database)/documents/conversations/$(conversationId)).data.users.contains(request.auth.uid) ||
+        get(/databases/$(database)/documents/conversations/$(conversationId)).data.participants.contains(request.auth.uid)
+      );
+      allow create: if isAuth();
+      allow update: if isAuth() && (
+        get(/databases/$(database)/documents/conversations/$(conversationId)).data.users.contains(request.auth.uid) ||
+        get(/databases/$(database)/documents/conversations/$(conversationId)).data.participants.contains(request.auth.uid)
+      );
+      allow delete: if isAuth() && (
+        get(/databases/$(database)/documents/conversations/$(conversationId)).data.users.contains(request.auth.uid) ||
+        get(/databases/$(database)/documents/conversations/$(conversationId)).data.participants.contains(request.auth.uid)
+      );
+
+      // Messages subcollection
+      match /messages/{messageId} {
+        allow read: if isAuth() && (
+          get(/databases/$(database)/documents/conversations/$(conversationId)).data.users.contains(request.auth.uid) ||
+          get(/databases/$(database)/documents/conversations/$(conversationId)).data.participants.contains(request.auth.uid)
+        );
+        allow create: if isAuth() && isOwner(resource.data.senderId);
+        allow update: if isAuth() && isOwner(resource.data.senderId);
+        allow delete: if isAuth() && isOwner(resource.data.senderId);
+      }
+    }
+
+    // Matches collection
+    match /matches/{matchId} {
+      allow read: if isAuth() && (
+        resource.data.user1 == request.auth.uid ||
+        resource.data.user2 == request.auth.uid
+      );
+      allow create: if isAuth();
+      allow update: if isAuth() && (
+        resource.data.user1 == request.auth.uid ||
+        resource.data.user2 == request.auth.uid
+      );
+      allow delete: if isAuth() && (
+        resource.data.user1 == request.auth.uid ||
+        resource.data.user2 == request.auth.uid
+      );
+    }
+
+    // Swipes collection (likes/rejects history)
+    match /swipes/{swipeId} {
+      allow read: if isOwner(resource.data.userId);
+      allow create: if isAuth() && isOwner(request.resource.data.userId);
+      allow update: if isOwner(resource.data.userId);
+      allow delete: if isOwner(resource.data.userId);
+    }
+
+    // Likes collection (user's received likes)
+    match /likes/{likeId} {
+      allow read: if isOwner(resource.data.receiverId);
+      allow create: if isAuth() && isOwner(request.resource.data.senderId);
+      allow update: if isOwner(resource.data.receiverId);
+      allow delete: if isAuth() && (
+        isOwner(resource.data.senderId) ||
+        isOwner(resource.data.receiverId)
+      );
+    }
+
+    // Verification sessions
     match /verificationSessions/{sessionId} {
-      allow read: if request.auth.uid == resource.data.userId;
-      allow create: if request.auth.uid == request.resource.data.userId;
-      allow update: if request.auth.uid == resource.data.userId;
+      allow read: if isAuth() && isOwner(resource.data.userId);
+      allow create: if isAuth() && isOwner(request.resource.data.userId);
+      allow update: if isAuth() && isOwner(resource.data.userId);
+      allow delete: if isAuth() && isOwner(resource.data.userId);
+    }
+
+    // Blocks collection (blocked users)
+    match /blocks/{blockId} {
+      allow read: if isOwner(resource.data.blockerId);
+      allow create: if isAuth() && isOwner(request.resource.data.blockerId);
+      allow update: if isOwner(resource.data.blockerId);
+      allow delete: if isOwner(resource.data.blockerId);
+    }
+
+    // Notifications collection
+    match /notifications/{notificationId} {
+      allow read: if isOwner(resource.data.userId);
+      allow create: if isAuth();
+      allow update: if isOwner(resource.data.userId);
+      allow delete: if isOwner(resource.data.userId);
+    }
+
+    // Default deny all (fallback for unmatched paths)
+    match /{document=**} {
+      allow read, write: if false;
     }
   }
 }

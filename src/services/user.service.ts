@@ -1,25 +1,17 @@
 import {
-  collection,
-  doc,
-  getDoc,
-  getDocs,
-  query,
-  where,
-  setDoc,
-  updateDoc,
-  orderBy,
-  limit,
-  DocumentSnapshot,
-  GeoPoint,
-} from 'firebase/firestore';
-import { db } from '../config/firebase';
+  ref,
+  get,
+  set,
+  update,
+} from 'firebase/database';
+import { rtdb } from '../config/firebase';
 import { Profile } from '../models/user';
 
 class UserService {
   async getProfile(uid: string): Promise<Profile | null> {
     try {
-      const docSnap = await getDoc(doc(db, 'profiles', uid));
-      return docSnap.exists() ? (docSnap.data() as Profile) : null;
+      const snapshot = await get(ref(rtdb, `profiles/${uid}`));
+      return snapshot.val() as Profile || null;
     } catch (error) {
       console.error('Error fetching profile:', error);
       throw error;
@@ -28,9 +20,9 @@ class UserService {
 
   async updateProfile(uid: string, data: Partial<Profile>): Promise<void> {
     try {
-      await updateDoc(doc(db, 'profiles', uid), {
+      await update(ref(rtdb, `profiles/${uid}`), {
         ...data,
-        updatedAt: new Date().toISOString(),
+        updatedAt: Date.now(),
       });
     } catch (error) {
       console.error('Error updating profile:', error);
@@ -44,14 +36,12 @@ class UserService {
     radiusInKm: number = 50
   ): Promise<Profile[]> {
     try {
-      // For now, fetch all profiles and filter client-side
-      // In production, use Firestore geohashing with geoflutterfire equivalent
-      const q = query(collection(db, 'profiles'));
-      const snapshot = await getDocs(q);
+      const snapshot = await get(ref(rtdb, 'profiles'));
 
-      return snapshot.docs
-        .map((doc) => doc.data() as Profile)
-        .filter((profile) => {
+      if (!snapshot.val()) return [];
+
+      return Object.values(snapshot.val() as Record<string, Profile>)
+        .filter((profile: Profile) => {
           if (!profile.location) return false;
           const distance = this.calculateDistance(
             latitude,
@@ -88,10 +78,10 @@ class UserService {
 
   async saveLike(userId: string, targetId: string): Promise<void> {
     try {
-      await setDoc(
-        doc(db, `profiles/${userId}/sent_likes/${targetId}`),
-        { createdAt: new Date().toISOString() }
-      );
+      await set(ref(rtdb, `profiles/${userId}/sent_likes/${targetId}`), {
+        createdAt: Date.now(),
+        targetId,
+      });
     } catch (error) {
       console.error('Error saving like:', error);
       throw error;
@@ -100,10 +90,10 @@ class UserService {
 
   async saveNope(userId: string, targetId: string): Promise<void> {
     try {
-      await setDoc(
-        doc(db, `profiles/${userId}/nopes/${targetId}`),
-        { createdAt: new Date().toISOString() }
-      );
+      await set(ref(rtdb, `profiles/${userId}/nopes/${targetId}`), {
+        createdAt: Date.now(),
+        targetId,
+      });
     } catch (error) {
       console.error('Error saving nope:', error);
       throw error;
@@ -112,10 +102,10 @@ class UserService {
 
   async saveFavorite(userId: string, targetId: string): Promise<void> {
     try {
-      await setDoc(
-        doc(db, `profiles/${userId}/favorites/${targetId}`),
-        { createdAt: new Date().toISOString() }
-      );
+      await set(ref(rtdb, `profiles/${userId}/favorites/${targetId}`), {
+        createdAt: Date.now(),
+        targetId,
+      });
     } catch (error) {
       console.error('Error saving favorite:', error);
       throw error;
@@ -124,10 +114,9 @@ class UserService {
 
   async getSentLikes(userId: string): Promise<string[]> {
     try {
-      const snapshot = await getDocs(
-        collection(db, `profiles/${userId}/sent_likes`)
-      );
-      return snapshot.docs.map((doc) => doc.id);
+      const snapshot = await get(ref(rtdb, `profiles/${userId}/sent_likes`));
+      if (!snapshot.val()) return [];
+      return Object.keys(snapshot.val());
     } catch (error) {
       console.error('Error fetching sent likes:', error);
       throw error;
@@ -136,10 +125,10 @@ class UserService {
 
   async getFavorites(userId: string): Promise<Profile[]> {
     try {
-      const snapshot = await getDocs(
-        collection(db, `profiles/${userId}/favorites`)
-      );
-      const favoriteIds = snapshot.docs.map((doc) => doc.id);
+      const snapshot = await get(ref(rtdb, `profiles/${userId}/favorites`));
+      if (!snapshot.val()) return [];
+
+      const favoriteIds = Object.keys(snapshot.val());
       const profiles = await Promise.all(
         favoriteIds.map((id) => this.getProfile(id))
       );

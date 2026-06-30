@@ -2,7 +2,7 @@ import { View, ScrollView, StyleSheet } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useSignup, SignupProvider } from '../../context/signup-context';
-import { Colors, BorderRadius } from '../../constants/theme';
+import { Colors } from '../../constants/theme';
 import SignupStep1 from './signup-step1';
 import SignupStep2 from './signup-step2';
 import SignupStep3 from './signup-step3';

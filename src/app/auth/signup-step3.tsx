@@ -7,10 +7,12 @@ import {
   ActivityIndicator,
   Alert,
   ScrollView,
+  Image,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { useState } from 'react';
+import * as ImagePicker from 'expo-image-picker';
 import { useSignup } from '../../context/signup-context';
 import { useAuth } from '../../context/auth-context';
 import { signupService } from '../../services/signup.service';
@@ -18,12 +20,39 @@ import { Colors, BorderRadius, Shadows } from '../../constants/theme';
 import { useRouter } from 'expo-router';
 
 const GENDERS = ['Homme', 'Femme', 'Non-binaire', 'Autre'];
+const INTERESTS = ['Travel', 'Music', 'Sport', 'Art', 'Food', 'Gaming', 'Books', 'Movies', 'Fitness'];
 
 export default function SignupStep3() {
   const router = useRouter();
   const { data, updateData, prevStep, clearSensitiveData } = useSignup();
   const { user: authUser } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
+  const [photos, setPhotos] = useState<string[]>([]);
+
+  const handleAddPhoto = async () => {
+    try {
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 0.8,
+      });
+
+      if (!result.canceled && result.assets.length > 0) {
+        if (photos.length < 6) {
+          setPhotos([...photos, result.assets[0].uri]);
+        } else {
+          Alert.alert('Limite atteinte', 'Vous pouvez ajouter maximum 6 photos');
+        }
+      }
+    } catch (error) {
+      Alert.alert('Erreur', 'Impossible de charger la photo');
+    }
+  };
+
+  const handleRemovePhoto = (index: number) => {
+    setPhotos(photos.filter((_, i) => i !== index));
+  };
 
   const isFormValid =
     data.firstName.trim().length > 0 &&
@@ -54,14 +83,20 @@ export default function SignupStep3() {
       // Update display name in Firebase Auth
       await signupService.updateDisplayName(authUser, data.firstName);
 
-      // Create profile in Firestore
-      await signupService.createProfile(authUser.uid, data);
+      // Create profile in Firestore with photos and interests
+      const profileData = {
+        ...data,
+        photos: photos,
+        interests: data.interests || [],
+      };
+
+      await signupService.createProfile(authUser.uid, profileData);
 
       // Clear sensitive data from memory
       clearSensitiveData();
 
-      // Navigate to discover
-      router.replace('/(tabs)/discover');
+      // Navigate to login page
+      router.replace('/auth/login');
     } catch (error: any) {
       const message = signupService.getErrorMessage(error.code || error.message);
       Alert.alert('Erreur', message);
@@ -83,7 +118,7 @@ export default function SignupStep3() {
 
       {/* Step Indicator */}
       <View style={styles.stepIndicator}>
-        <StepIndicatorItem number={1} label="Complet" completed />
+        <StepIndicatorItem number={1} label="Compte" completed />
         <View style={styles.stepConnector} />
         <StepIndicatorItem number={2} label="Règles" completed />
         <View style={styles.stepConnector} />
@@ -91,8 +126,8 @@ export default function SignupStep3() {
       </View>
 
       {/* Title */}
-      <Text style={styles.title}>Votre profil</Text>
-      <Text style={styles.subtitle}>Ces informations seront visibles par les autres</Text>
+      <Text style={styles.title}>Créez votre profil</Text>
+      <Text style={styles.subtitle}>Ces informations aideront à vous trouver des correspondances parfaites</Text>
 
       {/* Form */}
       <View style={styles.form}>
@@ -169,6 +204,70 @@ export default function SignupStep3() {
               onChangeText={(city) => updateData({ city })}
               editable={!isLoading}
             />
+          </View>
+        </View>
+
+        {/* Photos */}
+        <View style={styles.fieldGroup}>
+          <Text style={styles.label}>PHOTOS ({photos.length}/6)</Text>
+          <View style={styles.photosGrid}>
+            {photos.map((photo, index) => (
+              <View key={index} style={styles.photoItem}>
+                <Image source={{ uri: photo }} style={styles.photoThumbnail} />
+                <TouchableOpacity
+                  style={styles.photoRemoveButton}
+                  onPress={() => handleRemovePhoto(index)}
+                >
+                  <Ionicons name="close-circle" size={24} color={Colors.primary} />
+                </TouchableOpacity>
+              </View>
+            ))}
+            {photos.length < 6 && (
+              <TouchableOpacity
+                style={[styles.photoAddButton, Shadows.soft]}
+                onPress={handleAddPhoto}
+                disabled={isLoading}
+              >
+                <Ionicons name="add" size={32} color={Colors.primary} />
+                <Text style={styles.photoAddText}>Ajouter</Text>
+              </TouchableOpacity>
+            )}
+          </View>
+        </View>
+
+        {/* Interests */}
+        <View style={styles.fieldGroup}>
+          <Text style={styles.label}>MES INTÉRÊTS</Text>
+          <View style={styles.interestsGrid}>
+            {INTERESTS.map((interest) => {
+              const isSelected = data.interests?.includes(interest);
+              return (
+                <TouchableOpacity
+                  key={interest}
+                  style={[
+                    styles.interestTag,
+                    isSelected && styles.interestTagActive,
+                    Shadows.soft,
+                  ]}
+                  onPress={() => {
+                    const newInterests = isSelected
+                      ? data.interests?.filter((i) => i !== interest) || []
+                      : [...(data.interests || []), interest];
+                    updateData({ interests: newInterests });
+                  }}
+                  disabled={isLoading}
+                >
+                  <Text
+                    style={[
+                      styles.interestText,
+                      isSelected && styles.interestTextActive,
+                    ]}
+                  >
+                    {interest}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
           </View>
         </View>
 
@@ -265,8 +364,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginHorizontal: 20,
     marginBottom: 32,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 16,
     backgroundColor: Colors.cardSurface,
     borderRadius: BorderRadius.base,
   },
@@ -281,7 +380,7 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.secondary,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 4,
+    marginBottom: 6,
   },
   stepCircleActive: {
     backgroundColor: Colors.primary,
@@ -298,7 +397,7 @@ const styles = StyleSheet.create({
     color: Colors.text,
   },
   stepLabel: {
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: '600',
     color: Colors.textSecondary,
   },
@@ -334,10 +433,11 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   label: {
-    fontSize: 12,
-    fontWeight: '700',
+    fontSize: 13,
+    fontWeight: '600',
     color: Colors.textSecondary,
-    letterSpacing: 0.5,
+    letterSpacing: 0.3,
+    textTransform: 'uppercase',
   },
   inputContainer: {
     flexDirection: 'row',
@@ -414,5 +514,69 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '700',
     color: Colors.text,
+  },
+  photosGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+  },
+  photoItem: {
+    width: '30%',
+    aspectRatio: 1,
+    borderRadius: BorderRadius.base,
+    overflow: 'hidden',
+    position: 'relative',
+  },
+  photoThumbnail: {
+    width: '100%',
+    height: '100%',
+  },
+  photoRemoveButton: {
+    position: 'absolute',
+    top: 4,
+    right: 4,
+  },
+  photoAddButton: {
+    width: '30%',
+    aspectRatio: 1,
+    borderRadius: BorderRadius.base,
+    backgroundColor: Colors.cardSurface,
+    borderWidth: 2,
+    borderColor: Colors.primary,
+    borderStyle: 'dashed',
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 4,
+  },
+  photoAddText: {
+    fontSize: 12,
+    color: Colors.primary,
+    fontWeight: '600',
+  },
+  interestsGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  interestTag: {
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    backgroundColor: Colors.cardSurface,
+    borderRadius: BorderRadius.pill,
+    borderWidth: 1,
+    borderColor: Colors.border,
+  },
+  interestTagActive: {
+    backgroundColor: Colors.primary,
+    borderColor: Colors.primary,
+  },
+  interestText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: Colors.text,
+  },
+  interestTextActive: {
+    color: Colors.text,
+    fontWeight: '700',
   },
 });

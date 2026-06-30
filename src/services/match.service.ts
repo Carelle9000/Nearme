@@ -29,7 +29,6 @@ class MatchService {
   }
 
   async checkMatch(userId1: string, userId2: string): Promise<boolean> {
-    const matchId = [userId1, userId2].sort().join('_');
     try {
       const snapshot = await getDocs(
         query(collection(db, 'matches'), where('users', 'array-contains', userId1))

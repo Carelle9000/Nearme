@@ -35,9 +35,19 @@ export function DiscoverProvider({ children }: { children: React.ReactNode }) {
 
   // Load initial profiles and user's liked/noped profiles
   useEffect(() => {
-    if (user) {
-      loadUserInteractions();
-    }
+    let isMounted = true;
+
+    const load = async () => {
+      if (user && isMounted) {
+        await loadUserInteractions();
+      }
+    };
+
+    load().catch(console.error);
+
+    return () => {
+      isMounted = false;
+    };
   }, [user]);
 
   const loadUserInteractions = async () => {

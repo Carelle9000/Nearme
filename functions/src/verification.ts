@@ -1,5 +1,5 @@
 import * as admin from 'firebase-admin';
-import * as functions from 'firebase-functions';
+import { onCall, HttpsError } from 'firebase-functions/v2/https';
 import Stripe from 'stripe';
 import { db } from './firebase';
 
@@ -7,19 +7,21 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', {
   apiVersion: '2023-10-16',
 });
 
-export const createVerificationSession = functions.https.onCall(
-  async (data, context) => {
+export const createVerificationSession = onCall(
+  { region: 'europe-west1' },
+  async (request) => {
+    const { data, auth: context } = request;
     // Vérifier que l'utilisateur est authentifié
-    if (!context.auth) {
-      throw new functions.https.HttpsError(
+    if (!context) {
+      throw new HttpsError(
         'unauthenticated',
         'Utilisateur non authentifié'
       );
     }
 
     try {
-      const userEmail = context.auth.token.email || '';
-      const userId = context.auth.uid;
+      const userEmail = context.token.email || '';
+      const userId = context.uid;
 
       // Créer la session Stripe Identity
       const verification = await stripe.identity.verificationSessions.create({
@@ -38,7 +40,7 @@ export const createVerificationSession = functions.https.onCall(
         verificationCreatedAt: admin.firestore.FieldValue.serverTimestamp(),
       });
 
-      functions.logger.info('Verification session created', {
+      console.log('Verification session created', {
         userId,
         sessionId: verification.id,
       });
@@ -49,8 +51,8 @@ export const createVerificationSession = functions.https.onCall(
         clientSecret: verification.client_secret,
       };
     } catch (error) {
-      functions.logger.error('Error creating verification session:', error);
-      throw new functions.https.HttpsError(
+      console.error('Error creating verification session:', error);
+      throw new HttpsError(
         'internal',
         'Erreur lors de la création de la session'
       );
@@ -58,17 +60,19 @@ export const createVerificationSession = functions.https.onCall(
   }
 );
 
-export const checkVerificationStatus = functions.https.onCall(
-  async (data, context) => {
-    if (!context.auth) {
-      throw new functions.https.HttpsError(
+export const checkVerificationStatus = onCall(
+  { region: 'europe-west1' },
+  async (request) => {
+    const { data, auth: context } = request;
+    if (!context) {
+      throw new HttpsError(
         'unauthenticated',
         'Utilisateur non authentifié'
       );
     }
 
     try {
-      const userId = context.auth.uid;
+      const userId = context.uid;
 
       // Récupérer le document utilisateur
       const userDoc = await db.collection('users').doc(userId).get();
@@ -100,7 +104,7 @@ export const checkVerificationStatus = functions.https.onCall(
           documentType: documentType,
         });
 
-        functions.logger.info('User verified', { userId });
+        console.log('User verified', { userId });
       } else if (
         verification.status === 'requires_input' ||
         verification.status === 'processing'
@@ -110,7 +114,7 @@ export const checkVerificationStatus = functions.https.onCall(
           verificationError: verification.last_error?.code,
         });
 
-        functions.logger.warn('Verification pending', {
+        console.warn('Verification pending', {
           userId,
           status: verification.status,
         });
@@ -123,8 +127,8 @@ export const checkVerificationStatus = functions.https.onCall(
         lastError: verification.last_error?.code,
       };
     } catch (error) {
-      functions.logger.error('Error checking verification status:', error);
-      throw new functions.https.HttpsError(
+      console.error('Error checking verification status:', error);
+      throw new HttpsError(
         'internal',
         'Erreur lors de la vérification du statut'
       );

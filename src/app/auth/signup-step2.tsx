@@ -4,24 +4,71 @@ import {
   TouchableOpacity,
   StyleSheet,
   ScrollView,
+  ActivityIndicator,
+  Alert,
+  Image,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
+import { useState } from 'react';
+import * as DocumentPicker from 'expo-document-picker';
 import { useSignup } from '../../context/signup-context';
 import { Colors, BorderRadius, Shadows } from '../../constants/theme';
+import { stripeIdentityService } from '../../services/stripe-identity.service';
+
+const ACCEPTED_DOCUMENTS = ['ID card', 'Passport', 'Permis'];
 
 export default function SignupStep2() {
   const { data, updateData, nextStep, prevStep } = useSignup();
+  const [documentSelected, setDocumentSelected] = useState(false);
+  const [isValidating, setIsValidating] = useState(false);
+  const [verificationStatus, setVerificationStatus] = useState('');
 
-  const handleAccept = () => {
-    if (!data.rulesAccepted) {
-      return;
+  const handleUploadDocument = async () => {
+    try {
+      const result = await DocumentPicker.getDocumentAsync({
+        type: ['image/*', 'application/pdf'],
+        copyToCacheDirectory: true,
+      });
+
+      if (result.canceled) {
+        return;
+      }
+
+      const file = result.assets[0];
+      setDocumentSelected(true);
+
+      // Validate document with Stripe
+      setIsValidating(true);
+      const verificationResult = await stripeIdentityService.startVerification(file);
+
+      if (verificationResult.status === 'verified') {
+        setVerificationStatus('Vérification réussie!');
+        // Proceed to next step after a short delay
+        setTimeout(() => {
+          nextStep();
+        }, 1500);
+      } else if (verificationResult.status === 'requires_input') {
+        setVerificationStatus('Vérification en cours...');
+      } else {
+        Alert.alert(
+          'Vérification échouée',
+          'Le document n\'a pas pu être vérifié. Veuillez réessayer avec un document valide.'
+        );
+        setDocumentSelected(false);
+      }
+    } catch (error: any) {
+      Alert.alert('Erreur', 'Impossible de charger le document. Veuillez réessayer.');
+      console.error('Document upload error:', error);
+    } finally {
+      setIsValidating(false);
     }
-    nextStep();
   };
 
+  const isRulesAndDocumentsReady = data.rulesAccepted && documentSelected && verificationStatus === 'Vérification réussie!';
+
   return (
-    <View style={styles.container}>
+    <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false}>
       {/* Back Button */}
       <TouchableOpacity
         style={styles.backButton}
@@ -33,49 +80,41 @@ export default function SignupStep2() {
 
       {/* Step Indicator */}
       <View style={styles.stepIndicator}>
-        <StepIndicatorItem number={1} label="Complet" completed />
+        <StepIndicatorItem number={1} label="Compte" completed />
         <View style={styles.stepConnector} />
-        <StepIndicatorItem number={2} label="Règles" active />
+        <StepIndicatorItem number={2} label="Vérification" active />
         <View style={styles.stepConnector} />
         <StepIndicatorItem number={3} label="Profil" />
       </View>
 
       {/* Title */}
-      <Text style={styles.title}>Règles de la communauté</Text>
+      <Text style={styles.title}>Vérification d'identité</Text>
       <Text style={styles.subtitle}>
-        NearMe repose sur la confiance. Avant de commencer, nous vous demandons de respecter ces
-        engagements.
+        Pour votre sécurité et celle de la communauté, nous devons vérifier votre identité.
       </Text>
 
-      {/* Rules */}
+      {/* Rules Section */}
       <View style={styles.rulesContainer}>
+        <Text style={styles.sectionTitle}>Règles de la communauté</Text>
         <RuleCard
           icon="calendar"
           title="Je confirme avoir 18 ans ou plus"
+          description="Vous devez être majeur pour utiliser NearMe"
           completed={data.rulesAccepted}
         />
         <RuleCard
           icon="heart"
           title="Je traite les autres avec respect"
+          description="Respectez tous les utilisateurs de la communauté"
+          completed={data.rulesAccepted}
+        />
+        <RuleCard
+          icon="shield-checkmark"
+          title="Je respecterai la sécurité de tous"
+          description="Pas de contenu offensant, illégal ou dangereux"
           completed={data.rulesAccepted}
         />
       </View>
-
-      {/* Accept Button */}
-      <LinearGradient
-        colors={[Colors.primary, '#C82E42']}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-        style={[styles.buttonGradient, Shadows.glow, { opacity: data.rulesAccepted ? 1 : 0.6 }]}
-      >
-        <TouchableOpacity
-          style={styles.button}
-          onPress={handleAccept}
-          disabled={!data.rulesAccepted}
-        >
-          <Text style={styles.buttonText}>J'accepte les règles</Text>
-        </TouchableOpacity>
-      </LinearGradient>
 
       {/* Checkbox */}
       <TouchableOpacity
@@ -89,14 +128,74 @@ export default function SignupStep2() {
           ]}
         >
           {data.rulesAccepted && (
-            <Ionicons name="checkmark" size={16} color={Colors.text} />
+            <Ionicons name="checkmark" size={14} color={Colors.text} />
           )}
         </View>
         <Text style={styles.checkboxLabel}>
           J'accepte les règles de la communauté et confirme que j'ai 18 ans ou plus
         </Text>
       </TouchableOpacity>
-    </View>
+
+      {/* Document Upload Section - Show after checkbox */}
+      {data.rulesAccepted && (
+        <View style={styles.documentSection}>
+          <Text style={styles.sectionTitle}>Télécharger un document d'identité</Text>
+          <Text style={styles.documentSubtitle}>
+            Acceptés: Carte d'identité, Passeport, Permis de conduire
+          </Text>
+
+          {/* Upload Button */}
+          <LinearGradient
+            colors={[Colors.primary, '#C82E42']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={[styles.buttonGradient, Shadows.glow]}
+          >
+            <TouchableOpacity
+              style={styles.button}
+              onPress={handleUploadDocument}
+              disabled={isValidating}
+            >
+              {isValidating ? (
+                <ActivityIndicator color={Colors.text} />
+              ) : (
+                <>
+                  <Ionicons name="cloud-upload" size={20} color={Colors.text} style={{ marginRight: 8 }} />
+                  <Text style={styles.buttonText}>
+                    {documentSelected ? 'Document vérifié ✓' : 'Télécharger un document'}
+                  </Text>
+                </>
+              )}
+            </TouchableOpacity>
+          </LinearGradient>
+
+          {/* Status Message */}
+          {verificationStatus && (
+            <Text style={[styles.statusMessage, { color: verificationStatus.includes('réussie') ? Colors.success : Colors.warning }]}>
+              {verificationStatus}
+            </Text>
+          )}
+        </View>
+      )}
+
+      {/* Continue Button - Show when both rules and document are done */}
+      {isRulesAndDocumentsReady && (
+        <LinearGradient
+          colors={[Colors.primary, '#C82E42']}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={[styles.buttonGradient, Shadows.glow]}
+        >
+          <TouchableOpacity
+            style={styles.button}
+            onPress={nextStep}
+          >
+            <Text style={styles.buttonText}>Continuer vers le profil</Text>
+            <Ionicons name="chevron-forward" size={20} color={Colors.text} style={{ marginLeft: 8 }} />
+          </TouchableOpacity>
+        </LinearGradient>
+      )}
+    </ScrollView>
   );
 }
 
@@ -121,7 +220,7 @@ function StepIndicatorItem({
         ]}
       >
         {completed ? (
-          <Ionicons name="checkmark" size={18} color={Colors.text} />
+          <Ionicons name="checkmark" size={16} color={Colors.text} />
         ) : (
           <Text style={[styles.stepNumber, active && styles.stepNumberActive]}>
             {number}
@@ -138,10 +237,12 @@ function StepIndicatorItem({
 function RuleCard({
   icon,
   title,
+  description,
   completed,
 }: {
   icon: string;
   title: string;
+  description: string;
   completed: boolean;
 }) {
   return (
@@ -158,24 +259,30 @@ function RuleCard({
           color={completed ? Colors.text : Colors.primary}
         />
       </View>
-      <Text style={styles.ruleTitle}>{title}</Text>
+      <View style={styles.ruleContent}>
+        <Text style={styles.ruleTitle}>{title}</Text>
+        <Text style={styles.ruleDescription}>{description}</Text>
+      </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
+    paddingHorizontal: 0,
+    paddingVertical: 16,
   },
   backButton: {
-    marginBottom: 16,
+    paddingLeft: 20,
+    paddingBottom: 16,
   },
   stepIndicator: {
     flexDirection: 'row',
     alignItems: 'center',
+    marginHorizontal: 20,
     marginBottom: 32,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 16,
     backgroundColor: Colors.cardSurface,
     borderRadius: BorderRadius.base,
   },
@@ -190,7 +297,7 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.secondary,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 4,
+    marginBottom: 6,
   },
   stepCircleActive: {
     backgroundColor: Colors.primary,
@@ -207,7 +314,7 @@ const styles = StyleSheet.create({
     color: Colors.text,
   },
   stepLabel: {
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: '600',
     color: Colors.textSecondary,
   },
@@ -224,25 +331,28 @@ const styles = StyleSheet.create({
     fontSize: 32,
     fontWeight: '700',
     color: Colors.text,
-    marginBottom: 12,
+    marginBottom: 8,
+    marginHorizontal: 20,
     lineHeight: 40,
   },
   subtitle: {
-    fontSize: 14,
+    fontSize: 15,
     color: Colors.textSecondary,
-    lineHeight: 20,
+    lineHeight: 22,
     marginBottom: 32,
+    marginHorizontal: 20,
   },
   rulesContainer: {
     gap: 12,
-    marginBottom: 32,
+    marginBottom: 24,
+    marginHorizontal: 20,
   },
   ruleCard: {
     backgroundColor: Colors.cardSurface,
     borderRadius: BorderRadius.base,
     padding: 16,
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     gap: 12,
   },
   ruleIcon: {
@@ -252,22 +362,33 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.secondary,
     justifyContent: 'center',
     alignItems: 'center',
+    flexShrink: 0,
   },
   ruleIconCompleted: {
     backgroundColor: Colors.primary,
   },
-  ruleTitle: {
+  ruleContent: {
     flex: 1,
-    fontSize: 16,
+    gap: 4,
+  },
+  ruleTitle: {
+    fontSize: 15,
     fontWeight: '700',
     color: Colors.text,
     lineHeight: 20,
+  },
+  ruleDescription: {
+    fontSize: 13,
+    color: Colors.textSecondary,
+    lineHeight: 18,
   },
   checkboxContainer: {
     flexDirection: 'row',
     alignItems: 'flex-start',
     gap: 12,
+    paddingHorizontal: 20,
     paddingTop: 16,
+    marginBottom: 24,
     borderTopWidth: 1,
     borderTopColor: Colors.border,
   },
@@ -275,11 +396,12 @@ const styles = StyleSheet.create({
     width: 20,
     height: 20,
     borderRadius: 4,
-    borderWidth: 2,
+    borderWidth: 1.5,
     borderColor: Colors.border,
     justifyContent: 'center',
     alignItems: 'center',
     marginTop: 2,
+    flexShrink: 0,
   },
   checkboxChecked: {
     backgroundColor: Colors.primary,
@@ -294,15 +416,47 @@ const styles = StyleSheet.create({
   buttonGradient: {
     borderRadius: BorderRadius.base,
     overflow: 'hidden',
-    marginBottom: 16,
+    marginHorizontal: 20,
   },
   button: {
-    paddingVertical: 16,
+    flexDirection: 'row',
+    paddingVertical: 14,
     alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+  },
+  buttonIcon: {
+    marginRight: 4,
   },
   buttonText: {
     fontSize: 16,
     fontWeight: '700',
     color: Colors.text,
+  },
+  documentSection: {
+    marginTop: 32,
+    marginBottom: 24,
+    marginHorizontal: 20,
+    backgroundColor: Colors.cardSurface,
+    borderRadius: BorderRadius.large,
+    padding: 20,
+  },
+  sectionTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: Colors.text,
+    marginBottom: 8,
+  },
+  documentSubtitle: {
+    fontSize: 13,
+    color: Colors.textSecondary,
+    marginBottom: 16,
+    lineHeight: 18,
+  },
+  statusMessage: {
+    marginTop: 12,
+    fontSize: 14,
+    fontWeight: '600',
+    textAlign: 'center',
   },
 });

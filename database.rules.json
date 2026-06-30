@@ -1,0 +1,102 @@
+{
+  "rules": {
+    "users": {
+      "$userId": {
+        ".read": "auth.uid == $userId || auth.token.type === 'backend'",
+        ".write": "auth.token.type === 'backend'",
+        ".validate": "newData.hasChildren(['email'])",
+        "refreshTokens": {
+          "$tokenId": {
+            ".read": "auth.token.type === 'backend'",
+            ".write": "auth.token.type === 'backend'"
+          }
+        }
+      }
+    },
+
+    "profiles": {
+      "$userId": {
+        ".read": "auth != null",
+        ".write": "auth.uid == $userId || auth.token.type === 'backend'",
+        ".validate": "newData.hasChildren(['uid'])",
+
+        "sent_likes": {
+          "$targetId": {
+            ".read": "auth.uid == $userId || auth.token.type === 'backend'",
+            ".write": "auth.uid == $userId || auth.token.type === 'backend'",
+            ".validate": "newData.hasChildren(['createdAt'])"
+          }
+        },
+
+        "received_likes": {
+          "$senderId": {
+            ".read": "auth.uid == $userId || auth.token.type === 'backend'",
+            ".write": "auth != null || auth.token.type === 'backend'",
+            ".validate": "newData.hasChildren(['createdAt'])"
+          }
+        },
+
+        "nopes": {
+          "$targetId": {
+            ".read": "auth.uid == $userId || auth.token.type === 'backend'",
+            ".write": "auth.uid == $userId || auth.token.type === 'backend'",
+            ".validate": "newData.hasChildren(['createdAt'])"
+          }
+        },
+
+        "favorites": {
+          "$targetId": {
+            ".read": "auth.uid == $userId || auth.token.type === 'backend'",
+            ".write": "auth.uid == $userId || auth.token.type === 'backend'",
+            ".validate": "newData.hasChildren(['createdAt'])"
+          }
+        },
+
+        "notifications": {
+          "$notificationId": {
+            ".read": "auth.uid == $userId || auth.token.type === 'backend'",
+            ".write": "auth != null || auth.token.type === 'backend'",
+            ".validate": "newData.hasChildren(['type', 'title', 'message'])"
+          }
+        }
+      }
+    },
+
+    "matches": {
+      "$matchId": {
+        ".read": "auth != null && (data.child('userId1').val() === auth.uid || data.child('userId2').val() === auth.uid || auth.token.type === 'backend')",
+        ".write": "auth.token.type === 'backend' || (auth != null && !data.exists())",
+        ".validate": "newData.hasChildren(['userId1', 'userId2', 'matchedAt'])",
+
+        "messages": {
+          "$messageId": {
+            ".read": "auth != null && (root.child('matches').child($matchId).child('userId1').val() === auth.uid || root.child('matches').child($matchId).child('userId2').val() === auth.uid || auth.token.type === 'backend')",
+
+            ".write": "auth.token.type === 'backend' || (auth != null && !data.exists() && newData.child('senderId').val() === auth.uid) || (auth != null && data.exists() && newData.child('readAt').exists())",
+
+            ".validate": "newData.hasChildren(['senderId', 'content', 'sentAt'])"
+          }
+        }
+      }
+    },
+
+    "blocks": {
+      "$blockId": {
+        ".read": "auth.uid == data.child('blockerId').val() || auth.token.type === 'backend'",
+        ".write": "auth.token.type === 'backend'",
+        ".validate": "newData.hasChildren(['blockerId', 'blockedId', 'createdAt'])"
+      }
+    },
+
+    "sharedSpots": {
+      "$spotId": {
+        ".read": "auth != null",
+        ".write": "auth.token.type === 'backend'",
+        ".validate": "newData.hasChildren(['userId', 'name'])"
+      }
+    },
+
+    ".read": false,
+    ".write": false
+  }
+}

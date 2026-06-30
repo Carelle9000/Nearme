@@ -1,6 +1,7 @@
 import * as Notifications from 'expo-notifications';
 import { doc, updateDoc } from 'firebase/firestore';
 import { db } from '../config/firebase';
+import { Platform } from 'react-native';
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
@@ -11,8 +12,21 @@ Notifications.setNotificationHandler({
 });
 
 class NotificationService {
+  // Check if we're on a platform that supports push notifications
+  private isNotificationSupported(): boolean {
+    // Push notifications are supported on iOS and Android
+    // Web requires VAPID setup which is complex for dev
+    return Platform.OS !== 'web';
+  }
+
   async requestPermissions(): Promise<boolean> {
     try {
+      // Skip on web to avoid VAPID key requirement
+      if (!this.isNotificationSupported()) {
+        console.info('Push notifications not supported on this platform');
+        return false;
+      }
+
       const { status } = await Notifications.requestPermissionsAsync();
       return status === 'granted';
     } catch (error) {
@@ -23,8 +37,17 @@ class NotificationService {
 
   async getFCMToken(): Promise<string | null> {
     try {
+      // Skip on web to avoid VAPID key requirement
+      if (!this.isNotificationSupported()) {
+        console.info('Push notifications not available on web');
+        return null;
+      }
+
       const hasPermission = await this.requestPermissions();
-      if (!hasPermission) return null;
+      if (!hasPermission) {
+        console.warn('Notification permissions not granted');
+        return null;
+      }
 
       const projectId = process.env.EXPO_PUBLIC_FIREBASE_PROJECT_ID;
       if (!projectId) {

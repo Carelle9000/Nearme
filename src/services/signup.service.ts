@@ -5,15 +5,8 @@ import {
   updateProfile,
   User,
 } from 'firebase/auth';
-import {
-  collection,
-  doc,
-  setDoc,
-  getDoc,
-  updateDoc,
-  Timestamp,
-} from 'firebase/firestore';
-import { auth, db } from '../config/firebase';
+import { ref, set, get, update } from 'firebase/database';
+import { auth, rtdb } from '../config/firebase';
 import { SignupData } from '../context/signup-context';
 
 export interface UserProfile {
@@ -24,10 +17,13 @@ export interface UserProfile {
   gender: string;
   city: string;
   bio: string;
-  createdAt: Timestamp;
-  updatedAt: Timestamp;
+  createdAt: number;
+  updatedAt: number;
   profileCompleted: boolean;
   age?: number;
+  interests?: string[];
+  photos?: string[];
+  bio?: string;
 }
 
 export const signupService = {
@@ -56,12 +52,19 @@ export const signupService = {
   },
 
   /**
-   * Create user profile in Firestore
+   * Create user profile in Realtime Database
    */
   async createProfile(userId: string, signupData: SignupData): Promise<UserProfile> {
     try {
       const birthYear = parseInt(signupData.birthYear, 10);
-      const now = Timestamp.now();
+      const now = Date.now();
+
+      // Validate age before creating profile
+      const currentYear = new Date().getFullYear();
+      const age = currentYear - birthYear;
+      if (age < 18) {
+        throw new Error('Users must be at least 18 years old');
+      }
 
       const profileData: UserProfile = {
         uid: userId,
@@ -71,15 +74,20 @@ export const signupService = {
         gender: signupData.gender,
         city: signupData.city,
         bio: signupData.bio,
+        interests: signupData.interests || [],
+        photos: (signupData as any).photos || [],
         createdAt: now,
         updatedAt: now,
         profileCompleted: true,
       };
 
-      await setDoc(doc(db, 'users', userId), profileData);
+      await set(ref(rtdb, `profiles/${userId}`), profileData);
       return profileData;
     } catch (error: any) {
-      throw new Error('Failed to create profile: ' + error.message);
+      const message = error.message.includes('permission')
+        ? 'Vous n\'avez pas la permission de créer un profil'
+        : 'Erreur lors de la création du profil. Veuillez réessayer.';
+      throw new Error(message);
     }
   },
 
@@ -95,27 +103,25 @@ export const signupService = {
   },
 
   /**
-   * Get user profile from Firestore
+   * Get user profile from Realtime Database
    */
   async getProfile(userId: string): Promise<UserProfile | null> {
     try {
-      const docRef = doc(db, 'users', userId);
-      const docSnap = await getDoc(docRef);
-      return docSnap.exists() ? (docSnap.data() as UserProfile) : null;
+      const snapshot = await get(ref(rtdb, `profiles/${userId}`));
+      return snapshot.exists() ? (snapshot.val() as UserProfile) : null;
     } catch (error: any) {
       throw new Error('Failed to get profile: ' + error.message);
     }
   },
 
   /**
-   * Update user profile
+   * Update user profile in Realtime Database
    */
   async updateProfile(userId: string, updates: Partial<UserProfile>): Promise<void> {
     try {
-      const docRef = doc(db, 'users', userId);
-      await updateDoc(docRef, {
+      await update(ref(rtdb, `profiles/${userId}`), {
         ...updates,
-        updatedAt: Timestamp.now(),
+        updatedAt: Date.now(),
       });
     } catch (error: any) {
       throw new Error('Failed to update profile: ' + error.message);

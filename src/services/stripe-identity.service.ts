@@ -3,7 +3,70 @@ import { functions } from '../config/firebase';
 import { updateDoc, doc } from 'firebase/firestore';
 import { db } from '../config/firebase';
 
+interface VerificationResult {
+  status: 'verified' | 'requires_input' | 'failed';
+  message?: string;
+  verificationId?: string;
+}
+
 class StripeIdentityService {
+  async startVerification(file: any): Promise<VerificationResult> {
+    try {
+      const startVerification = httpsCallable<
+        { fileName: string; fileData: string },
+        VerificationResult
+      >(functions, 'startIdentityVerification');
+
+      const reader = new FileReader();
+
+      return new Promise((resolve, reject) => {
+        reader.onload = async () => {
+          try {
+            const base64Data = reader.result as string;
+            const result = await startVerification({
+              fileName: file.name || 'document',
+              fileData: base64Data,
+            });
+
+            resolve(result.data);
+          } catch (error) {
+            reject(error);
+          }
+        };
+
+        reader.onerror = () => {
+          reject(new Error('Failed to read file'));
+        };
+
+        if (file.uri) {
+          // Mobile file
+          fetch(file.uri)
+            .then((res) => res.blob())
+            .then((blob) => {
+              const fileReader = new FileReader();
+              fileReader.onload = () => {
+                const base64 = fileReader.result as string;
+                startVerification({
+                  fileName: file.name || 'document',
+                  fileData: base64,
+                }).then((result) => resolve(result.data));
+              };
+              fileReader.readAsDataURL(blob);
+            });
+        } else {
+          // Web file
+          reader.readAsDataURL(file);
+        }
+      });
+    } catch (error) {
+      console.error('Error starting verification:', error);
+      return {
+        status: 'failed',
+        message: 'Erreur lors de la vérification',
+      };
+    }
+  }
+
   async createVerificationSession(userId: string): Promise<string | null> {
     try {
       const createSession = httpsCallable(

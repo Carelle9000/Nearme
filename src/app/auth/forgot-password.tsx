@@ -28,7 +28,12 @@ export default function ForgotPasswordScreen() {
   const router = useRouter();
 
   const handleSendReset = async () => {
-    if (!email || !signupService.isEmailValid(email)) {
+    if (!email.trim()) {
+      Alert.alert('Erreur', 'Veuillez entrer votre adresse email');
+      return;
+    }
+
+    if (!signupService.isEmailValid(email)) {
       Alert.alert('Erreur', 'Veuillez entrer une adresse email valide');
       return;
     }

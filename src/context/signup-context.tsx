@@ -9,6 +9,7 @@ export interface SignupData {
   city: string;
   bio: string;
   rulesAccepted: boolean;
+  interests?: string[];
 }
 
 interface SignupContextType {

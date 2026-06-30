@@ -9,6 +9,7 @@
     "expo": "~56.0.12",
     "expo-constants": "~56.0.18",
     "expo-device": "~56.0.4",
+    "expo-document-picker": "^56.0.4",
     "expo-font": "~56.0.7",
     "expo-glass-effect": "~56.0.4",
     "expo-image": "~56.0.11",
@@ -36,6 +37,10 @@
   },
   "devDependencies": {
     "@types/react": "~19.2.2",
+    "eslint": "^9.0.0",
+    "eslint-config-expo": "~56.0.4",
+    "firebase-admin": "^14.1.0",
+    "playwright": "^1.61.1",
     "typescript": "~6.0.3"
   },
   "scripts": {

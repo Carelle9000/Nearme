@@ -1,20 +1,16 @@
 import {
-  collection,
-  doc,
-  getDoc,
-  getDocs,
-  setDoc,
-  addDoc,
-  updateDoc,
+  ref,
+  set,
+  get,
+  push,
+  update,
   query,
-  where,
-  orderBy,
-  limit,
-  onSnapshot,
+  orderByChild,
+  limitToLast,
+  onValue,
   Unsubscribe,
-  serverTimestamp,
-} from 'firebase/firestore';
-import { db } from '../config/firebase';
+} from 'firebase/database';
+import { rtdb } from '../config/firebase';
 import { Conversation, Message } from '../models/user';
 
 class ChatService {
@@ -25,6 +21,7 @@ class ChatService {
     user2Name: string
   ): Promise<Conversation> {
     const conversationId = [userId1, userId2].sort().join('_');
+    const now = Date.now();
 
     const conversation: Conversation = {
       id: conversationId,
@@ -33,14 +30,14 @@ class ChatService {
         [userId1]: user1Name,
         [userId2]: user2Name,
       },
-      createdAt: new Date(),
-      updatedAt: new Date(),
+      createdAt: new Date(now),
+      updatedAt: new Date(now),
     };
 
-    await setDoc(doc(db, 'conversations', conversationId), {
+    await set(ref(rtdb, `conversations/${conversationId}`), {
       ...conversation,
-      createdAt: serverTimestamp(),
-      updatedAt: serverTimestamp(),
+      createdAt: now,
+      updatedAt: now,
     });
 
     return conversation;
@@ -53,10 +50,15 @@ class ChatService {
     user2Name: string
   ): Promise<Conversation> {
     const conversationId = [userId1, userId2].sort().join('_');
-    const docSnap = await getDoc(doc(db, 'conversations', conversationId));
+    const snapshot = await get(ref(rtdb, `conversations/${conversationId}`));
 
-    if (docSnap.exists()) {
-      return docSnap.data() as Conversation;
+    if (snapshot.exists()) {
+      const data = snapshot.val();
+      return {
+        ...data,
+        createdAt: new Date(data.createdAt),
+        updatedAt: new Date(data.updatedAt),
+      };
     }
 
     return this.createConversation(userId1, userId2, user1Name, user2Name);
@@ -68,80 +70,80 @@ class ChatService {
     content: string,
     type: 'text' | 'image' = 'text'
   ): Promise<Message> {
-    const messagesRef = collection(db, `conversations/${conversationId}/messages`);
+    const now = Date.now();
+    const messagesRef = ref(rtdb, `conversations/${conversationId}/messages`);
+    const newMessageRef = push(messagesRef);
 
     const messageData = {
       senderId,
       content,
       type,
       status: 'sent',
-      createdAt: serverTimestamp(),
+      createdAt: now,
       deliveredAt: null,
       readAt: null,
-      errorMessage: null,
     };
 
-    const docRef = await addDoc(messagesRef, messageData);
+    await set(newMessageRef, messageData);
 
-    // Update conversation last message
-    await updateDoc(doc(db, 'conversations', conversationId), {
+    // Update conversation
+    await update(ref(rtdb, `conversations/${conversationId}`), {
       lastMessage: content,
-      lastMessageAt: serverTimestamp(),
-      updatedAt: serverTimestamp(),
+      lastMessageAt: now,
+      updatedAt: now,
     });
 
     return {
-      id: docRef.id,
+      id: newMessageRef.key!,
       conversationId,
       senderId,
       content,
       type,
       status: 'sent',
-      createdAt: new Date(),
+      createdAt: new Date(now),
     };
   }
 
   async getMessages(conversationId: string, limitCount: number = 50): Promise<Message[]> {
     try {
-      const q = query(
-        collection(db, `conversations/${conversationId}/messages`),
-        orderBy('createdAt', 'desc'),
-        limit(limitCount)
-      );
+      const snapshot = await get(ref(rtdb, `conversations/${conversationId}/messages`));
+      if (!snapshot.exists()) return [];
 
-      const snapshot = await getDocs(q);
-      return snapshot.docs
-        .map((doc) => ({
-          id: doc.id,
-          conversationId,
-          ...(doc.data() as Omit<Message, 'id' | 'conversationId'>),
-          createdAt: doc.data().createdAt?.toDate?.() || new Date(),
-        }))
-        .reverse();
+      const messagesObj = snapshot.val();
+      const messages = Object.entries(messagesObj).map(([id, data]: any) => ({
+        id,
+        conversationId,
+        ...data,
+        createdAt: new Date(data.createdAt),
+      }));
+
+      return messages.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime()).slice(0, limitCount);
     } catch (error) {
       console.error('Error fetching messages:', error);
-      throw error;
+      return [];
     }
   }
 
   async getConversations(userId: string): Promise<Conversation[]> {
     try {
-      const q = query(
-        collection(db, 'conversations'),
-        where('participants', 'array-contains', userId),
-        orderBy('lastMessageAt', 'desc')
-      );
+      const snapshot = await get(ref(rtdb, 'conversations'));
+      if (!snapshot.exists()) return [];
 
-      const snapshot = await getDocs(q);
-      return snapshot.docs.map((doc) => ({
-        ...(doc.data() as Conversation),
-        createdAt: doc.data().createdAt?.toDate?.() || new Date(),
-        updatedAt: doc.data().updatedAt?.toDate?.() || new Date(),
-        lastMessageAt: doc.data().lastMessageAt?.toDate?.(),
-      }));
+      const conversationsObj = snapshot.val();
+      const conversations = Object.entries(conversationsObj)
+        .map(([id, data]: any) => ({
+          id,
+          ...data,
+          createdAt: new Date(data.createdAt),
+          updatedAt: new Date(data.updatedAt),
+        }))
+        .filter((conv: any) => conv.participants.includes(userId))
+        .sort((a: any, b: any) => (b.lastMessageAt || 0) - (a.lastMessageAt || 0));
+
+      return conversations;
     } catch (error) {
       console.error('Error fetching conversations:', error);
-      throw error;
+      return [];
     }
   }
 
@@ -149,26 +151,30 @@ class ChatService {
     conversationId: string,
     callback: (messages: Message[]) => void
   ): Unsubscribe {
-    const q = query(
-      collection(db, `conversations/${conversationId}/messages`),
-      orderBy('createdAt', 'asc')
-    );
+    return onValue(ref(rtdb, `conversations/${conversationId}/messages`), (snapshot) => {
+      if (!snapshot.exists()) {
+        callback([]);
+        return;
+      }
 
-    return onSnapshot(q, (snapshot) => {
-      const messages = snapshot.docs.map((doc) => ({
-        id: doc.id,
-        conversationId,
-        ...(doc.data() as Omit<Message, 'id' | 'conversationId'>),
-        createdAt: doc.data().createdAt?.toDate?.() || new Date(),
-      }));
+      const messagesObj = snapshot.val();
+      const messages = Object.entries(messagesObj)
+        .map(([id, data]: any) => ({
+          id,
+          conversationId,
+          ...data,
+          createdAt: new Date(data.createdAt),
+        }))
+        .sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime());
+
       callback(messages);
     });
   }
 
   async markMessageAsRead(conversationId: string, messageId: string): Promise<void> {
-    await updateDoc(doc(db, `conversations/${conversationId}/messages/${messageId}`), {
+    await update(ref(rtdb, `conversations/${conversationId}/messages/${messageId}`), {
       status: 'read',
-      readAt: serverTimestamp(),
+      readAt: Date.now(),
     });
   }
 }

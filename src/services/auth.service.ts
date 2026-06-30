@@ -3,16 +3,12 @@ import {
   signInWithEmailAndPassword,
   signOut,
   onAuthStateChanged,
-  User as FirebaseUser,
-  signInWithCredential,
-  GoogleAuthProvider,
-  OAuthProvider,
   sendPasswordResetEmail,
   confirmPasswordReset,
   verifyPasswordResetCode,
 } from 'firebase/auth';
-import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
-import { auth, db } from '../config/firebase';
+import { ref, set, get } from 'firebase/database';
+import { auth, rtdb } from '../config/firebase';
 import { AppUser, Profile } from '../models/user';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
@@ -34,10 +30,10 @@ class AuthService {
       verified: false,
     };
 
-    // Create profile document in Firestore
-    await setDoc(doc(db, 'profiles', uid), {
+    // Create profile in Realtime Database
+    await set(ref(rtdb, `profiles/${uid}`), {
       ...appUser,
-      createdAt: serverTimestamp(),
+      createdAt: Date.now(),
     });
 
     this.cachedUser = appUser;
@@ -53,7 +49,7 @@ class AuthService {
     }
 
     try {
-      const userCred = await signInWithEmailAndPassword(auth, email, password);
+      await signInWithEmailAndPassword(auth, email, password);
       this.loginAttempts = 0;
       this.lastLoginAttempt = 0;
       await this.loadCurrentUser();
@@ -74,9 +70,9 @@ class AuthService {
     }
 
     try {
-      const profileDoc = await getDoc(doc(db, 'profiles', user.uid));
-      if (profileDoc.exists()) {
-        const profileData = profileDoc.data() as Profile;
+      const snapshot = await get(ref(rtdb, `profiles/${user.uid}`));
+      if (snapshot.exists()) {
+        const profileData = snapshot.val() as Profile;
         this.cachedUser = {
           id: user.uid,
           name: profileData.name || user.displayName || '',
@@ -93,6 +89,7 @@ class AuthService {
           isAgeVerified: profileData.isAgeVerified,
         };
       } else {
+        // Profile doesn't exist yet (new user) - use Auth data
         this.cachedUser = {
           id: user.uid,
           name: user.displayName || '',
@@ -102,10 +99,18 @@ class AuthService {
         };
       }
       this.checkAgeVerificationNeeded();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error loading user profile:', error);
-      this.cachedUser = null;
-      throw new Error('Failed to load user profile');
+      // If RTDB read fails, still create a minimal user object from Auth
+      // This allows users to proceed even if profile is not yet created
+      this.cachedUser = {
+        id: user.uid,
+        name: user.displayName || '',
+        email: user.email || '',
+        createdAt: new Date(),
+        verified: user.emailVerified,
+      };
+      this.checkAgeVerificationNeeded();
     }
   }
 
@@ -165,7 +170,15 @@ class AuthService {
   }
 
   async updateUserProfile(uid: string, updates: Partial<Profile>): Promise<void> {
-    await setDoc(doc(db, 'profiles', uid), updates, { merge: true });
+    // Get current profile and merge
+    const snapshot = await get(ref(rtdb, `profiles/${uid}`));
+    const currentProfile = snapshot.val() || {};
+
+    await set(ref(rtdb, `profiles/${uid}`), {
+      ...currentProfile,
+      ...updates,
+    });
+
     if (this.cachedUser?.id === uid) {
       await this.loadCurrentUser();
     }
