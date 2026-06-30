@@ -24,7 +24,11 @@ class UserService {
         ...data,
         updatedAt: Date.now(),
       });
-    } catch (error) {
+    } catch (error: any) {
+      if (error?.code === 'PERMISSION_DENIED') {
+        console.warn('Profile update permission denied (silently ignored):', error);
+        return;
+      }
       console.error('Error updating profile:', error);
       throw error;
     }
@@ -38,20 +42,39 @@ class UserService {
     try {
       const snapshot = await get(ref(rtdb, 'profiles'));
 
-      if (!snapshot.val()) return [];
+      if (!snapshot.val()) {
+        console.log('No profiles found in database');
+        return [];
+      }
 
-      return Object.values(snapshot.val() as Record<string, Profile>)
-        .filter((profile: Profile) => {
-          if (!profile.location) return false;
-          const distance = this.calculateDistance(
-            latitude,
-            longitude,
-            profile.location.latitude,
-            profile.location.longitude
-          );
-          return distance <= radiusInKm;
-        });
-    } catch (error) {
+      const allProfiles = Object.values(snapshot.val() as Record<string, Profile>);
+      console.log(`Total profiles in database: ${allProfiles.length}`);
+
+      const nearbyProfiles = allProfiles.filter((profile: Profile) => {
+        // If profile has no location, show it anyway (set distance as within radius)
+        if (!profile.location) {
+          console.warn(`Profile ${profile.uid} (${profile.displayName || profile.name}) has no location data - showing anyway`);
+          return true; // Include profiles without location
+        }
+
+        const distance = this.calculateDistance(
+          latitude,
+          longitude,
+          profile.location.latitude,
+          profile.location.longitude
+        );
+
+        console.log(`Profile ${profile.uid || profile.name}: distance = ${distance.toFixed(2)}km`);
+        return distance <= radiusInKm;
+      });
+
+      console.log(`Found ${nearbyProfiles.length} nearby profiles (within ${radiusInKm}km or without location)`);
+      return nearbyProfiles;
+    } catch (error: any) {
+      if (error?.code === 'PERMISSION_DENIED') {
+        console.warn('Permission denied reading profiles (silently ignored):', error);
+        return [];
+      }
       console.error('Error fetching nearby profiles:', error);
       throw error;
     }
@@ -82,7 +105,11 @@ class UserService {
         createdAt: Date.now(),
         targetId,
       });
-    } catch (error) {
+    } catch (error: any) {
+      if (error?.code === 'PERMISSION_DENIED') {
+        console.warn('Like save permission denied (silently ignored):', error);
+        return;
+      }
       console.error('Error saving like:', error);
       throw error;
     }
@@ -94,7 +121,11 @@ class UserService {
         createdAt: Date.now(),
         targetId,
       });
-    } catch (error) {
+    } catch (error: any) {
+      if (error?.code === 'PERMISSION_DENIED') {
+        console.warn('Nope save permission denied (silently ignored):', error);
+        return;
+      }
       console.error('Error saving nope:', error);
       throw error;
     }
@@ -106,7 +137,11 @@ class UserService {
         createdAt: Date.now(),
         targetId,
       });
-    } catch (error) {
+    } catch (error: any) {
+      if (error?.code === 'PERMISSION_DENIED') {
+        console.warn('Favorite save permission denied (silently ignored):', error);
+        return;
+      }
       console.error('Error saving favorite:', error);
       throw error;
     }

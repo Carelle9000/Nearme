@@ -1,7 +1,7 @@
 import { httpsCallable } from 'firebase/functions';
 import { functions } from '../config/firebase';
-import { updateDoc, doc } from 'firebase/firestore';
-import { db } from '../config/firebase';
+import { ref, update } from 'firebase/database';
+import { rtdb } from '../config/firebase';
 
 interface VerificationResult {
   status: 'verified' | 'requires_input' | 'failed';
@@ -10,7 +10,19 @@ interface VerificationResult {
 }
 
 class StripeIdentityService {
+  private simulationMode = true; // Toggle to false to use real Stripe verification
+
   async startVerification(file: any): Promise<VerificationResult> {
+    // Simulation mode for testing
+    if (this.simulationMode) {
+      await new Promise((resolve) => setTimeout(resolve, 1500)); // Simulate processing delay
+      return {
+        status: 'verified',
+        message: 'Vérification simulée réussie',
+        verificationId: 'sim_' + Math.random().toString(36).substr(2, 9),
+      };
+    }
+
     try {
       const startVerification = httpsCallable<
         { fileName: string; fileData: string },
@@ -88,7 +100,7 @@ class StripeIdentityService {
       const isVerified = (result.data as any).verified;
 
       if (isVerified) {
-        await updateDoc(doc(db, 'profiles', userId), {
+        await update(ref(rtdb, `profiles/${userId}`), {
           isAgeVerified: true,
           stripeIdentitySessionId: sessionId,
         });

@@ -6,7 +6,6 @@ import {
   ScrollView,
   ActivityIndicator,
   Alert,
-  Image,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
@@ -15,8 +14,6 @@ import * as DocumentPicker from 'expo-document-picker';
 import { useSignup } from '../../context/signup-context';
 import { Colors, BorderRadius, Shadows } from '../../constants/theme';
 import { stripeIdentityService } from '../../services/stripe-identity.service';
-
-const ACCEPTED_DOCUMENTS = ['ID card', 'Passport', 'Permis'];
 
 export default function SignupStep2() {
   const { data, updateData, nextStep, prevStep } = useSignup();
@@ -88,7 +85,7 @@ export default function SignupStep2() {
       </View>
 
       {/* Title */}
-      <Text style={styles.title}>Vérification d'identité</Text>
+      <Text style={styles.title}>Vérification d&apos;identité</Text>
       <Text style={styles.subtitle}>
         Pour votre sécurité et celle de la communauté, nous devons vérifier votre identité.
       </Text>
@@ -132,16 +129,16 @@ export default function SignupStep2() {
           )}
         </View>
         <Text style={styles.checkboxLabel}>
-          J'accepte les règles de la communauté et confirme que j'ai 18 ans ou plus
+          J&apos;accepte les règles de la communauté et confirme que j&apos;ai 18 ans ou plus
         </Text>
       </TouchableOpacity>
 
       {/* Document Upload Section - Show after checkbox */}
       {data.rulesAccepted && (
         <View style={styles.documentSection}>
-          <Text style={styles.sectionTitle}>Télécharger un document d'identité</Text>
+          <Text style={styles.sectionTitle}>Télécharger un document d&apos;identité</Text>
           <Text style={styles.documentSubtitle}>
-            Acceptés: Carte d'identité, Passeport, Permis de conduire
+            Acceptés: Carte d&apos;identité, Passeport, Permis de conduire
           </Text>
 
           {/* Upload Button */}
@@ -159,12 +156,12 @@ export default function SignupStep2() {
               {isValidating ? (
                 <ActivityIndicator color={Colors.text} />
               ) : (
-                <>
+                <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}>
                   <Ionicons name="cloud-upload" size={20} color={Colors.text} style={{ marginRight: 8 }} />
                   <Text style={styles.buttonText}>
                     {documentSelected ? 'Document vérifié ✓' : 'Télécharger un document'}
                   </Text>
-                </>
+                </View>
               )}
             </TouchableOpacity>
           </LinearGradient>
@@ -190,8 +187,10 @@ export default function SignupStep2() {
             style={styles.button}
             onPress={nextStep}
           >
-            <Text style={styles.buttonText}>Continuer vers le profil</Text>
-            <Ionicons name="chevron-forward" size={20} color={Colors.text} style={{ marginLeft: 8 }} />
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}>
+              <Text style={styles.buttonText}>Continuer vers le profil</Text>
+              <Ionicons name="chevron-forward" size={20} color={Colors.text} style={{ marginLeft: 8 }} />
+            </View>
           </TouchableOpacity>
         </LinearGradient>
       )}

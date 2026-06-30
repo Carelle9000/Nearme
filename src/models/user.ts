@@ -4,6 +4,7 @@ export interface AppUser {
   email: string;
   displayName?: string;
   photoUrl?: string;
+  photos?: string[];
   birthDate?: Date;
   gender?: 'male' | 'female' | 'other';
   bio?: string;

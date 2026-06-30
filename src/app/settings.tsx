@@ -15,8 +15,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useAuth } from '../context/auth-context';
 import { Colors, BorderRadius, Shadows } from '../constants/theme';
-import { doc, deleteDoc } from 'firebase/firestore';
-import { db, auth } from '../config/firebase';
+import { ref, remove } from 'firebase/database';
+import { rtdb, auth } from '../config/firebase';
 import { deleteUser } from 'firebase/auth';
 
 export default function SettingsScreen() {
@@ -70,7 +70,7 @@ export default function SettingsScreen() {
       // Delete Firestore profile
       if (user.id) {
         try {
-          await deleteDoc(doc(db, 'profiles', user.id));
+          await remove(ref(rtdb, `profiles/${user.id}`));
         } catch (error) {
           console.error('Error deleting profile from Firestore:', error);
         }
@@ -163,11 +163,17 @@ export default function SettingsScreen() {
               <Text style={styles.settingName}>Version</Text>
               <Text style={styles.settingValue}>1.0.0</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={styles.settingRow}>
+            <TouchableOpacity
+              style={styles.settingRow}
+              onPress={() => router.push('/legal/privacy-policy')}
+            >
               <Text style={styles.settingName}>Politique de confidentialité</Text>
               <Ionicons name="chevron-forward" size={20} color={Colors.textSecondary} />
             </TouchableOpacity>
-            <TouchableOpacity style={styles.settingRow}>
+            <TouchableOpacity
+              style={styles.settingRow}
+              onPress={() => router.push('/legal/terms-of-service')}
+            >
               <Text style={styles.settingName}>Conditions d'utilisation</Text>
               <Ionicons name="chevron-forward" size={20} color={Colors.textSecondary} />
             </TouchableOpacity>

@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import { AppUser } from '../models/user';
 import { authService } from '../services/auth.service';
 
@@ -45,7 +45,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return unsubscribe;
   }, []);
 
-  const login = async (email: string, password: string, rememberMe: boolean = false) => {
+  const login = useCallback(async (email: string, password: string, rememberMe: boolean = false) => {
     setIsLoading(true);
     try {
       await authService.login(email, password);
@@ -59,9 +59,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
 
-  const register = async (email: string, password: string, name: string) => {
+  const register = useCallback(async (email: string, password: string, name: string) => {
     setIsLoading(true);
     try {
       await authService.register(email, password, name);
@@ -70,9 +70,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
 
-  const logout = async () => {
+  const logout = useCallback(async () => {
     setIsLoading(true);
     try {
       await authService.logout();
@@ -81,34 +81,34 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
 
-  const updateProfile = async (updates: Partial<AppUser>) => {
+  const updateProfile = useCallback(async (updates: Partial<AppUser>) => {
     if (!user) return;
     await authService.updateUserProfile(user.id, updates as any);
     setUser(authService.currentUser);
     setNeedsAgeVerif(authService.needsAgeVerify);
-  };
+  }, [user]);
 
-  const sendPasswordReset = async (email: string) => {
+  const sendPasswordReset = useCallback(async (email: string) => {
     await authService.sendPasswordReset(email);
-  };
+  }, []);
 
-  const resetPassword = async (oobCode: string, newPassword: string) => {
+  const resetPassword = useCallback(async (oobCode: string, newPassword: string) => {
     await authService.resetPassword(oobCode, newPassword);
-  };
+  }, []);
 
-  const verifyResetCode = async (oobCode: string) => {
+  const verifyResetCode = useCallback(async (oobCode: string) => {
     return await authService.verifyResetCode(oobCode);
-  };
+  }, []);
 
-  const getRememberedEmail = async () => {
+  const getRememberedEmail = useCallback(async () => {
     return await authService.getRememberedEmail();
-  };
+  }, []);
 
-  const clearRememberMe = async () => {
+  const clearRememberMe = useCallback(async () => {
     await authService.clearRememberMe();
-  };
+  }, []);
 
   return (
     <AuthContext.Provider

@@ -92,7 +92,14 @@ class PhotoService {
 
   async deletePhoto(photoUrl: string): Promise<void> {
     try {
-      const storageRef = ref(storage, photoUrl);
+      // Extract the path from the download URL
+      const pathMatch = photoUrl.match(/\/o\/(.*?)\?/);
+      if (!pathMatch || !pathMatch[1]) {
+        throw new Error('Invalid photo URL');
+      }
+
+      const decodedPath = decodeURIComponent(pathMatch[1]);
+      const storageRef = ref(storage, decodedPath);
       await deleteObject(storageRef);
     } catch (error) {
       console.error('Error deleting photo:', error);

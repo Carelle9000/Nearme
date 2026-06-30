@@ -23,7 +23,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 export default function ManagePhotosScreen() {
   const router = useRouter();
   const { user } = useAuth();
-  const { profilePhotos, isUploadingPhoto, pickAndUploadPhoto, takeAndUploadPhoto, deletePhoto } =
+  const { profilePhotos, isUploadingPhoto, error, pickAndUploadPhoto, takeAndUploadPhoto, deletePhoto, clearError } =
     useProfile();
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [showPreview, setShowPreview] = useState(false);
@@ -32,17 +32,39 @@ export default function ManagePhotosScreen() {
     if (user?.location) {
       // Load user photos on mount
     }
-  }, [user?.id]);
+
+    return () => {
+      clearError();
+    };
+  }, [user?.id, clearError]);
 
   const handleUploadPhoto = () => {
     Alert.alert('Ajouter une photo', 'Choisir une source', [
       {
         text: 'Appareil photo',
-        onPress: takeAndUploadPhoto,
+        onPress: async () => {
+          try {
+            const success = await takeAndUploadPhoto();
+            if (success) {
+              Alert.alert('Succès', 'Votre photo a été uploadée');
+            }
+          } catch (error: any) {
+            Alert.alert('Erreur', error.message || 'Impossible de prendre une photo');
+          }
+        },
       },
       {
         text: 'Galerie',
-        onPress: pickAndUploadPhoto,
+        onPress: async () => {
+          try {
+            const success = await pickAndUploadPhoto();
+            if (success) {
+              Alert.alert('Succès', 'Votre photo a été uploadée');
+            }
+          } catch (error: any) {
+            Alert.alert('Erreur', error.message || 'Impossible de charger la photo');
+          }
+        },
       },
       { text: 'Annuler', style: 'cancel' },
     ]);
@@ -92,7 +114,7 @@ export default function ManagePhotosScreen() {
     <LinearGradient colors={[Colors.background, Colors.cardSurface]} style={styles.container}>
       <SafeAreaView style={styles.safeArea}>
         <View style={styles.header}>
-          <TouchableOpacity onPress={() => router.back()}>
+          <TouchableOpacity onPress={() => router.replace('/(tabs)/profile')}>
             <Ionicons name="chevron-back" size={28} color={Colors.primary} />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Gérer mes photos</Text>
@@ -100,6 +122,18 @@ export default function ManagePhotosScreen() {
         </View>
 
         <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+          {error && (
+            <View style={styles.errorContainer}>
+              <View style={styles.errorContent}>
+                <Ionicons name="alert-circle" size={20} color="#fff" />
+                <Text style={styles.errorText}>{error}</Text>
+              </View>
+              <TouchableOpacity onPress={clearError} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+                <Ionicons name="close" size={20} color="#fff" />
+              </TouchableOpacity>
+            </View>
+          )}
+
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>
               Mes photos ({profilePhotos.length}/6)
@@ -438,5 +472,28 @@ const styles = StyleSheet.create({
     color: Colors.primary,
     fontSize: 16,
     fontWeight: '600',
+  },
+  errorContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: '#E74C3C',
+    paddingHorizontal: 12,
+    paddingVertical: 12,
+    borderRadius: BorderRadius.base,
+    marginBottom: 16,
+    gap: 8,
+  },
+  errorContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+    gap: 8,
+  },
+  errorText: {
+    flex: 1,
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: '500',
   },
 });

@@ -33,6 +33,7 @@ class AuthService {
     // Create profile in Realtime Database
     await set(ref(rtdb, `profiles/${uid}`), {
       ...appUser,
+      uid, // Required by Firebase validation rules
       createdAt: Date.now(),
     });
 
@@ -79,6 +80,7 @@ class AuthService {
           email: user.email || '',
           displayName: profileData.displayName,
           photoUrl: profileData.photoUrl,
+          photos: profileData.photos,
           birthDate: profileData.birthDate ? new Date(profileData.birthDate) : undefined,
           gender: profileData.gender,
           bio: profileData.bio,
@@ -94,6 +96,7 @@ class AuthService {
           id: user.uid,
           name: user.displayName || '',
           email: user.email || '',
+          photos: [],
           createdAt: new Date(),
           verified: user.emailVerified,
         };
@@ -107,6 +110,7 @@ class AuthService {
         id: user.uid,
         name: user.displayName || '',
         email: user.email || '',
+        photos: [],
         createdAt: new Date(),
         verified: user.emailVerified,
       };
@@ -170,17 +174,25 @@ class AuthService {
   }
 
   async updateUserProfile(uid: string, updates: Partial<Profile>): Promise<void> {
-    // Get current profile and merge
-    const snapshot = await get(ref(rtdb, `profiles/${uid}`));
-    const currentProfile = snapshot.val() || {};
+    try {
+      // Get current profile and merge
+      const snapshot = await get(ref(rtdb, `profiles/${uid}`));
+      const currentProfile = snapshot.val() || {};
 
-    await set(ref(rtdb, `profiles/${uid}`), {
-      ...currentProfile,
-      ...updates,
-    });
+      await set(ref(rtdb, `profiles/${uid}`), {
+        ...currentProfile,
+        uid, // Ensure uid is always present for validation
+        ...updates,
+      });
 
-    if (this.cachedUser?.id === uid) {
-      await this.loadCurrentUser();
+      if (this.cachedUser?.id === uid) {
+        await this.loadCurrentUser();
+      }
+    } catch (error: any) {
+      if (error?.code === 'PERMISSION_DENIED') {
+        throw new Error(this.getErrorMessage('PERMISSION_DENIED'));
+      }
+      throw error;
     }
   }
 
@@ -232,6 +244,7 @@ class AuthService {
       'auth/operation-not-allowed': 'La réinitialisation de mot de passe n\'est pas activée.',
       'auth/weak-password': 'Le nouveau mot de passe est trop faible.',
       'auth/too-many-requests': 'Trop de tentatives. Veuillez réessayer plus tard.',
+      'PERMISSION_DENIED': 'Vous n\'avez pas la permission de modifier votre profil. Veuillez vous reconnecter.',
     };
 
     return errorMessages[code] || 'Une erreur s\'est produite. Veuillez réessayer.';

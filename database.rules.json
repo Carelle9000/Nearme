@@ -15,12 +15,14 @@
     },
 
     "profiles": {
+      ".read": "auth != null",
       "$userId": {
         ".read": "auth != null",
         ".write": "auth.uid == $userId || auth.token.type === 'backend'",
-        ".validate": "newData.hasChildren(['uid'])",
+        ".validate": "newData.child('uid').exists() || data.child('uid').exists()",
 
         "sent_likes": {
+          ".read": "auth.uid == $userId || auth.token.type === 'backend'",
           "$targetId": {
             ".read": "auth.uid == $userId || auth.token.type === 'backend'",
             ".write": "auth.uid == $userId || auth.token.type === 'backend'",
@@ -29,6 +31,7 @@
         },
 
         "received_likes": {
+          ".read": "auth.uid == $userId || auth.token.type === 'backend'",
           "$senderId": {
             ".read": "auth.uid == $userId || auth.token.type === 'backend'",
             ".write": "auth != null || auth.token.type === 'backend'",
@@ -37,6 +40,7 @@
         },
 
         "nopes": {
+          ".read": "auth.uid == $userId || auth.token.type === 'backend'",
           "$targetId": {
             ".read": "auth.uid == $userId || auth.token.type === 'backend'",
             ".write": "auth.uid == $userId || auth.token.type === 'backend'",
@@ -45,6 +49,7 @@
         },
 
         "favorites": {
+          ".read": "auth.uid == $userId || auth.token.type === 'backend'",
           "$targetId": {
             ".read": "auth.uid == $userId || auth.token.type === 'backend'",
             ".write": "auth.uid == $userId || auth.token.type === 'backend'",
@@ -53,10 +58,31 @@
         },
 
         "notifications": {
+          ".read": "auth.uid == $userId || auth.token.type === 'backend'",
           "$notificationId": {
             ".read": "auth.uid == $userId || auth.token.type === 'backend'",
             ".write": "auth != null || auth.token.type === 'backend'",
             ".validate": "newData.hasChildren(['type', 'title', 'message'])"
+          }
+        }
+      }
+    },
+
+    "conversations": {
+      ".read": "auth != null",
+      ".write": "auth.token.type === 'backend'",
+      "$conversationId": {
+        ".read": "auth != null && (data.child('participants').child(auth.uid).exists() || data.child('users').child(auth.uid).exists() || auth.token.type === 'backend')",
+        ".write": "auth.token.type === 'backend'",
+        ".validate": "newData.hasChildren(['participants'])",
+
+        "messages": {
+          "$messageId": {
+            ".read": "auth != null && (root.child('conversations').child($conversationId).child('participants').child(auth.uid).exists() || root.child('conversations').child($conversationId).child('users').child(auth.uid).exists() || auth.token.type === 'backend')",
+
+            ".write": "auth != null && newData.child('senderId').val() === auth.uid || auth.token.type === 'backend'",
+
+            ".validate": "newData.hasChildren(['senderId', 'content', 'createdAt'])"
           }
         }
       }

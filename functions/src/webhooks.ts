@@ -8,8 +8,19 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', {
 });
 
 export const stripeWebhook = onRequest(
-  { region: 'europe-west1' },
+  { region: 'europe-west1', cors: true },
   async (req, res) => {
+    // Set CORS headers
+    res.set('Access-Control-Allow-Origin', '*');
+    res.set('Access-Control-Allow-Methods', 'POST, OPTIONS');
+    res.set('Access-Control-Allow-Headers', 'Content-Type, stripe-signature');
+
+    // Handle preflight
+    if (req.method === 'OPTIONS') {
+      res.status(204).send('');
+      return;
+    }
+
     const sig = req.headers['stripe-signature'] as string;
     const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET || '';
 

@@ -165,7 +165,7 @@ class ChatService {
           ...data,
           createdAt: new Date(data.createdAt),
         }))
-        .sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime());
+        .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
 
       callback(messages);
     });

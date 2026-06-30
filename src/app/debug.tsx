@@ -4,8 +4,8 @@ import { useAuth } from '../context/auth-context';
 import { authService } from '../services/auth.service';
 import { userService } from '../services/user.service';
 import { chatService } from '../services/chat.service';
-import { db, auth } from '../config/firebase';
-import { doc, getDoc } from 'firebase/firestore';
+import { rtdb, auth } from '../config/firebase';
+import { ref, get } from 'firebase/database';
 
 export default function DebugScreen() {
   const { user } = useAuth();
@@ -34,7 +34,7 @@ export default function DebugScreen() {
       addLog('Testing Firebase connection...');
 
       // Vérifier que Firebase est initialisé
-      if (!auth || !db) {
+      if (!auth || !rtdb) {
         throw new Error('Firebase not initialized');
       }
       addLog('Firebase auth initialized ✓');
@@ -42,8 +42,8 @@ export default function DebugScreen() {
 
       // Tester la lecture Firestore
       try {
-        const testRef = doc(db, 'conversations/test');
-        await getDoc(testRef);
+        const testRef = ref(rtdb, 'conversations/test');
+        await get(testRef);
         addLog('Firestore read access ✓');
       } catch (e: any) {
         if (e.code === 'permission-denied') {

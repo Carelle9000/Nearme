@@ -4,16 +4,18 @@ import {
   Text,
   StyleSheet,
   TouchableOpacity,
-  Slider,
   Modal,
   ScrollView,
-  Switch,
 } from 'react-native';
+import Slider from '@react-native-community/slider';
 import { Ionicons } from '@expo/vector-icons';
 import { useDiscoverFilters } from '../context/discover-filters-context';
+import { useDiscover } from '../context/discover-context';
+import { Colors } from '../constants/theme';
 
 export function FilterPanel() {
   const { filters, updateFilters, resetFilters } = useDiscoverFilters();
+  const { applyFilters } = useDiscover();
   const [showModal, setShowModal] = useState(false);
 
   const handleAgeChange = (ages: number[]) => {
@@ -27,33 +29,43 @@ export function FilterPanel() {
     updateFilters({ maxDistance: distance });
   };
 
+  const handleApplyFilters = () => {
+    applyFilters(filters);
+    setShowModal(false);
+  };
+
+  const handleResetFilters = () => {
+    resetFilters();
+  };
+
   return (
     <>
       <TouchableOpacity style={styles.filterButton} onPress={() => setShowModal(true)}>
         <Ionicons name="funnel" size={20} color="#fff" />
-        <Text style={styles.filterButtonText}>Filters</Text>
+        <Text style={styles.filterButtonText}>Filtres</Text>
       </TouchableOpacity>
 
       <Modal visible={showModal} animationType="slide" onRequestClose={() => setShowModal(false)}>
         <View style={styles.modalContainer}>
           <View style={styles.modalHeader}>
             <TouchableOpacity onPress={() => setShowModal(false)}>
-              <Text style={styles.modalCloseText}>Cancel</Text>
+              <Text style={styles.modalCloseText}>Fermer</Text>
             </TouchableOpacity>
-            <Text style={styles.modalTitle}>Filters</Text>
-            <TouchableOpacity onPress={resetFilters}>
-              <Text style={styles.modalResetText}>Reset</Text>
+            <Text style={styles.modalTitle}>Filtres</Text>
+            <TouchableOpacity onPress={handleResetFilters}>
+              <Text style={styles.modalResetText}>Réinitialiser</Text>
             </TouchableOpacity>
           </View>
 
           <ScrollView contentContainerStyle={styles.modalContent}>
             {/* Age Filter */}
             <View style={styles.filterSection}>
-              <Text style={styles.filterSectionTitle}>Age Range</Text>
+              <Text style={styles.filterSectionTitle}>Plage d&apos;âge</Text>
               <Text style={styles.filterValue}>
-                {filters.minAge} - {filters.maxAge} years
+                {filters.minAge} - {filters.maxAge} ans
               </Text>
               <View style={styles.sliderContainer}>
+                <Text style={styles.sliderLabel}>Âge minimum: {filters.minAge}</Text>
                 <Slider
                   style={styles.slider}
                   minimumValue={18}
@@ -63,11 +75,12 @@ export function FilterPanel() {
                   onValueChange={(value) =>
                     handleAgeChange([value, filters.maxAge])
                   }
-                  minimumTrackTintColor="#FF1744"
-                  maximumTrackTintColor="#f0f0f0"
+                  minimumTrackTintColor={Colors.primary}
+                  maximumTrackTintColor={Colors.border}
                 />
               </View>
               <View style={styles.sliderContainer}>
+                <Text style={styles.sliderLabel}>Âge maximum: {filters.maxAge}</Text>
                 <Slider
                   style={styles.slider}
                   minimumValue={18}
@@ -77,15 +90,15 @@ export function FilterPanel() {
                   onValueChange={(value) =>
                     handleAgeChange([filters.minAge, value])
                   }
-                  minimumTrackTintColor="#FF1744"
-                  maximumTrackTintColor="#f0f0f0"
+                  minimumTrackTintColor={Colors.primary}
+                  maximumTrackTintColor={Colors.border}
                 />
               </View>
             </View>
 
             {/* Distance Filter */}
             <View style={styles.filterSection}>
-              <Text style={styles.filterSectionTitle}>Maximum Distance</Text>
+              <Text style={styles.filterSectionTitle}>Distance maximale</Text>
               <Text style={styles.filterValue}>{filters.maxDistance} km</Text>
               <View style={styles.sliderContainer}>
                 <Slider
@@ -95,32 +108,37 @@ export function FilterPanel() {
                   step={5}
                   value={filters.maxDistance}
                   onValueChange={handleDistanceChange}
-                  minimumTrackTintColor="#FF1744"
-                  maximumTrackTintColor="#f0f0f0"
+                  minimumTrackTintColor={Colors.primary}
+                  maximumTrackTintColor={Colors.border}
                 />
               </View>
             </View>
 
             {/* Gender Filter */}
             <View style={styles.filterSection}>
-              <Text style={styles.filterSectionTitle}>Gender</Text>
+              <Text style={styles.filterSectionTitle}>Genre</Text>
               <View style={styles.genderOptions}>
-                {['male', 'female', 'other', 'all'].map((gender) => (
+                {[
+                  { key: 'male' as const, label: 'Homme' },
+                  { key: 'female' as const, label: 'Femme' },
+                  { key: 'other' as const, label: 'Autre' },
+                  { key: 'all' as const, label: 'Tous' },
+                ].map(({ key, label }) => (
                   <TouchableOpacity
-                    key={gender}
+                    key={key}
                     style={[
                       styles.genderButton,
-                      filters.gender === gender && styles.genderButtonActive,
+                      filters.gender === key && styles.genderButtonActive,
                     ]}
-                    onPress={() => updateFilters({ gender: gender as any })}
+                    onPress={() => updateFilters({ gender: key })}
                   >
                     <Text
                       style={[
                         styles.genderButtonText,
-                        filters.gender === gender && styles.genderButtonTextActive,
+                        filters.gender === key && styles.genderButtonTextActive,
                       ]}
                     >
-                      {gender.charAt(0).toUpperCase() + gender.slice(1)}
+                      {label}
                     </Text>
                   </TouchableOpacity>
                 ))}
@@ -130,9 +148,9 @@ export function FilterPanel() {
 
           <TouchableOpacity
             style={styles.applyButton}
-            onPress={() => setShowModal(false)}
+            onPress={handleApplyFilters}
           >
-            <Text style={styles.applyButtonText}>Apply Filters</Text>
+            <Text style={styles.applyButtonText}>Appliquer les filtres</Text>
           </TouchableOpacity>
         </View>
       </Modal>
@@ -146,7 +164,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 16,
     paddingVertical: 10,
-    backgroundColor: '#FF1744',
+    backgroundColor: Colors.primary,
     borderRadius: 20,
     gap: 8,
   },
@@ -157,7 +175,7 @@ const styles = StyleSheet.create({
   },
   modalContainer: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: Colors.background,
   },
   modalHeader: {
     flexDirection: 'row',
@@ -166,20 +184,20 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
+    borderBottomColor: Colors.border,
   },
   modalCloseText: {
     fontSize: 16,
-    color: '#666',
+    color: Colors.textSecondary,
   },
   modalTitle: {
     fontSize: 18,
     fontWeight: '600',
-    color: '#000',
+    color: Colors.text,
   },
   modalResetText: {
     fontSize: 16,
-    color: '#FF1744',
+    color: Colors.primary,
   },
   modalContent: {
     padding: 16,
@@ -190,17 +208,22 @@ const styles = StyleSheet.create({
   filterSectionTitle: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#000',
+    color: Colors.text,
     marginBottom: 12,
   },
   filterValue: {
     fontSize: 14,
-    color: '#FF1744',
+    color: Colors.primary,
     fontWeight: '600',
     marginBottom: 12,
   },
   sliderContainer: {
-    marginBottom: 12,
+    marginBottom: 16,
+  },
+  sliderLabel: {
+    fontSize: 12,
+    color: Colors.textSecondary,
+    marginBottom: 8,
   },
   slider: {
     width: '100%',
@@ -215,17 +238,17 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 10,
     borderWidth: 1,
-    borderColor: '#ddd',
+    borderColor: Colors.border,
     borderRadius: 20,
-    backgroundColor: '#fff',
+    backgroundColor: Colors.cardSurface,
   },
   genderButtonActive: {
-    backgroundColor: '#FF1744',
-    borderColor: '#FF1744',
+    backgroundColor: Colors.primary,
+    borderColor: Colors.primary,
   },
   genderButtonText: {
     fontSize: 14,
-    color: '#666',
+    color: Colors.textSecondary,
     fontWeight: '500',
   },
   genderButtonTextActive: {
@@ -235,7 +258,7 @@ const styles = StyleSheet.create({
     marginHorizontal: 16,
     marginBottom: 32,
     paddingVertical: 14,
-    backgroundColor: '#FF1744',
+    backgroundColor: Colors.primary,
     borderRadius: 8,
     alignItems: 'center',
   },

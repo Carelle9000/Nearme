@@ -1,28 +1,25 @@
 import {
-  collection,
-  doc,
-  setDoc,
-  getDocs,
-  query,
-  where,
-  serverTimestamp,
-} from 'firebase/firestore';
-import { db } from '../config/firebase';
+  ref,
+  set,
+  get,
+} from 'firebase/database';
+import { rtdb } from '../config/firebase';
 import { Match } from '../models/user';
 
 class MatchService {
   async createMatch(userId1: string, userId2: string): Promise<Match> {
     const matchId = [userId1, userId2].sort().join('_');
+    const now = Date.now();
 
     const match: Match = {
       id: matchId,
       users: [userId1, userId2],
-      matchedAt: new Date(),
+      matchedAt: new Date(now),
     };
 
-    await setDoc(doc(db, 'matches', matchId), {
+    await set(ref(rtdb, `matches/${matchId}`), {
       ...match,
-      matchedAt: serverTimestamp(),
+      matchedAt: now,
     });
 
     return match;
@@ -30,13 +27,9 @@ class MatchService {
 
   async checkMatch(userId1: string, userId2: string): Promise<boolean> {
     try {
-      const snapshot = await getDocs(
-        query(collection(db, 'matches'), where('users', 'array-contains', userId1))
-      );
-
-      return snapshot.docs.some(
-        (doc) => doc.data().users.includes(userId1) && doc.data().users.includes(userId2)
-      );
+      const matchId = [userId1, userId2].sort().join('_');
+      const snapshot = await get(ref(rtdb, `matches/${matchId}`));
+      return snapshot.exists();
     } catch (error) {
       console.error('Error checking match:', error);
       return false;
@@ -45,19 +38,22 @@ class MatchService {
 
   async getUserMatches(userId: string): Promise<Match[]> {
     try {
-      const q = query(
-        collection(db, 'matches'),
-        where('users', 'array-contains', userId)
-      );
+      const snapshot = await get(ref(rtdb, 'matches'));
+      if (!snapshot.exists()) return [];
 
-      const snapshot = await getDocs(q);
-      return snapshot.docs.map((doc) => ({
-        ...(doc.data() as Match),
-        matchedAt: doc.data().matchedAt?.toDate?.() || new Date(),
-      }));
+      const matchesObj = snapshot.val();
+      const matches = Object.entries(matchesObj)
+        .map(([id, data]: any) => ({
+          id,
+          ...data,
+          matchedAt: new Date(data.matchedAt),
+        }))
+        .filter((match: any) => match.users.includes(userId));
+
+      return matches;
     } catch (error) {
       console.error('Error fetching user matches:', error);
-      throw error;
+      return [];
     }
   }
 

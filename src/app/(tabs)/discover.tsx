@@ -1,26 +1,19 @@
 import { View, StyleSheet, ActivityIndicator, Alert, TouchableOpacity, Text } from 'react-native';
-import { useAuth } from '../../context/auth-context';
 import { useDiscover } from '../../context/discover-context';
 import { ProfileCard } from '../../components/profile-card';
+import { FilterPanel } from '../../components/filter-panel';
 import { locationService } from '../../services/location.service';
-import { useEffect, useState } from 'react';
+import { useEffect, useCallback } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '../../constants/theme';
 
 export default function DiscoverScreen() {
-  const { user } = useAuth();
   const { profiles, currentIndex, isLoading, loadNearbyProfiles, like, nope, favorite, favoriteIds } =
     useDiscover();
-  const [isLoadingLocation, setIsLoadingLocation] = useState(false);
 
-  useEffect(() => {
-    loadProfiles();
-  }, []);
-
-  const loadProfiles = async () => {
-    setIsLoadingLocation(true);
+  const loadProfiles = useCallback(async () => {
     try {
       const location = await locationService.getCurrentLocation();
       if (location) {
@@ -31,18 +24,54 @@ export default function DiscoverScreen() {
     } catch (error) {
       console.error('Error loading profiles:', error);
       Alert.alert('Erreur', 'Impossible de charger les profils');
-    } finally {
-      setIsLoadingLocation(false);
     }
-  };
+  }, [loadNearbyProfiles]);
+
+  useEffect(() => {
+    loadProfiles();
+  }, [loadProfiles]);
 
   const currentProfile = profiles[currentIndex] || null;
   const isFavorite = currentProfile ? favoriteIds.has(currentProfile.uid) : false;
 
-  if (isLoading || isLoadingLocation) {
+  if (isLoading) {
     return (
       <LinearGradient colors={[Colors.background, Colors.cardSurface]} style={styles.loaderContainer}>
         <ActivityIndicator size="large" color={Colors.primary} />
+      </LinearGradient>
+    );
+  }
+
+  if (profiles.length === 0 && !isLoading) {
+    return (
+      <LinearGradient colors={[Colors.background, Colors.cardSurface]} style={styles.container}>
+        <SafeAreaView style={styles.safeArea}>
+          {/* Header */}
+          <View style={styles.header}>
+            <Text style={styles.logoText}>nearme</Text>
+            <View style={styles.headerActions}>
+              <FilterPanel />
+              <TouchableOpacity hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+                <Ionicons name="menu" size={24} color={Colors.text} />
+              </TouchableOpacity>
+            </View>
+          </View>
+
+          {/* Empty State */}
+          <View style={styles.emptyContainer}>
+            <Ionicons name="search-outline" size={64} color={Colors.primary} />
+            <Text style={styles.emptyTitle}>Aucun profil ne correspond</Text>
+            <Text style={styles.emptySubtitle}>
+              Essayez d&apos;ajuster vos filtres pour voir plus de profils
+            </Text>
+            <TouchableOpacity
+              style={styles.emptyButton}
+              onPress={() => loadProfiles()}
+            >
+              <Text style={styles.emptyButtonText}>Recharger</Text>
+            </TouchableOpacity>
+          </View>
+        </SafeAreaView>
       </LinearGradient>
     );
   }
@@ -53,9 +82,12 @@ export default function DiscoverScreen() {
         {/* Header */}
         <View style={styles.header}>
           <Text style={styles.logoText}>nearme</Text>
-          <TouchableOpacity hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
-            <Ionicons name="menu" size={24} color={Colors.text} />
-          </TouchableOpacity>
+          <View style={styles.headerActions}>
+            <FilterPanel />
+            <TouchableOpacity hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+              <Ionicons name="menu" size={24} color={Colors.text} />
+            </TouchableOpacity>
+          </View>
         </View>
 
         {/* Profile Card */}
@@ -98,5 +130,41 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: '700',
     color: Colors.text,
+  },
+  headerActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  emptyContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+  },
+  emptyTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: Colors.text,
+    marginTop: 16,
+    marginBottom: 8,
+    textAlign: 'center',
+  },
+  emptySubtitle: {
+    fontSize: 14,
+    color: Colors.textSecondary,
+    marginBottom: 24,
+    textAlign: 'center',
+  },
+  emptyButton: {
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    backgroundColor: Colors.primary,
+    borderRadius: 8,
+  },
+  emptyButtonText: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: '600',
   },
 });

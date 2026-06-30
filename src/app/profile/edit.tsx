@@ -26,7 +26,7 @@ const INTERESTS_OPTIONS = [
 export default function EditProfileScreen() {
   const router = useRouter();
   const { user, updateProfile } = useAuth();
-  const { isSavingProfile } = useProfile();
+  const { isSavingProfile, error, clearError } = useProfile();
 
   const [displayName, setDisplayName] = useState('');
   const [bio, setBio] = useState('');
@@ -68,7 +68,11 @@ export default function EditProfileScreen() {
         gender,
       });
       Alert.alert('Succès', 'Votre profil a été mis à jour');
-      router.back();
+      if (router.canGoBack()) {
+        router.back();
+      } else {
+        router.replace('/(tabs)/profile');
+      }
     } catch (error: any) {
       Alert.alert('Erreur', error.message || 'Impossible de mettre à jour le profil');
       console.error('Error updating profile:', error);
@@ -81,7 +85,16 @@ export default function EditProfileScreen() {
     <LinearGradient colors={[Colors.background, Colors.cardSurface]} style={styles.container}>
       <SafeAreaView style={styles.safeArea}>
         <View style={styles.header}>
-          <TouchableOpacity onPress={() => router.back()} disabled={isSaving}>
+          <TouchableOpacity
+            onPress={() => {
+              if (router.canGoBack()) {
+                router.back();
+              } else {
+                router.replace('/(tabs)/profile');
+              }
+            }}
+            disabled={isSaving}
+          >
             <Ionicons name="chevron-back" size={28} color={Colors.primary} />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Modifier mon profil</Text>
@@ -98,6 +111,18 @@ export default function EditProfileScreen() {
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
         >
+          {error && (
+            <View style={styles.errorContainer}>
+              <View style={styles.errorContent}>
+                <Ionicons name="alert-circle" size={20} color="#fff" />
+                <Text style={styles.errorText}>{error}</Text>
+              </View>
+              <TouchableOpacity onPress={clearError} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+                <Ionicons name="close" size={20} color="#fff" />
+              </TouchableOpacity>
+            </View>
+          )}
+
           {/* Nom d'affichage */}
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Nom d'affichage</Text>

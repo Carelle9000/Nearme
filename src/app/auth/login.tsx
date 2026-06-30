@@ -30,7 +30,7 @@ export default function LoginScreen() {
           setRememberMe(true);
         }
       } catch (error) {
-        console.error('Erreur lors du chargement de l\'email sauvegardé:', error);
+        console.error('Erreur lors du chargement de l&apos;email sauvegardé:', error);
       }
     };
     loadRememberedEmail();
@@ -211,10 +211,10 @@ export default function LoginScreen() {
 
         {/* Signup Link */}
         <View style={styles.footer}>
-          <Text style={styles.footerText}>Vous n'avez pas de compte? </Text>
+          <Text style={styles.footerText}>Vous n&apos;avez pas de compte? </Text>
           <Link href="/auth/signup" asChild>
             <TouchableOpacity disabled={isLoading}>
-              <Text style={styles.signupLink}>S'inscrire</Text>
+              <Text style={styles.signupLink}>S&apos;inscrire</Text>
             </TouchableOpacity>
           </Link>
         </View>

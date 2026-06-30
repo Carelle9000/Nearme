@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState } from 'react';
+import React, { createContext, useContext, useState, useEffect } from 'react';
 import { Profile } from '../models/user';
 import { photoService } from '../services/photo.service';
 import { userService } from '../services/user.service';
@@ -10,11 +10,12 @@ interface ProfileContextType {
   isSavingProfile: boolean;
   error: string | null;
 
-  pickAndUploadPhoto: () => Promise<void>;
-  takeAndUploadPhoto: () => Promise<void>;
+  pickAndUploadPhoto: () => Promise<boolean>;
+  takeAndUploadPhoto: () => Promise<boolean>;
   deletePhoto: (photoUrl: string) => Promise<void>;
   updateProfile: (updates: Partial<Profile>) => Promise<void>;
   reorderPhotos: (newOrder: string[]) => Promise<void>;
+  clearError: () => void;
 }
 
 const ProfileContext = createContext<ProfileContextType | undefined>(undefined);
@@ -26,49 +27,69 @@ export function ProfileProvider({ children }: { children: React.ReactNode }) {
   const [isSavingProfile, setIsSavingProfile] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const pickAndUploadPhoto = async () => {
-    if (!user?.id) return;
+  // Load user photos on mount or when user changes
+  useEffect(() => {
+    if (user?.id) {
+      setProfilePhotos(user.photos || []);
+      setError(null);
+    } else {
+      // Clear photos when user logs out
+      setProfilePhotos([]);
+      setError(null);
+      setIsUploadingPhoto(false);
+      setIsSavingProfile(false);
+    }
+  }, [user?.id, user?.photos]);
+
+  const pickAndUploadPhoto = async (): Promise<boolean> => {
+    if (!user?.id) return false;
 
     setIsUploadingPhoto(true);
     setError(null);
     try {
       const imageUri = await photoService.pickImage();
-      if (!imageUri) return;
+      if (!imageUri) return false;
 
       const photoUrl = await photoService.uploadProfilePhoto(user.id, imageUri);
-      setProfilePhotos((prev) => [...prev, photoUrl]);
+      const updatedPhotos = [...(profilePhotos || []), photoUrl];
+      setProfilePhotos(updatedPhotos);
 
       // Update user profile with new photos
       await userService.updateProfile(user.id, {
-        photos: [...profilePhotos, photoUrl],
+        photos: updatedPhotos,
       });
+      return true;
     } catch (err: any) {
       setError(err.message || 'Impossible de télécharger la photo');
       console.error('Error uploading photo:', err);
+      return false;
     } finally {
       setIsUploadingPhoto(false);
     }
   };
 
-  const takeAndUploadPhoto = async () => {
-    if (!user?.id) return;
+  const takeAndUploadPhoto = async (): Promise<boolean> => {
+    if (!user?.id) return false;
 
     setIsUploadingPhoto(true);
     setError(null);
     try {
       const imageUri = await photoService.takePhoto();
-      if (!imageUri) return;
+      if (!imageUri) return false;
 
       const photoUrl = await photoService.uploadProfilePhoto(user.id, imageUri);
-      setProfilePhotos((prev) => [...prev, photoUrl]);
+      const updatedPhotos = [...(profilePhotos || []), photoUrl];
+      setProfilePhotos(updatedPhotos);
 
       // Update user profile with new photos
       await userService.updateProfile(user.id, {
-        photos: [...profilePhotos, photoUrl],
+        photos: updatedPhotos,
       });
+      return true;
     } catch (err: any) {
       setError(err.message || 'Impossible de prendre une photo');
       console.error('Error taking photo:', err);
+      return false;
     } finally {
       setIsUploadingPhoto(false);
     }
@@ -121,6 +142,10 @@ export function ProfileProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const clearError = () => {
+    setError(null);
+  };
+
   return (
     <ProfileContext.Provider
       value={{
@@ -133,6 +158,7 @@ export function ProfileProvider({ children }: { children: React.ReactNode }) {
         deletePhoto,
         updateProfile,
         reorderPhotos,
+        clearError,
       }}
     >
       {children}

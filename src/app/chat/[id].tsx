@@ -82,7 +82,7 @@ export default function ConversationScreen() {
         renderItem={renderMessage}
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.messagesList}
-        inverted={false}
+        inverted={true}
       />
 
       {/* Input Area */}
