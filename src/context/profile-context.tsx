@@ -43,7 +43,7 @@ export function ProfileProvider({ children }: { children: React.ReactNode }) {
         photos: [...profilePhotos, photoUrl],
       });
     } catch (err: any) {
-      setError(err.message || 'Failed to upload photo');
+      setError(err.message || 'Impossible de télécharger la photo');
       console.error('Error uploading photo:', err);
     } finally {
       setIsUploadingPhoto(false);
@@ -67,7 +67,7 @@ export function ProfileProvider({ children }: { children: React.ReactNode }) {
         photos: [...profilePhotos, photoUrl],
       });
     } catch (err: any) {
-      setError(err.message || 'Failed to take photo');
+      setError(err.message || 'Impossible de prendre une photo');
       console.error('Error taking photo:', err);
     } finally {
       setIsUploadingPhoto(false);
@@ -87,7 +87,7 @@ export function ProfileProvider({ children }: { children: React.ReactNode }) {
         photos: updatedPhotos,
       });
     } catch (err: any) {
-      setError(err.message || 'Failed to delete photo');
+      setError(err.message || 'Impossible de supprimer la photo');
       console.error('Error deleting photo:', err);
     }
   };
@@ -100,7 +100,7 @@ export function ProfileProvider({ children }: { children: React.ReactNode }) {
     try {
       await userService.updateProfile(user.id, updates);
     } catch (err: any) {
-      setError(err.message || 'Failed to update profile');
+      setError(err.message || 'Impossible de mettre à jour le profil');
       console.error('Error updating profile:', err);
     } finally {
       setIsSavingProfile(false);
@@ -116,7 +116,7 @@ export function ProfileProvider({ children }: { children: React.ReactNode }) {
         photos: newOrder,
       });
     } catch (err: any) {
-      setError(err.message || 'Failed to reorder photos');
+      setError(err.message || 'Impossible de réorganiser les photos');
       console.error('Error reordering photos:', err);
     }
   };
@@ -143,7 +143,7 @@ export function ProfileProvider({ children }: { children: React.ReactNode }) {
 export function useProfile() {
   const context = useContext(ProfileContext);
   if (!context) {
-    throw new Error('useProfile must be used within ProfileProvider');
+    throw new Error('useProfile doit être utilisé dans ProfileProvider');
   }
   return context;
 }

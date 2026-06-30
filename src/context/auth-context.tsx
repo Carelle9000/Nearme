@@ -18,16 +18,22 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<AppUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [needsAgeVerif, setNeedsAgeVerif] = useState(false);
 
   useEffect(() => {
     const unsubscribe = authService.setupAuthListener((currentUser) => {
       setUser(currentUser);
+      setNeedsAgeVerif(authService.needsAgeVerify);
       setIsLoading(false);
     });
 
     // Initial load
     authService.loadCurrentUser().then(() => {
       setUser(authService.currentUser);
+      setNeedsAgeVerif(authService.needsAgeVerify);
+      setIsLoading(false);
+    }).catch((error) => {
+      console.error('Failed to load current user:', error);
       setIsLoading(false);
     });
 
@@ -39,6 +45,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       await authService.login(email, password);
       setUser(authService.currentUser);
+      setNeedsAgeVerif(authService.needsAgeVerify);
     } finally {
       setIsLoading(false);
     }
@@ -49,6 +56,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       await authService.register(email, password, name);
       setUser(authService.currentUser);
+      setNeedsAgeVerif(authService.needsAgeVerify);
     } finally {
       setIsLoading(false);
     }
@@ -59,6 +67,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       await authService.logout();
       setUser(null);
+      setNeedsAgeVerif(false);
     } finally {
       setIsLoading(false);
     }
@@ -68,6 +77,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (!user) return;
     await authService.updateUserProfile(user.id, updates as any);
     setUser(authService.currentUser);
+    setNeedsAgeVerif(authService.needsAgeVerify);
   };
 
   return (
@@ -76,7 +86,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         user,
         isLoading,
         isLoggedIn: authService.isLoggedIn,
-        needsAgeVerification: authService.needsAgeVerify,
+        needsAgeVerification: needsAgeVerif,
         login,
         register,
         logout,

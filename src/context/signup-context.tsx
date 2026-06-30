@@ -18,6 +18,7 @@ interface SignupContextType {
   nextStep: () => void;
   prevStep: () => void;
   reset: () => void;
+  clearSensitiveData: () => void;
 }
 
 const initialData: SignupData = {
@@ -54,6 +55,13 @@ export function SignupProvider({ children }: { children: React.ReactNode }) {
     setData(initialData);
   };
 
+  const clearSensitiveData = () => {
+    setData((prev) => ({
+      ...prev,
+      password: '',
+    }));
+  };
+
   return (
     <SignupContext.Provider
       value={{
@@ -63,6 +71,7 @@ export function SignupProvider({ children }: { children: React.ReactNode }) {
         nextStep,
         prevStep,
         reset,
+        clearSensitiveData,
       }}
     >
       {children}

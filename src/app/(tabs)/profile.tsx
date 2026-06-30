@@ -11,10 +11,10 @@ export default function ProfileScreen() {
   const router = useRouter();
 
   const handleLogout = async () => {
-    Alert.alert('Logout', 'Are you sure you want to logout?', [
-      { text: 'Cancel', style: 'cancel' },
+    Alert.alert('Déconnexion', 'Êtes-vous sûr de vouloir vous déconnecter ?', [
+      { text: 'Annuler', style: 'cancel' },
       {
-        text: 'Logout',
+        text: 'Déconnectez-moi',
         style: 'destructive',
         onPress: async () => {
           await logout();
@@ -72,7 +72,7 @@ export default function ProfileScreen() {
         {/* Interests Section */}
         {user.interests && user.interests.length > 0 && (
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Interests</Text>
+            <Text style={styles.sectionTitle}>Intérêts</Text>
             <View style={styles.interestsList}>
               {user.interests.map((interest, index) => (
                 <View key={index} style={styles.interestBadge}>
@@ -87,22 +87,22 @@ export default function ProfileScreen() {
         <View style={styles.section}>
           <TouchableOpacity style={styles.actionButton} onPress={() => router.push('/profile/edit')}>
             <Ionicons name="create-outline" size={20} color={Colors.primary} />
-            <Text style={styles.actionButtonText}>Edit Profile</Text>
+            <Text style={styles.actionButtonText}>Modifier mon profil</Text>
           </TouchableOpacity>
 
           <TouchableOpacity style={styles.actionButton} onPress={() => router.push('/profile/photos')}>
             <Ionicons name="image-outline" size={20} color={Colors.primary} />
-            <Text style={styles.actionButtonText}>Manage Photos</Text>
+            <Text style={styles.actionButtonText}>Gérer mes photos</Text>
           </TouchableOpacity>
 
           <TouchableOpacity style={styles.actionButton} onPress={() => router.push('/settings')}>
             <Ionicons name="settings-outline" size={20} color={Colors.primary} />
-            <Text style={styles.actionButtonText}>Settings</Text>
+            <Text style={styles.actionButtonText}>Paramètres</Text>
           </TouchableOpacity>
 
           <TouchableOpacity style={[styles.actionButton, styles.logoutButton]} onPress={handleLogout}>
             <Ionicons name="log-out-outline" size={20} color={Colors.text} />
-            <Text style={[styles.actionButtonText, styles.logoutButtonText]}>Logout</Text>
+            <Text style={[styles.actionButtonText, styles.logoutButtonText]}>Déconnexion</Text>
           </TouchableOpacity>
         </View>
       </ScrollView>

@@ -1,9 +1,10 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { View, TextInput, TouchableOpacity, Text, StyleSheet, Alert, ActivityIndicator } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useAuth } from '../../context/auth-context';
 import { useRouter, Link } from 'expo-router';
 import { Colors, BorderRadius, Shadows } from '../../constants/theme';
+import { signupService } from '../../services/signup.service';
 
 export default function LoginScreen() {
   const [email, setEmail] = useState('');
@@ -12,18 +13,34 @@ export default function LoginScreen() {
   const { login } = useAuth();
   const router = useRouter();
 
+  const loginAttemptsRef = useRef(0);
+  const lastLoginAttemptRef = useRef(0);
+
   const handleLogin = async () => {
     if (!email || !password) {
-      Alert.alert('Error', 'Please fill in all fields');
+      Alert.alert('Erreur', 'Veuillez remplir tous les champs');
+      return;
+    }
+
+    const now = Date.now();
+    const delayMs = 1000 * Math.pow(2, loginAttemptsRef.current);
+
+    if (now - lastLoginAttemptRef.current < delayMs && loginAttemptsRef.current > 0) {
+      Alert.alert('Trop de tentatives', 'Veuillez réessayer dans quelques secondes.');
       return;
     }
 
     setIsLoading(true);
     try {
       await login(email, password);
+      loginAttemptsRef.current = 0;
+      lastLoginAttemptRef.current = 0;
       router.replace('/(tabs)/discover');
     } catch (error: any) {
-      Alert.alert('Login Error', error.message || 'Failed to login');
+      loginAttemptsRef.current++;
+      lastLoginAttemptRef.current = now;
+      const message = signupService.getErrorMessage(error.code || error.message);
+      Alert.alert('Erreur de connexion', message);
     } finally {
       setIsLoading(false);
     }

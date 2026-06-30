@@ -27,8 +27,14 @@ export default function SignupStep1() {
       return;
     }
 
-    if (data.password.length < 6) {
-      Alert.alert('Erreur', 'Le mot de passe doit contenir au moins 6 caractères');
+    if (!signupService.isEmailValid(data.email)) {
+      Alert.alert('Erreur', 'Veuillez entrer une adresse email valide');
+      return;
+    }
+
+    const passwordValidation = signupService.isPasswordStrong(data.password);
+    if (!passwordValidation.valid) {
+      Alert.alert('Mot de passe faible', passwordValidation.reason);
       return;
     }
 
@@ -39,7 +45,8 @@ export default function SignupStep1() {
       // Move to next step
       nextStep();
     } catch (error: any) {
-      Alert.alert('Erreur', error.message);
+      const message = signupService.getErrorMessage(error.code || error.message);
+      Alert.alert('Erreur', message);
     } finally {
       setIsLoading(false);
     }

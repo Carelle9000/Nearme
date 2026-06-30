@@ -44,7 +44,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
       const conversations = await chatService.getConversations(user.id);
       setConversations(conversations);
     } catch (err: any) {
-      setError(err.message || 'Failed to load conversations');
+      setError(err.message || 'Impossible de charger les conversations');
       console.error('Error loading conversations:', err);
     } finally {
       setIsLoading(false);
@@ -76,7 +76,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
 
       setMessageUnsubscriber(() => unsubscribe);
     } catch (err: any) {
-      setError(err.message || 'Failed to load messages');
+      setError(err.message || 'Impossible de charger les messages');
       console.error('Error loading messages:', err);
     } finally {
       setIsLoading(false);
@@ -90,17 +90,17 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
       await chatService.sendMessage(conversationId, user.id, content, 'text');
       // Message will appear via the real-time listener
     } catch (err: any) {
-      setError(err.message || 'Failed to send message');
+      setError(err.message || 'Impossible d\'envoyer le message');
       console.error('Error sending message:', err);
     }
   };
 
   const createOrGetConversation = async (otherUserId: string): Promise<Conversation> => {
-    if (!user?.id) throw new Error('User not authenticated');
+    if (!user?.id) throw new Error('Utilisateur non authentifié');
 
     try {
       const otherUser = await userService.getProfile(otherUserId);
-      if (!otherUser) throw new Error('User not found');
+      if (!otherUser) throw new Error('Utilisateur non trouvé');
 
       const conversation = await chatService.getOrCreateConversation(
         user.id,
@@ -120,7 +120,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
 
       return conversation;
     } catch (err: any) {
-      setError(err.message || 'Failed to create conversation');
+      setError(err.message || 'Impossible de créer la conversation');
       throw err;
     }
   };

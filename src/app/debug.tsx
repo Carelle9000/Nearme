@@ -53,10 +53,10 @@ export default function DebugScreen() {
         }
       }
 
-      Alert.alert('✅ Firebase Connected', 'Your Firebase is properly connected!');
+      Alert.alert('✅ Firebase Connecté', 'Votre Firebase est correctement connecté !');
     } catch (error: any) {
       addError(`Firebase Error: ${error.message}`);
-      Alert.alert('❌ Firebase Error', error.message);
+      Alert.alert('❌ Erreur Firebase', error.message);
     } finally {
       setLoading(false);
     }

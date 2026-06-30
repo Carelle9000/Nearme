@@ -74,7 +74,6 @@ export const signupService = {
         createdAt: now,
         updatedAt: now,
         profileCompleted: true,
-        age: new Date().getFullYear() - birthYear,
       };
 
       await setDoc(doc(db, 'users', userId), profileData);
@@ -144,20 +143,58 @@ export const signupService = {
   },
 
   /**
+   * Validate password strength (12+ chars with complexity)
+   */
+  isPasswordStrong(password: string): { valid: boolean; reason?: string } {
+    if (password.length < 12) {
+      return { valid: false, reason: 'Le mot de passe doit contenir au moins 12 caractères.' };
+    }
+    if (!/[a-z]/.test(password)) {
+      return { valid: false, reason: 'Le mot de passe doit contenir au moins une minuscule.' };
+    }
+    if (!/[A-Z]/.test(password)) {
+      return { valid: false, reason: 'Le mot de passe doit contenir au moins une majuscule.' };
+    }
+    if (!/\d/.test(password)) {
+      return { valid: false, reason: 'Le mot de passe doit contenir au moins un chiffre.' };
+    }
+    if (!/[@$!%*?&#]/.test(password)) {
+      return { valid: false, reason: 'Le mot de passe doit contenir au moins un caractère spécial (@$!%*?&#).' };
+    }
+    return { valid: true };
+  },
+
+  /**
+   * Validate email format
+   */
+  isEmailValid(email: string): boolean {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+  },
+
+  /**
    * Convert Firebase error codes to user-friendly messages
    */
   getErrorMessage(code: string): string {
     const errorMessages: { [key: string]: string } = {
-      'auth/email-already-in-use': 'This email is already in use. Please log in or use a different email.',
-      'auth/invalid-email': 'Please enter a valid email address.',
-      'auth/weak-password': 'Password should be at least 6 characters.',
-      'auth/user-not-found': 'No account found with this email.',
-      'auth/wrong-password': 'Incorrect password. Please try again.',
-      'auth/too-many-requests': 'Too many login attempts. Please try again later.',
-      'auth/operation-not-allowed': 'This operation is not allowed. Please contact support.',
-      'auth/invalid-credential': 'Invalid email or password.',
+      'auth/email-already-in-use': 'Cet email est déjà utilisé. Veuillez vous connecter ou utiliser une autre adresse.',
+      'auth/invalid-email': 'Veuillez entrer une adresse email valide.',
+      'auth/weak-password': 'Le mot de passe doit contenir 12+ caractères avec minuscules, majuscules, chiffres et symboles.',
+      'auth/user-not-found': 'Identifiants invalides. Veuillez réessayer.',
+      'auth/wrong-password': 'Identifiants invalides. Veuillez réessayer.',
+      'auth/too-many-requests': 'Trop de tentatives. Veuillez réessayer dans quelques minutes.',
+      'auth/operation-not-allowed': 'Cette opération n\'est pas autorisée. Veuillez contacter le support.',
+      'auth/invalid-credential': 'Identifiants invalides. Veuillez réessayer.',
+      'auth/network-request-failed': 'Erreur réseau. Vérifiez votre connexion Internet.',
+      'auth/service-disabled': 'Le service d\'authentification est temporairement indisponible.',
+      'auth/invalid-api-key': 'Configuration invalide. Veuillez contacter le support.',
+      'auth/app-not-authorized': 'L\'application n\'est pas autorisée. Veuillez contacter le support.',
+      'auth/invalid-user-token': 'Votre session a expiré. Veuillez vous reconnecter.',
+      'auth/user-token-expired': 'Votre session a expiré. Veuillez vous reconnecter.',
+      'auth/null-user': 'Aucun utilisateur connecté.',
+      'auth/internal-error': 'Erreur interne. Veuillez réessayer.',
     };
 
-    return errorMessages[code] || 'An error occurred. Please try again.';
+    return errorMessages[code] || 'Une erreur s\'est produite. Veuillez réessayer.';
   },
 };

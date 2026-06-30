@@ -16,6 +16,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 class AuthService {
   private cachedUser: AppUser | null = null;
   private needsAgeVerification = false;
+  private loginAttempts = 0;
+  private lastLoginAttempt = 0;
 
   async register(email: string, password: string, name: string): Promise<AppUser> {
     const userCred = await createUserWithEmailAndPassword(auth, email, password);
@@ -40,9 +42,24 @@ class AuthService {
   }
 
   async login(email: string, password: string): Promise<AppUser> {
-    const userCred = await signInWithEmailAndPassword(auth, email, password);
-    await this.loadCurrentUser();
-    return this.cachedUser!;
+    const now = Date.now();
+    const delayMs = 1000 * Math.pow(2, this.loginAttempts);
+
+    if (now - this.lastLoginAttempt < delayMs && this.loginAttempts > 0) {
+      throw new Error('auth/too-many-requests');
+    }
+
+    try {
+      const userCred = await signInWithEmailAndPassword(auth, email, password);
+      this.loginAttempts = 0;
+      this.lastLoginAttempt = 0;
+      await this.loadCurrentUser();
+      return this.cachedUser!;
+    } catch (error) {
+      this.loginAttempts++;
+      this.lastLoginAttempt = now;
+      throw error;
+    }
   }
 
   async loadCurrentUser(): Promise<void> {
@@ -84,13 +101,8 @@ class AuthService {
       this.checkAgeVerificationNeeded();
     } catch (error) {
       console.error('Error loading user profile:', error);
-      this.cachedUser = {
-        id: user.uid,
-        name: user.displayName || '',
-        email: user.email || '',
-        createdAt: new Date(),
-        verified: user.emailVerified,
-      };
+      this.cachedUser = null;
+      throw new Error('Failed to load user profile');
     }
   }
 
@@ -115,10 +127,14 @@ class AuthService {
   }
 
   async logout(): Promise<void> {
-    await signOut(auth);
-    this.cachedUser = null;
-    this.needsAgeVerification = false;
-    await AsyncStorage.removeItem('authToken');
+    try {
+      await signOut(auth);
+    } finally {
+      this.cachedUser = null;
+      this.needsAgeVerification = false;
+      this.loginAttempts = 0;
+      this.lastLoginAttempt = 0;
+    }
   }
 
   setupAuthListener(callback: (user: AppUser | null) => void): () => void {

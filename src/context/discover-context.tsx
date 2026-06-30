@@ -69,7 +69,7 @@ export function DiscoverProvider({ children }: { children: React.ReactNode }) {
       setProfiles(filteredProfiles);
       setCurrentIndex(0);
     } catch (err: any) {
-      setError(err.message || 'Failed to load profiles');
+      setError(err.message || 'Impossible de charger les profils');
       console.error('Error loading nearby profiles:', err);
     } finally {
       setIsLoading(false);
@@ -85,7 +85,7 @@ export function DiscoverProvider({ children }: { children: React.ReactNode }) {
       nextProfile();
     } catch (err) {
       console.error('Error liking profile:', err);
-      setError('Failed to like profile');
+      setError('Impossible de liker le profil');
     }
   };
 
@@ -98,7 +98,7 @@ export function DiscoverProvider({ children }: { children: React.ReactNode }) {
       nextProfile();
     } catch (err) {
       console.error('Error rejecting profile:', err);
-      setError('Failed to reject profile');
+      setError('Impossible de rejeter le profil');
     }
   };
 
@@ -110,7 +110,7 @@ export function DiscoverProvider({ children }: { children: React.ReactNode }) {
       setFavoriteIds((prev) => new Set([...prev, targetId]));
     } catch (err) {
       console.error('Error favoriting profile:', err);
-      setError('Failed to favorite profile');
+      setError('Impossible de mettre en favori le profil');
     }
   };
 

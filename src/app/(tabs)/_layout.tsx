@@ -39,7 +39,7 @@ export default function TabsLayout() {
         name="activity"
         options={{
           title: 'Activité',
-          headerTitle: 'Activity',
+          headerTitle: 'Activité',
           tabBarIcon: ({ color, size }) => <Ionicons name="flash" size={size} color={color} />,
         }}
       />
@@ -47,7 +47,7 @@ export default function TabsLayout() {
         name="profile"
         options={{
           title: 'Profil',
-          headerTitle: 'My Profile',
+          headerTitle: 'Mon profil',
           tabBarIcon: ({ color, size }) => <Ionicons name="person" size={size} color={color} />,
         }}
       />

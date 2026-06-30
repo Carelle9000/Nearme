@@ -93,7 +93,7 @@ export default function SignupStep2() {
           )}
         </View>
         <Text style={styles.checkboxLabel}>
-          I agree to the community rules and confirm I am 18 years or older
+          J'accepte les règles de la communauté et confirme que j'ai 18 ans ou plus
         </Text>
       </TouchableOpacity>
     </View>

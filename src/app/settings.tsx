@@ -15,7 +15,7 @@ export default function SettingsScreen() {
         <TouchableOpacity onPress={() => router.back()}>
           <Ionicons name="chevron-back" size={28} color="#000" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Settings</Text>
+        <Text style={styles.headerTitle}>Paramètres</Text>
         <View style={{ width: 28 }} />
       </View>
 
@@ -23,36 +23,36 @@ export default function SettingsScreen() {
         <Text style={styles.sectionTitle}>Notifications</Text>
         <View style={styles.settingRow}>
           <View style={styles.settingLabel}>
-            <Text style={styles.settingName}>Push Notifications</Text>
-            <Text style={styles.settingDescription}>Receive message and match alerts</Text>
+            <Text style={styles.settingName}>Notifications push</Text>
+            <Text style={styles.settingDescription}>Recevez les alertes de messages et de matches</Text>
           </View>
           <Switch value={notificationsEnabled} onValueChange={setNotificationsEnabled} />
         </View>
       </View>
 
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Location</Text>
+        <Text style={styles.sectionTitle}>Localisation</Text>
         <View style={styles.settingRow}>
           <View style={styles.settingLabel}>
-            <Text style={styles.settingName}>Share Location</Text>
-            <Text style={styles.settingDescription}>Show your location to matches</Text>
+            <Text style={styles.settingName}>Partager ma localisation</Text>
+            <Text style={styles.settingDescription}>Montrez votre localisation à vos matches</Text>
           </View>
           <Switch value={locationEnabled} onValueChange={setLocationEnabled} />
         </View>
       </View>
 
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>About</Text>
+        <Text style={styles.sectionTitle}>À propos</Text>
         <TouchableOpacity style={styles.settingRow}>
           <Text style={styles.settingName}>Version</Text>
           <Text style={styles.settingValue}>1.0.0</Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.settingRow}>
-          <Text style={styles.settingName}>Privacy Policy</Text>
+          <Text style={styles.settingName}>Politique de confidentialité</Text>
           <Ionicons name="chevron-forward" size={20} color="#999" />
         </TouchableOpacity>
         <TouchableOpacity style={styles.settingRow}>
-          <Text style={styles.settingName}>Terms of Service</Text>
+          <Text style={styles.settingName}>Conditions d'utilisation</Text>
           <Ionicons name="chevron-forward" size={20} color="#999" />
         </TouchableOpacity>
       </View>

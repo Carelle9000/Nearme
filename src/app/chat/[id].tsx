@@ -89,7 +89,7 @@ export default function ConversationScreen() {
       <View style={styles.inputContainer}>
         <TextInput
           style={styles.input}
-          placeholder="Type a message..."
+          placeholder="Tapez un message..."
           value={messageText}
           onChangeText={setMessageText}
           editable={!isSending}

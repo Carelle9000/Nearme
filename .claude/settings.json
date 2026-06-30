@@ -1,5 +1,10 @@
 {
   "enabledPlugins": {
     "expo@claude-plugins-official": true
+  },
+  "permissions": {
+    "allow": [
+      "mcp__claude_ai_Claude_Code_Remote__create_trigger"
+    ]
   }
 }

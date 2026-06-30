@@ -85,7 +85,7 @@ export default function MatchesScreen() {
             </View>
           )}
           <Text style={styles.matchedDate}>
-            Matched {new Date(item.matchedAt).toLocaleDateString()}
+            Match du {new Date(item.matchedAt).toLocaleDateString()}
           </Text>
 
           <TouchableOpacity
@@ -118,8 +118,8 @@ export default function MatchesScreen() {
       {matches.length === 0 ? (
         <View style={styles.emptyState}>
           <Ionicons name="heart-discard-outline" size={64} color="#ccc" />
-          <Text style={styles.emptyText}>No matches yet</Text>
-          <Text style={styles.emptySubtext}>Keep discovering to find your match!</Text>
+          <Text style={styles.emptyText}>Aucun match pour l'instant</Text>
+          <Text style={styles.emptySubtext}>Continuez à découvrir pour trouver votre match !</Text>
         </View>
       ) : (
         <FlatList

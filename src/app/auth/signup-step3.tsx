@@ -21,7 +21,7 @@ const GENDERS = ['Homme', 'Femme', 'Non-binaire', 'Autre'];
 
 export default function SignupStep3() {
   const router = useRouter();
-  const { data, updateData, prevStep } = useSignup();
+  const { data, updateData, prevStep, clearSensitiveData } = useSignup();
   const { user: authUser } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
 
@@ -35,17 +35,17 @@ export default function SignupStep3() {
 
   const handleCreateProfile = async () => {
     if (!isFormValid) {
-      Alert.alert('Error', 'Please fill in all required fields correctly');
+      Alert.alert('Erreur', 'Veuillez remplir tous les champs obligatoires correctement');
       return;
     }
 
     if (!signupService.isAgeValid(parseInt(data.birthYear))) {
-      Alert.alert('Error', 'You must be at least 18 years old');
+      Alert.alert('Erreur', 'Vous devez avoir au moins 18 ans pour utiliser cette application');
       return;
     }
 
     if (!authUser) {
-      Alert.alert('Error', 'User not authenticated');
+      Alert.alert('Erreur', 'Utilisateur non authentifié');
       return;
     }
 
@@ -57,10 +57,14 @@ export default function SignupStep3() {
       // Create profile in Firestore
       await signupService.createProfile(authUser.uid, data);
 
+      // Clear sensitive data from memory
+      clearSensitiveData();
+
       // Navigate to discover
       router.replace('/(tabs)/discover');
     } catch (error: any) {
-      Alert.alert('Error', error.message);
+      const message = signupService.getErrorMessage(error.code || error.message);
+      Alert.alert('Erreur', message);
     } finally {
       setIsLoading(false);
     }

@@ -29,27 +29,27 @@ export default function ManagePhotosScreen() {
   }, [user?.id]);
 
   const handleUploadPhoto = () => {
-    Alert.alert('Add Photo', 'Choose a source', [
+    Alert.alert('Ajouter une photo', 'Choisir une source', [
       {
-        text: 'Camera',
+        text: 'Appareil photo',
         onPress: takeAndUploadPhoto,
       },
       {
-        text: 'Gallery',
+        text: 'Galerie',
         onPress: pickAndUploadPhoto,
       },
-      { text: 'Cancel', style: 'cancel' },
+      { text: 'Annuler', style: 'cancel' },
     ]);
   };
 
   const handleDeletePhoto = (photoUrl: string) => {
-    Alert.alert('Delete Photo', 'Are you sure you want to delete this photo?', [
+    Alert.alert('Supprimer la photo', 'Êtes-vous sûr de vouloir supprimer cette photo ?', [
       {
-        text: 'Delete',
+        text: 'Supprimer',
         style: 'destructive',
         onPress: () => deletePhoto(photoUrl),
       },
-      { text: 'Cancel', style: 'cancel' },
+      { text: 'Annuler', style: 'cancel' },
     ]);
   };
 
@@ -64,7 +64,7 @@ export default function ManagePhotosScreen() {
         <Ionicons name="trash" size={20} color="#fff" />
       </TouchableOpacity>
       {index === 0 && <View style={styles.primaryBadge}>
-        <Text style={styles.primaryBadgeText}>Primary</Text>
+        <Text style={styles.primaryBadgeText}>Principal</Text>
       </View>}
     </View>
   );
@@ -75,25 +75,25 @@ export default function ManagePhotosScreen() {
         <TouchableOpacity onPress={() => router.back()}>
           <Ionicons name="chevron-back" size={28} color="#000" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Manage Photos</Text>
+        <Text style={styles.headerTitle}>Gérer mes photos</Text>
         <View style={{ width: 28 }} />
       </View>
 
       <ScrollView contentContainerStyle={styles.content}>
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>
-            Your Photos ({profilePhotos.length}/6)
+            Mes photos ({profilePhotos.length}/6)
           </Text>
           <Text style={styles.sectionDescription}>
-            The first photo will be your primary photo
+            La première photo sera votre photo de profil
           </Text>
         </View>
 
         {profilePhotos.length === 0 ? (
           <View style={styles.emptyState}>
             <Ionicons name="image-outline" size={64} color="#ccc" />
-            <Text style={styles.emptyText}>No photos yet</Text>
-            <Text style={styles.emptySubtext}>Add your first photo to get started</Text>
+            <Text style={styles.emptyText}>Aucune photo pour l'instant</Text>
+            <Text style={styles.emptySubtext}>Ajoutez votre première photo pour commencer</Text>
           </View>
         ) : (
           <FlatList
@@ -118,29 +118,29 @@ export default function ManagePhotosScreen() {
             ) : (
               <>
                 <Ionicons name="cloud-upload" size={24} color="#fff" />
-                <Text style={styles.uploadButtonText}>Add Photo</Text>
+                <Text style={styles.uploadButtonText}>Ajouter une photo</Text>
               </>
             )}
           </TouchableOpacity>
         )}
 
         <View style={styles.tipsSection}>
-          <Text style={styles.tipsTitle}>Tips for Good Photos</Text>
+          <Text style={styles.tipsTitle}>Conseils pour de bonnes photos</Text>
           <View style={styles.tipItem}>
             <Ionicons name="checkmark-circle" size={20} color="#FF1744" />
-            <Text style={styles.tipText}>Use clear, recent photos of just you</Text>
+            <Text style={styles.tipText}>Utilisez des photos claires et récentes de vous seul</Text>
           </View>
           <View style={styles.tipItem}>
             <Ionicons name="checkmark-circle" size={20} color="#FF1744" />
-            <Text style={styles.tipText}>Show your face clearly</Text>
+            <Text style={styles.tipText}>Montrez bien votre visage</Text>
           </View>
           <View style={styles.tipItem}>
             <Ionicons name="checkmark-circle" size={20} color="#FF1744" />
-            <Text style={styles.tipText}>Avoid filters or heavy edits</Text>
+            <Text style={styles.tipText}>Évitez les filtres ou les retouches excessives</Text>
           </View>
           <View style={styles.tipItem}>
             <Ionicons name="checkmark-circle" size={20} color="#FF1744" />
-            <Text style={styles.tipText}>Add variety to your photos</Text>
+            <Text style={styles.tipText}>Ajoutez de la variété à vos photos</Text>
           </View>
         </View>
       </ScrollView>

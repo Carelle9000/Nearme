@@ -26,11 +26,11 @@ export default function DiscoverScreen() {
       if (location) {
         await loadNearbyProfiles(location.latitude, location.longitude);
       } else {
-        Alert.alert('Permission Denied', 'Please enable location services to discover people');
+        Alert.alert('Permission refusée', 'Veuillez activer les services de localisation pour découvrir des personnes');
       }
     } catch (error) {
       console.error('Error loading profiles:', error);
-      Alert.alert('Error', 'Failed to load profiles');
+      Alert.alert('Erreur', 'Impossible de charger les profils');
     } finally {
       setIsLoadingLocation(false);
     }

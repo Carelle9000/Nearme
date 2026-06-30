@@ -11,13 +11,13 @@ export default function EditProfileScreen() {
         <TouchableOpacity onPress={() => router.back()}>
           <Ionicons name="chevron-back" size={28} color="#000" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Edit Profile</Text>
+        <Text style={styles.headerTitle}>Modifier mon profil</Text>
         <View style={{ width: 28 }} />
       </View>
 
       <View style={styles.placeholder}>
-        <Text style={styles.placeholderText}>✏️ Edit Profile Coming Soon</Text>
-        <Text style={styles.placeholderSubtext}>Update your name, bio, interests, and more</Text>
+        <Text style={styles.placeholderText}>✏️ Modification de profil bientôt disponible</Text>
+        <Text style={styles.placeholderSubtext}>Mettez à jour votre nom, bio, intérêts, et plus encore</Text>
       </View>
     </View>
   );
