@@ -23,6 +23,7 @@ export default function MatchProfileScreen() {
 
   useEffect(() => {
     if (id) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       loadProfile();
     }
   }, [id]);

@@ -7,7 +7,7 @@ interface ErrorDetail {
   userFriendly: string;
 }
 
-export function useFirestoreError() {
+export function useFirebaseError() {
   const parseError = useCallback((error: unknown): ErrorDetail => {
     const firebaseError = error as FirebaseError;
 

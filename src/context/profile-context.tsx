@@ -22,24 +22,26 @@ const ProfileContext = createContext<ProfileContextType | undefined>(undefined);
 
 export function ProfileProvider({ children }: { children: React.ReactNode }) {
   const { user } = useAuth();
-  const [profilePhotos, setProfilePhotos] = useState<string[]>([]);
+  const [profilePhotos, setProfilePhotos] = useState<string[]>(user?.photos || []);
   const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
   const [isSavingProfile, setIsSavingProfile] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Load user photos on mount or when user changes
+  // Sync photos when user changes
   useEffect(() => {
     if (user?.id) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setProfilePhotos(user.photos || []);
       setError(null);
     } else {
       // Clear photos when user logs out
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setProfilePhotos([]);
       setError(null);
       setIsUploadingPhoto(false);
       setIsSavingProfile(false);
     }
-  }, [user?.id, user?.photos]);
+  }, [user?.id]);
 
   const pickAndUploadPhoto = async (): Promise<boolean> => {
     console.log('pickAndUploadPhoto: user.id=', user?.id);

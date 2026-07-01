@@ -3,9 +3,15 @@ import {
   get,
   set,
   update,
+  query,
+  orderByChild,
+  startAt,
+  endAt,
 } from 'firebase/database';
 import { rtdb } from '../config/firebase';
 import { Profile } from '../models/user';
+import { matchService } from './match.service';
+import { encodeLocation, neighborPrefixRanges } from '../utils/geohash';
 
 class UserService {
   async getProfile(uid: string): Promise<Profile | null> {
@@ -19,17 +25,28 @@ class UserService {
   }
 
   async updateProfile(uid: string, data: Partial<Profile>): Promise<void> {
+    // Bug #3: keep geohash in sync whenever location coordinates are updated,
+    // so the indexed nearby query can find this profile.
+    const payload: Record<string, any> = { ...data, updatedAt: Date.now() };
+    const loc = data.location;
+    if (
+      loc &&
+      typeof loc.latitude === 'number' &&
+      typeof loc.longitude === 'number' &&
+      Number.isFinite(loc.latitude) &&
+      Number.isFinite(loc.longitude)
+    ) {
+      payload.geohash = encodeLocation(loc.latitude, loc.longitude);
+    }
+
     try {
-      await update(ref(rtdb, `profiles/${uid}`), {
-        ...data,
-        updatedAt: Date.now(),
-      });
+      await update(ref(rtdb, `profiles/${uid}`), payload);
     } catch (error: any) {
       if (error?.code === 'PERMISSION_DENIED') {
-        console.warn('Profile update permission denied (silently ignored):', error);
-        return;
+        console.error('[RTDB-DENY] updateProfile', { uid, dataKeys: Object.keys(data) }, error);
+      } else {
+        console.error('Error updating profile:', error);
       }
-      console.error('Error updating profile:', error);
       throw error;
     }
   }
@@ -39,43 +56,96 @@ class UserService {
     longitude: number,
     radiusInKm: number = 50
   ): Promise<Profile[]> {
-    try {
-      const snapshot = await get(ref(rtdb, 'profiles'));
+    // Diagnostic: reject obviously invalid search coords so we don't silently
+    // "find 0 profiles" because expo-location handed us (0,0) or NaN.
+    if (
+      !Number.isFinite(latitude) ||
+      !Number.isFinite(longitude) ||
+      (latitude === 0 && longitude === 0)
+    ) {
+      console.warn(
+        `[getNearbyProfiles] refusing to search from suspicious coords (${latitude}, ${longitude}). ` +
+        `Check locationService.getCurrentLocation() output.`
+      );
+      return [];
+    }
+    console.log(
+      `[getNearbyProfiles] searching around (${latitude.toFixed(4)}, ${longitude.toFixed(4)}) radius=${radiusInKm}km`
+    );
 
-      if (!snapshot.val()) {
-        console.log('No profiles found in database');
-        return [];
+    try {
+      // Bug #3: query only the 3x3 geohash tile block around the user instead of
+      // downloading the whole profiles collection. Requires ".indexOn": ["geohash"].
+      const ranges = neighborPrefixRanges(latitude, longitude, radiusInKm);
+      const snapshots = await Promise.all(
+        ranges.map(([start, end]) =>
+          get(
+            query(
+              ref(rtdb, 'profiles'),
+              orderByChild('geohash'),
+              startAt(start),
+              endAt(end)
+            )
+          )
+        )
+      );
+
+      const merged = new Map<string, Profile>();
+      for (const snap of snapshots) {
+        const val = snap.val() as Record<string, Profile> | null;
+        if (!val) continue;
+        for (const [uid, profile] of Object.entries(val)) {
+          if (!merged.has(uid)) merged.set(uid, { ...profile, uid: profile.uid ?? uid });
+        }
       }
 
-      const allProfiles = Object.values(snapshot.val() as Record<string, Profile>);
-      console.log(`Total profiles in database: ${allProfiles.length}`);
+      let candidates = Array.from(merged.values());
+      console.log(
+        `[getNearbyProfiles] geohash query returned ${candidates.length} candidates ` +
+        `across ${ranges.length} tiles (radius ${radiusInKm}km)`
+      );
 
-      const nearbyProfiles = allProfiles.filter((profile: Profile) => {
-        // If profile has no location, show it anyway (set distance as within radius)
-        if (!profile.location) {
-          console.warn(`Profile ${profile.uid} (${profile.displayName || profile.name}) has no location data - showing anyway`);
-          return true; // Include profiles without location
+      // Fallback: if nothing matched by geohash (e.g. legacy profiles missing the
+      // field), scan the whole collection once so the app keeps working while a
+      // backfill is pending. Remove once all profiles have a geohash.
+      if (candidates.length === 0) {
+        console.warn(
+          '[getNearbyProfiles] no geohash matches — falling back to full scan. ' +
+          'Run scripts/backfill-geohash.js to migrate existing profiles.'
+        );
+        const snapshot = await get(ref(rtdb, 'profiles'));
+        if (!snapshot.val()) return [];
+        candidates = Object.values(snapshot.val() as Record<string, Profile>);
+      }
+
+      const nearby = candidates.filter((profile) => {
+        const loc = profile.location;
+        if (
+          !loc ||
+          typeof loc.latitude !== 'number' ||
+          typeof loc.longitude !== 'number' ||
+          !Number.isFinite(loc.latitude) ||
+          !Number.isFinite(loc.longitude)
+        ) {
+          return false;
         }
-
         const distance = this.calculateDistance(
           latitude,
           longitude,
-          profile.location.latitude,
-          profile.location.longitude
+          loc.latitude,
+          loc.longitude
         );
-
-        console.log(`Profile ${profile.uid || profile.name}: distance = ${distance.toFixed(2)}km`);
         return distance <= radiusInKm;
       });
 
-      console.log(`Found ${nearbyProfiles.length} nearby profiles (within ${radiusInKm}km or without location)`);
-      return nearbyProfiles;
+      console.log(`Found ${nearby.length} nearby profiles within ${radiusInKm}km`);
+      return nearby;
     } catch (error: any) {
       if (error?.code === 'PERMISSION_DENIED') {
-        console.warn('Permission denied reading profiles (silently ignored):', error);
-        return [];
+        console.error('[RTDB-DENY] getNearbyProfiles', error);
+      } else {
+        console.error('Error fetching nearby profiles:', error);
       }
-      console.error('Error fetching nearby profiles:', error);
       throw error;
     }
   }
@@ -99,20 +169,49 @@ class UserService {
     return R * c;
   }
 
-  async saveLike(userId: string, targetId: string): Promise<void> {
+  async saveLike(
+    userId: string,
+    targetId: string
+  ): Promise<{ isMatch: boolean; matchId?: string }> {
+    const now = Date.now();
     try {
       await set(ref(rtdb, `profiles/${userId}/sent_likes/${targetId}`), {
-        createdAt: Date.now(),
+        createdAt: now,
         targetId,
       });
     } catch (error: any) {
       if (error?.code === 'PERMISSION_DENIED') {
-        console.warn('Like save permission denied (silently ignored):', error);
-        return;
+        console.error('[RTDB-DENY] saveLike', { userId, targetId }, error);
+      } else {
+        console.error('Error saving like:', error);
       }
-      console.error('Error saving like:', error);
       throw error;
     }
+
+    // Notify the target that they received a like (best-effort, non-blocking).
+    try {
+      await set(ref(rtdb, `profiles/${targetId}/received_likes/${userId}`), {
+        createdAt: now,
+        senderId: userId,
+      });
+    } catch (err: any) {
+      console.warn('[saveLike] received_likes write failed (non-blocking):', err?.code || err);
+    }
+
+    // Detect reciprocal like → create match.
+    try {
+      const reciprocal = await get(
+        ref(rtdb, `profiles/${targetId}/sent_likes/${userId}`)
+      );
+      if (reciprocal.exists()) {
+        const match = await matchService.createMatch(userId, targetId);
+        return { isMatch: true, matchId: match.id };
+      }
+    } catch (err: any) {
+      console.warn('[saveLike] reciprocal check failed (non-blocking):', err?.code || err);
+    }
+
+    return { isMatch: false };
   }
 
   async saveNope(userId: string, targetId: string): Promise<void> {
@@ -123,10 +222,10 @@ class UserService {
       });
     } catch (error: any) {
       if (error?.code === 'PERMISSION_DENIED') {
-        console.warn('Nope save permission denied (silently ignored):', error);
-        return;
+        console.error('[RTDB-DENY] saveNope', { userId, targetId }, error);
+      } else {
+        console.error('Error saving nope:', error);
       }
-      console.error('Error saving nope:', error);
       throw error;
     }
   }
@@ -139,10 +238,10 @@ class UserService {
       });
     } catch (error: any) {
       if (error?.code === 'PERMISSION_DENIED') {
-        console.warn('Favorite save permission denied (silently ignored):', error);
-        return;
+        console.error('[RTDB-DENY] saveFavorite', { userId, targetId }, error);
+      } else {
+        console.error('Error saving favorite:', error);
       }
-      console.error('Error saving favorite:', error);
       throw error;
     }
   }

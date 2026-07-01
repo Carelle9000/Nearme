@@ -42,29 +42,29 @@ export default function SignupStep2() {
       const verificationResult = await stripeIdentityService.startVerification(file);
 
       if (verificationResult.status === 'verified') {
-        setVerificationStatus('Vérification réussie!');
+        setVerificationStatus(t('verificationSuccess'));
         // Proceed to next step after a short delay
         setTimeout(() => {
           nextStep();
         }, 1500);
       } else if (verificationResult.status === 'requires_input') {
-        setVerificationStatus('Vérification en cours...');
+        setVerificationStatus(t('verifyingDocument'));
       } else {
         Alert.alert(
-          'Vérification échouée',
-          'Le document n\'a pas pu être vérifié. Veuillez réessayer avec un document valide.'
+          t('verificationFailed'),
+          t('documentVerificationError')
         );
         setDocumentSelected(false);
       }
     } catch (error: any) {
-      Alert.alert(t('error'), 'Impossible de charger le document. Veuillez réessayer.');
+      Alert.alert(t('error'), t('documentUploadError'));
       console.error('Document upload error:', error);
     } finally {
       setIsValidating(false);
     }
   };
 
-  const isRulesAndDocumentsReady = data.rulesAccepted && documentSelected && verificationStatus === 'Vérification réussie!';
+  const isRulesAndDocumentsReady = data.rulesAccepted && documentSelected && verificationStatus === t('verificationSuccess');
 
   return (
     <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false}>
@@ -79,38 +79,38 @@ export default function SignupStep2() {
 
       {/* Step Indicator */}
       <View style={styles.stepIndicator}>
-        <StepIndicatorItem number={1} label="Compte" completed />
+        <StepIndicatorItem number={1} label={t('accountStep')} completed />
         <View style={styles.stepConnector} />
-        <StepIndicatorItem number={2} label="Vérification" active />
+        <StepIndicatorItem number={2} label={t('rulesStep')} active />
         <View style={styles.stepConnector} />
-        <StepIndicatorItem number={3} label="Profil" />
+        <StepIndicatorItem number={3} label={t('profileStep')} />
       </View>
 
       {/* Title */}
-      <Text style={styles.title}>Vérification d&apos;identité</Text>
+      <Text style={styles.title}>{t('identityVerification')}</Text>
       <Text style={styles.subtitle}>
-        Pour votre sécurité et celle de la communauté, nous devons vérifier votre identité.
+        {t('identityVerificationDesc')}
       </Text>
 
       {/* Rules Section */}
       <View style={styles.rulesContainer}>
-        <Text style={styles.sectionTitle}>Règles de la communauté</Text>
+        <Text style={styles.sectionTitle}>{t('communityRules')}</Text>
         <RuleCard
           icon="calendar"
-          title="Je confirme avoir 18 ans ou plus"
-          description="Vous devez être majeur pour utiliser NearMe"
+          title={t('ageConfirmation')}
+          description={t('ageConfirmationDesc')}
           completed={data.rulesAccepted}
         />
         <RuleCard
           icon="heart"
-          title="Je traite les autres avec respect"
-          description="Respectez tous les utilisateurs de la communauté"
+          title={t('respectOthers')}
+          description={t('respectOthersDesc')}
           completed={data.rulesAccepted}
         />
         <RuleCard
           icon="shield-checkmark"
-          title="Je respecterai la sécurité de tous"
-          description="Pas de contenu offensant, illégal ou dangereux"
+          title={t('safetyRespect')}
+          description={t('safetyRespectDesc')}
           completed={data.rulesAccepted}
         />
       </View>
@@ -131,14 +131,14 @@ export default function SignupStep2() {
           )}
         </View>
         <Text style={styles.checkboxLabel}>
-          J&apos;accepte les règles de la communauté et confirme que j&apos;ai 18 ans ou plus
+          {t('acceptRules')}
         </Text>
       </TouchableOpacity>
 
       {data.rulesAccepted && (
         <View style={styles.documentSection}>
-          <Text style={styles.sectionTitle}>Télécharger un document d&apos;identité</Text>
-          <Text style={styles.documentSubtitle}>Acceptés: Carte d&apos;identité, Passeport, Permis de conduire</Text>
+          <Text style={styles.sectionTitle}>{t('uploadIdentity')}</Text>
+          <Text style={styles.documentSubtitle}>{t('acceptedDocuments')}</Text>
           <LinearGradient
             colors={[Colors.primary, '#C82E42']}
             start={{ x: 0, y: 0 }}

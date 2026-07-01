@@ -6,6 +6,7 @@ export default function ProfileLayout() {
       <Stack.Screen name="edit" />
       <Stack.Screen name="photos" />
       <Stack.Screen name="delete-account" />
+      <Stack.Screen name="[id]" />
     </Stack>
   );
 }

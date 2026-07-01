@@ -96,7 +96,7 @@ export default function SignupStep1() {
           style={styles.logo}
         />
         <Text style={styles.title}>{t('createAccount')}</Text>
-        <Text style={styles.subtitle}>Commencez à rencontrer des personnes près de chez vous</Text>
+        <Text style={styles.subtitle}>{t('signupSubtitle')}</Text>
       </View>
 
       {/* Step Indicator */}
@@ -105,21 +105,21 @@ export default function SignupStep1() {
           <View style={[styles.stepCircle, styles.stepCircleActive]}>
             <Text style={styles.stepNumber}>1</Text>
           </View>
-          <Text style={styles.stepLabel}>Compte</Text>
+          <Text style={styles.stepLabel}>{t('accountStep')}</Text>
         </View>
         <View style={styles.stepConnector} />
         <View style={styles.step}>
           <View style={styles.stepCircle}>
             <Text style={styles.stepNumberInactive}>2</Text>
           </View>
-          <Text style={styles.stepLabelInactive}>Règles</Text>
+          <Text style={styles.stepLabelInactive}>{t('rulesStep')}</Text>
         </View>
         <View style={styles.stepConnector} />
         <View style={styles.step}>
           <View style={styles.stepCircle}>
             <Text style={styles.stepNumberInactive}>3</Text>
           </View>
-          <Text style={styles.stepLabelInactive}>Profil</Text>
+          <Text style={styles.stepLabelInactive}>{t('profileStep')}</Text>
         </View>
       </View>
 
@@ -127,12 +127,12 @@ export default function SignupStep1() {
       <View style={styles.form}>
         {/* Email Field */}
         <View style={styles.fieldContainer}>
-          <Text style={styles.label}>Adresse email</Text>
+          <Text style={styles.label}>{t('emailLabel')}</Text>
           <View style={[styles.inputContainer, emailError ? styles.inputError : null]}>
             <Ionicons name="mail" size={20} color={Colors.primary} style={styles.inputIcon} />
             <TextInput
               style={styles.input}
-              placeholder="exemple@email.com"
+              placeholder={t('emailPlaceholder')}
               placeholderTextColor={Colors.textSecondary}
               value={data.email}
               onChangeText={(email) => {
@@ -149,12 +149,12 @@ export default function SignupStep1() {
 
         {/* Password Field */}
         <View style={styles.fieldContainer}>
-          <Text style={styles.label}>Mot de passe</Text>
+          <Text style={styles.label}>{t('passwordLabel')}</Text>
           <View style={[styles.inputContainer, passwordError ? styles.inputError : null]}>
             <Ionicons name="lock-closed" size={20} color={Colors.primary} style={styles.inputIcon} />
             <TextInput
               style={styles.input}
-              placeholder="Au moins 8 caractères"
+              placeholder={t('passwordPlaceholder')}
               placeholderTextColor={Colors.textSecondary}
               value={data.password}
               onChangeText={(password) => {
@@ -180,12 +180,12 @@ export default function SignupStep1() {
 
         {/* Confirm Password Field */}
         <View style={styles.fieldContainer}>
-          <Text style={styles.label}>Confirmer le mot de passe</Text>
+          <Text style={styles.label}>{t('confirmPasswordLabel')}</Text>
           <View style={[styles.inputContainer, confirmPasswordError ? styles.inputError : null]}>
             <Ionicons name="lock-closed" size={20} color={Colors.primary} style={styles.inputIcon} />
             <TextInput
               style={styles.input}
-              placeholder="Confirmez votre mot de passe"
+              placeholder={t('confirmPasswordPlaceholder')}
               placeholderTextColor={Colors.textSecondary}
               value={confirmPassword}
               onChangeText={(text) => {
@@ -226,7 +226,7 @@ export default function SignupStep1() {
             ) : (
               <>
                 <Ionicons name="person-add" size={18} color={Colors.text} style={styles.buttonIcon} />
-                <Text style={styles.buttonText}>Continuer</Text>
+                <Text style={styles.buttonText}>{t('continueButton')}</Text>
               </>
             )}
           </TouchableOpacity>
@@ -235,10 +235,10 @@ export default function SignupStep1() {
 
       {/* Already have account */}
       <View style={styles.footer}>
-        <Text style={styles.footerText}>Vous avez déjà un compte? </Text>
+        <Text style={styles.footerText}>{t('alreadyAccount')} </Text>
         <Link href="/auth/login" asChild>
           <TouchableOpacity disabled={isLoading}>
-            <Text style={styles.loginLink}>Se connecter</Text>
+            <Text style={styles.loginLink}>{t('login')}</Text>
           </TouchableOpacity>
         </Link>
       </View>

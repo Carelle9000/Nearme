@@ -3,23 +3,79 @@ import { useDiscover } from '../../context/discover-context';
 import { ProfileCard } from '../../components/profile-card';
 import { FilterPanel } from '../../components/filter-panel';
 import { locationService } from '../../services/location.service';
+import { chatService } from '../../services/chat.service';
 import { useEffect, useCallback } from 'react';
+import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '../../constants/theme';
 import { useLocalization } from '../../context/localization-context';
+import { useAuth } from '../../context/auth-context';
 
 export default function DiscoverScreen() {
-  const { profiles, currentIndex, isLoading, loadNearbyProfiles, like, nope, favorite, favoriteIds } =
-    useDiscover();
+  const {
+    profiles,
+    currentIndex,
+    isLoading,
+    loadNearbyProfiles,
+    like,
+    favorite,
+    favoriteIds,
+    lastMatch,
+    clearLastMatch,
+  } = useDiscover();
   const { t } = useLocalization();
+  const { user } = useAuth();
+  const router = useRouter();
+
+  // Declare currentProfile early so it can be used in callbacks
+  const currentProfile = profiles[currentIndex] || null;
+  const isFavorite = currentProfile ? favoriteIds.has(currentProfile.uid) : false;
+
+  useEffect(() => {
+    if (!lastMatch) return;
+    Alert.alert(
+      "C'est un match !",
+      'Vous vous êtes mutuellement likés. Envoyez un message maintenant.',
+      [
+        { text: 'Plus tard', style: 'cancel', onPress: clearLastMatch },
+        {
+          text: 'Envoyer un message',
+          onPress: () => {
+            clearLastMatch();
+            router.push(`/chat/${lastMatch.matchId}`);
+          },
+        },
+      ]
+    );
+  }, [lastMatch, clearLastMatch, router]);
 
   const loadProfiles = useCallback(async () => {
     try {
-      const location = await locationService.getCurrentLocation();
-      if (location) {
-        await loadNearbyProfiles(location.latitude, location.longitude);
+      // Prefer the profile's stored location (intent-based, kept fresh by
+      // locationSyncService). Fall back to the device's live position only if
+      // no valid coords are on file — otherwise a user swiping abroad would
+      // suddenly see profiles around their travel spot instead of home.
+      const stored = user?.location;
+      const hasStored =
+        stored &&
+        typeof stored.latitude === 'number' &&
+        typeof stored.longitude === 'number' &&
+        Number.isFinite(stored.latitude) &&
+        Number.isFinite(stored.longitude) &&
+        !(stored.latitude === 0 && stored.longitude === 0);
+
+      if (hasStored) {
+        console.log(`[Discover] Using stored profile location (${stored!.latitude}, ${stored!.longitude})`);
+        await loadNearbyProfiles(stored!.latitude, stored!.longitude);
+        return;
+      }
+
+      const live = await locationService.getCurrentLocation();
+      if (live) {
+        console.log(`[Discover] Using device live location (${live.latitude}, ${live.longitude})`);
+        await loadNearbyProfiles(live.latitude, live.longitude);
       } else {
         Alert.alert(t('error'), 'Veuillez activer les services de localisation');
       }
@@ -27,14 +83,31 @@ export default function DiscoverScreen() {
       console.error('Error loading profiles:', error);
       Alert.alert(t('error'), t('noProfiles'));
     }
-  }, [loadNearbyProfiles]);
+  }, [loadNearbyProfiles, user?.location]);
+
+  const handleMessage = useCallback(async () => {
+    if (!currentProfile || !user) return;
+
+    try {
+      // Create or get existing conversation
+      const conversation = await chatService.getOrCreateConversation(
+        user.id,
+        currentProfile.uid,
+        user.displayName || user.name,
+        currentProfile.displayName || currentProfile.name
+      );
+
+      // Navigate to chat
+      router.push(`/chat/${conversation.id}`);
+    } catch (error) {
+      console.error('Error creating conversation:', error);
+      Alert.alert(t('error'), 'Impossible de créer la conversation');
+    }
+  }, [currentProfile, user, router]);
 
   useEffect(() => {
     loadProfiles();
   }, [loadProfiles]);
-
-  const currentProfile = profiles[currentIndex] || null;
-  const isFavorite = currentProfile ? favoriteIds.has(currentProfile.uid) : false;
 
   if (isLoading) {
     return (
@@ -108,12 +181,9 @@ export default function DiscoverScreen() {
         <ProfileCard
           profile={currentProfile}
           isFavorite={isFavorite}
-          onNope={() => currentProfile && nope(currentProfile.uid)}
           onLike={() => currentProfile && like(currentProfile.uid)}
           onFavorite={() => currentProfile && favorite(currentProfile.uid)}
-          onViewProfile={() => {
-            // TODO: Navigate to profile detail view
-          }}
+          onMessage={handleMessage}
         />
       </SafeAreaView>
     </LinearGradient>

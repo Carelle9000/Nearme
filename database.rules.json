@@ -16,6 +16,7 @@
 
     "profiles": {
       ".read": "auth != null",
+      ".indexOn": ["geohash"],
       "$userId": {
         ".read": "auth != null",
         ".write": "auth.uid == $userId || auth.token.type === 'backend'",
@@ -70,17 +71,16 @@
 
     "conversations": {
       ".read": "auth != null",
-      ".write": "auth.token.type === 'backend'",
       "$conversationId": {
-        ".read": "auth != null && (data.child('participants').child(auth.uid).exists() || data.child('users').child(auth.uid).exists() || auth.token.type === 'backend')",
-        ".write": "auth.token.type === 'backend'",
+        ".read": "auth != null && (data.child('participants').child(auth.uid).exists() || auth.token.type === 'backend')",
+        ".write": "auth.token.type === 'backend' || (auth != null && ((!data.exists() && newData.child('participants').child(auth.uid).exists()) || data.child('participants').child(auth.uid).exists()))",
         ".validate": "newData.hasChildren(['participants'])",
 
         "messages": {
           "$messageId": {
-            ".read": "auth != null && (root.child('conversations').child($conversationId).child('participants').child(auth.uid).exists() || root.child('conversations').child($conversationId).child('users').child(auth.uid).exists() || auth.token.type === 'backend')",
+            ".read": "auth != null && (root.child('conversations').child($conversationId).child('participants').child(auth.uid).exists() || auth.token.type === 'backend')",
 
-            ".write": "auth != null && newData.child('senderId').val() === auth.uid || auth.token.type === 'backend'",
+            ".write": "auth.token.type === 'backend' || (auth != null && root.child('conversations').child($conversationId).child('participants').child(auth.uid).exists() && (newData.child('senderId').val() === auth.uid || (data.exists() && newData.child('readAt').exists())))",
 
             ".validate": "newData.hasChildren(['senderId', 'content', 'createdAt'])"
           }
@@ -89,9 +89,11 @@
     },
 
     "matches": {
+      ".read": "auth != null",
+      ".indexOn": ["userId1", "userId2"],
       "$matchId": {
         ".read": "auth != null && (data.child('userId1').val() === auth.uid || data.child('userId2').val() === auth.uid || auth.token.type === 'backend')",
-        ".write": "auth.token.type === 'backend' || (auth != null && !data.exists())",
+        ".write": "auth.token.type === 'backend' || (auth != null && !data.exists() && (newData.child('userId1').val() === auth.uid || newData.child('userId2').val() === auth.uid))",
         ".validate": "newData.hasChildren(['userId1', 'userId2', 'matchedAt'])",
 
         "messages": {
@@ -119,6 +121,14 @@
         ".read": "auth != null",
         ".write": "auth.token.type === 'backend'",
         ".validate": "newData.hasChildren(['userId', 'name'])"
+      }
+    },
+
+    "verificationSessions": {
+      "$sessionId": {
+        ".read": "auth.token.type === 'backend'",
+        ".write": "auth.token.type === 'backend'",
+        ".validate": "newData.hasChildren(['userId', 'createdAt'])"
       }
     },
 

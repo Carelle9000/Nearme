@@ -2,33 +2,54 @@ import {
   ref,
   set,
   get,
+  query,
+  orderByChild,
+  equalTo,
 } from 'firebase/database';
 import { rtdb } from '../config/firebase';
 import { Match } from '../models/user';
 
+function pairIds(a: string, b: string): [string, string] {
+  const sorted = [a, b].sort();
+  return [sorted[0], sorted[1]];
+}
+
+function matchIdFor(a: string, b: string): string {
+  const [u1, u2] = pairIds(a, b);
+  return `${u1}_${u2}`;
+}
+
 class MatchService {
-  async createMatch(userId1: string, userId2: string): Promise<Match> {
-    const matchId = [userId1, userId2].sort().join('_');
+  async createMatch(userA: string, userB: string): Promise<Match> {
+    const [userId1, userId2] = pairIds(userA, userB);
+    const matchId = `${userId1}_${userId2}`;
     const now = Date.now();
 
-    const match: Match = {
+    try {
+      await set(ref(rtdb, `matches/${matchId}`), {
+        userId1,
+        userId2,
+        matchedAt: now,
+      });
+    } catch (error: any) {
+      if (error?.code === 'PERMISSION_DENIED') {
+        console.error('[RTDB-DENY] createMatch', { matchId }, error);
+      } else {
+        console.error('Error creating match:', error);
+      }
+      throw error;
+    }
+
+    return {
       id: matchId,
       users: [userId1, userId2],
       matchedAt: new Date(now),
     };
-
-    await set(ref(rtdb, `matches/${matchId}`), {
-      ...match,
-      matchedAt: now,
-    });
-
-    return match;
   }
 
-  async checkMatch(userId1: string, userId2: string): Promise<boolean> {
+  async checkMatch(userA: string, userB: string): Promise<boolean> {
     try {
-      const matchId = [userId1, userId2].sort().join('_');
-      const snapshot = await get(ref(rtdb, `matches/${matchId}`));
+      const snapshot = await get(ref(rtdb, `matches/${matchIdFor(userA, userB)}`));
       return snapshot.exists();
     } catch (error) {
       console.error('Error checking match:', error);
@@ -38,19 +59,24 @@ class MatchService {
 
   async getUserMatches(userId: string): Promise<Match[]> {
     try {
-      const snapshot = await get(ref(rtdb, 'matches'));
-      if (!snapshot.exists()) return [];
+      const [asUser1Snap, asUser2Snap] = await Promise.all([
+        get(query(ref(rtdb, 'matches'), orderByChild('userId1'), equalTo(userId))),
+        get(query(ref(rtdb, 'matches'), orderByChild('userId2'), equalTo(userId))),
+      ]);
 
-      const matchesObj = snapshot.val();
-      const matches = Object.entries(matchesObj)
-        .map(([id, data]: any) => ({
-          id,
-          ...data,
-          matchedAt: new Date(data.matchedAt),
-        }))
-        .filter((match: any) => match.users.includes(userId));
+      const raw: Record<string, any> = {
+        ...(asUser1Snap.val() || {}),
+        ...(asUser2Snap.val() || {}),
+      };
 
-      return matches;
+      return Object.entries(raw).map(([id, data]: any) => ({
+        id,
+        users: [data.userId1, data.userId2],
+        matchedAt: new Date(data.matchedAt),
+        lastInteractionAt: data.lastInteractionAt
+          ? new Date(data.lastInteractionAt)
+          : undefined,
+      }));
     } catch (error) {
       console.error('Error fetching user matches:', error);
       return [];

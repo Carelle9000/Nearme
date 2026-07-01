@@ -1,7 +1,6 @@
-import * as admin from 'firebase-admin';
 import { onRequest } from 'firebase-functions/v2/https';
 import Stripe from 'stripe';
-import { db } from './firebase';
+import { rtdb } from './firebase';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', {
   apiVersion: '2023-10-16',
@@ -40,22 +39,18 @@ export const stripeWebhook = onRequest(
         case 'identity.verification_session.verified': {
           const session = event.data.object as Stripe.Identity.VerificationSession;
 
-          // Trouver l'utilisateur par session ID
-          const usersSnapshot = await db
-            .collection('users')
-            .where('verificationSessionId', '==', session.id)
-            .limit(1)
-            .get();
+          // Trouver l'utilisateur via l'index de session
+          const sessionSnapshot = await rtdb.ref(`verificationSessions/${session.id}`).get();
+          const sessionData = sessionSnapshot.val();
 
-          if (!usersSnapshot.empty) {
-            const userId = usersSnapshot.docs[0].id;
+          if (sessionData && sessionData.userId) {
+            const userId = sessionData.userId;
             const verifiedOutputs = session.verified_outputs || {};
 
-            await db.collection('users').doc(userId).update({
+            await rtdb.ref(`profiles/${userId}`).update({
               ageVerified: true,
               verificationStatus: 'verified',
-              verificationVerifiedAt:
-                admin.firestore.FieldValue.serverTimestamp(),
+              verificationVerifiedAt: Date.now(),
               dateOfBirth: (verifiedOutputs as any).dob?.date,
               documentType: (verifiedOutputs as any).document?.type,
             });
@@ -69,16 +64,13 @@ export const stripeWebhook = onRequest(
         case 'identity.verification_session.canceled': {
           const session = event.data.object as Stripe.Identity.VerificationSession;
 
-          const usersSnapshot = await db
-            .collection('users')
-            .where('verificationSessionId', '==', session.id)
-            .limit(1)
-            .get();
+          const sessionSnapshot = await rtdb.ref(`verificationSessions/${session.id}`).get();
+          const sessionData = sessionSnapshot.val();
 
-          if (!usersSnapshot.empty) {
-            const userId = usersSnapshot.docs[0].id;
+          if (sessionData && sessionData.userId) {
+            const userId = sessionData.userId;
 
-            await db.collection('users').doc(userId).update({
+            await rtdb.ref(`profiles/${userId}`).update({
               verificationStatus: 'canceled',
             });
 
@@ -91,16 +83,13 @@ export const stripeWebhook = onRequest(
         case 'identity.verification_session.requires_input': {
           const session = event.data.object as Stripe.Identity.VerificationSession;
 
-          const usersSnapshot = await db
-            .collection('users')
-            .where('verificationSessionId', '==', session.id)
-            .limit(1)
-            .get();
+          const sessionSnapshot = await rtdb.ref(`verificationSessions/${session.id}`).get();
+          const sessionData = sessionSnapshot.val();
 
-          if (!usersSnapshot.empty) {
-            const userId = usersSnapshot.docs[0].id;
+          if (sessionData && sessionData.userId) {
+            const userId = sessionData.userId;
 
-            await db.collection('users').doc(userId).update({
+            await rtdb.ref(`profiles/${userId}`).update({
               verificationStatus: 'requires_input',
               verificationError:
                 session.last_error?.code || 'unknown_error',

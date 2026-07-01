@@ -9,7 +9,7 @@ import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Colors, BorderRadius } from '../../constants/theme';
+import { Colors } from '../../constants/theme';
 
 export default function TermsOfServiceScreen() {
   const router = useRouter();

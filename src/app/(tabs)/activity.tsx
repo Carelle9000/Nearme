@@ -11,20 +11,15 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useState, useEffect, useCallback } from 'react';
+import { useRouter } from 'expo-router';
 import { useAuth } from '../../context/auth-context';
 import { Colors, BorderRadius, Shadows } from '../../constants/theme';
-import {
-  collection,
-  query,
-  where,
-  getDocs,
-  doc,
-  getDoc,
-} from 'firebase/firestore';
-import { db } from '../../config/firebase';
+import { ref, get, getDatabase } from 'firebase/database';
+import { firebaseApp } from '../../config/firebase';
 import { Profile } from '../../models/user';
+import { userService } from '../../services';
 
-type Tab = 'matches' | 'likes' | 'favorites' | 'blocked';
+type Tab = 'likes' | 'favorites' | 'blocked';
 
 interface Like {
   swiperId: string;
@@ -34,60 +29,34 @@ interface Like {
 
 export default function ActivityScreen() {
   const { user } = useAuth();
-  const [activeTab, setActiveTab] = useState<Tab>('matches');
-  const [matches, setMatches] = useState<Profile[]>([]);
+  const router = useRouter();
+  const [activeTab, setActiveTab] = useState<Tab>('likes');
   const [likes, setLikes] = useState<Like[]>([]);
   const [favorites, setFavorites] = useState<Profile[]>([]);
   const [blocked, setBlocked] = useState<Profile[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(() => {
-    if (user?.id) {
-      loadActivityData();
-    }
-  }, [user?.id, loadActivityData]);
-
-  const loadMatches = useCallback(async () => {
-    if (!user?.id) return;
-    try {
-      const q1 = query(collection(db, 'swipes'), where('swiped_id', '==', user.id), where('action', '==', 'like'));
-      const likesSnapshot = await getDocs(q1);
-      const likerIds = likesSnapshot.docs.map(doc => doc.data().swiper_id);
-
-      const q2 = query(collection(db, 'swipes'), where('swiper_id', '==', user.id), where('action', '==', 'like'));
-      const likedSnapshot = await getDocs(q2);
-      const likedIds = likedSnapshot.docs.map(doc => doc.data().swiped_id);
-
-      const matchIds = likerIds.filter(id => likedIds.includes(id));
-
-      const matchProfiles: Profile[] = [];
-      for (const matchId of matchIds) {
-        const profileRef = doc(db, 'users', matchId);
-        const profileDoc = await getDoc(profileRef);
-        if (profileDoc.exists()) {
-          matchProfiles.push({ uid: profileDoc.id, ...profileDoc.data() } as Profile);
-        }
-      }
-      setMatches(matchProfiles);
-    } catch (error) {
-      console.error('Error loading matches:', error);
-    }
-  }, [user?.id]);
-
   const loadLikes = useCallback(async () => {
     if (!user?.id) return;
     try {
-      const q = query(collection(db, 'swipes'), where('swiped_id', '==', user.id));
-      const snapshot = await getDocs(q);
+      const db = getDatabase(firebaseApp);
+      const likesRef = ref(db, `profiles/${user.id}/received_likes`);
+      const snapshot = await get(likesRef);
 
       const likesData: Like[] = [];
-      for (const doc of snapshot.docs) {
-        const data = doc.data();
-        if (data.action === 'like') {
-          likesData.push({
-            swiperId: data.swiper_id,
-            action: 'like',
-          });
+      if (snapshot.exists()) {
+        const likes = snapshot.val();
+        for (const swiperId of Object.keys(likes)) {
+          const profileRef = ref(db, `profiles/${swiperId}`);
+          const profileSnapshot = await get(profileRef);
+          if (profileSnapshot.exists()) {
+            const profileData = profileSnapshot.val();
+            likesData.push({
+              swiperId,
+              action: 'like',
+              profile: { uid: swiperId, ...profileData } as Profile,
+            });
+          }
         }
       }
       setLikes(likesData);
@@ -99,16 +68,20 @@ export default function ActivityScreen() {
   const loadFavorites = useCallback(async () => {
     if (!user?.id) return;
     try {
-      const userRef = doc(db, 'users', user.id);
-      const userDoc = await getDoc(userRef);
-      const favoriteIds = userDoc.data()?.favoriteIds || [];
+      const db = getDatabase(firebaseApp);
+      const favoritesRef = ref(db, `profiles/${user.id}/favorites`);
+      const snapshot = await get(favoritesRef);
 
       const favProfiles: Profile[] = [];
-      for (const favId of favoriteIds) {
-        const favRef = doc(db, 'users', favId);
-        const favDoc = await getDoc(favRef);
-        if (favDoc.exists()) {
-          favProfiles.push({ uid: favDoc.id, ...favDoc.data() } as Profile);
+      if (snapshot.exists()) {
+        const favorites = snapshot.val();
+        for (const favId of Object.keys(favorites)) {
+          const profileRef = ref(db, `profiles/${favId}`);
+          const profileSnapshot = await get(profileRef);
+          if (profileSnapshot.exists()) {
+            const profileData = profileSnapshot.val();
+            favProfiles.push({ uid: favId, ...profileData } as Profile);
+          }
         }
       }
       setFavorites(favProfiles);
@@ -120,16 +93,23 @@ export default function ActivityScreen() {
   const loadBlocked = useCallback(async () => {
     if (!user?.id) return;
     try {
-      const q = query(collection(db, 'blocks'), where('blocker_id', '==', user.id));
-      const snapshot = await getDocs(q);
+      const db = getDatabase(firebaseApp);
+      const blocksRef = ref(db, 'blocks');
+      const snapshot = await get(blocksRef);
 
       const blockedProfiles: Profile[] = [];
-      for (const doc of snapshot.docs) {
-        const data = doc.data();
-        const blockedRef = doc(db, 'users', data.blocked_id);
-        const blockedDoc = await getDoc(blockedRef);
-        if (blockedDoc.exists()) {
-          blockedProfiles.push({ uid: blockedDoc.id, ...blockedDoc.data() } as Profile);
+      if (snapshot.exists()) {
+        const blocks = snapshot.val();
+        for (const blockId of Object.keys(blocks)) {
+          const block = blocks[blockId];
+          if (block.blockerId === user.id) {
+            const blockedRef = ref(db, `profiles/${block.blockedId}`);
+            const blockedSnapshot = await get(blockedRef);
+            if (blockedSnapshot.exists()) {
+              const profileData = blockedSnapshot.val();
+              blockedProfiles.push({ uid: block.blockedId, ...profileData } as Profile);
+            }
+          }
         }
       }
       setBlocked(blockedProfiles);
@@ -143,9 +123,7 @@ export default function ActivityScreen() {
     setIsLoading(true);
 
     try {
-      if (activeTab === 'matches') {
-        await loadMatches();
-      } else if (activeTab === 'likes') {
+      if (activeTab === 'likes') {
         await loadLikes();
       } else if (activeTab === 'favorites') {
         await loadFavorites();
@@ -157,16 +135,21 @@ export default function ActivityScreen() {
     } finally {
       setIsLoading(false);
     }
-  }, [activeTab, loadMatches, loadLikes, loadFavorites, loadBlocked]);
+  }, [activeTab, loadLikes, loadFavorites, loadBlocked]);
+
+  useEffect(() => {
+    if (user?.id) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      loadActivityData();
+    }
+  }, [user?.id, loadActivityData]);
 
   const renderEmptyState = (title: string) => (
     <View style={styles.emptyState}>
       <View style={styles.emptyIconContainer}>
         <Ionicons
           name={
-            activeTab === 'matches'
-              ? 'heart'
-              : activeTab === 'likes'
+            activeTab === 'likes'
               ? 'heart'
               : activeTab === 'favorites'
               ? 'star'
@@ -187,7 +170,16 @@ export default function ActivityScreen() {
       : '?';
 
     return (
-      <TouchableOpacity style={[styles.profileCard, Shadows.soft]} key={profile.uid}>
+      <TouchableOpacity
+        style={[styles.profileCard, Shadows.soft]}
+        key={profile.uid}
+        onPress={() =>
+          router.push({
+            pathname: '/profile/[id]',
+            params: { id: profile.uid },
+          })
+        }
+      >
         <Image
           source={{ uri: profile.photoUrl || 'https://via.placeholder.com/200' }}
           style={styles.profileImage}
@@ -214,10 +206,8 @@ export default function ActivityScreen() {
 
   const getActiveData = () => {
     switch (activeTab) {
-      case 'matches':
-        return matches;
       case 'likes':
-        return likes;
+        return likes.map(l => l.profile).filter(Boolean) as Profile[];
       case 'favorites':
         return favorites;
       case 'blocked':
@@ -229,8 +219,6 @@ export default function ActivityScreen() {
 
   const getEmptyTitle = () => {
     switch (activeTab) {
-      case 'matches':
-        return 'match';
       case 'likes':
         return 'like';
       case 'favorites':
@@ -244,8 +232,6 @@ export default function ActivityScreen() {
 
   const getEmptyMessage = () => {
     switch (activeTab) {
-      case 'matches':
-        return 'Vos correspondances mutuelles apparaîtront ici';
       case 'likes':
         return 'Les profils qui vous ont aimé apparaîtront ici';
       case 'favorites':
@@ -280,22 +266,6 @@ export default function ActivityScreen() {
 
         {/* Tabs */}
         <View style={styles.tabsContainer}>
-          <TouchableOpacity
-            style={[styles.tab, activeTab === 'matches' && styles.activeTab]}
-            onPress={() => setActiveTab('matches')}
-          >
-            <Ionicons
-              name="heart"
-              size={20}
-              color={activeTab === 'matches' ? Colors.primary : Colors.textSecondary}
-            />
-            <Text
-              style={[styles.tabText, activeTab === 'matches' && styles.activeTabText]}
-            >
-              Matches
-            </Text>
-          </TouchableOpacity>
-
           <TouchableOpacity
             style={[styles.tab, activeTab === 'likes' && styles.activeTab]}
             onPress={() => setActiveTab('likes')}
@@ -351,8 +321,8 @@ export default function ActivityScreen() {
         ) : (
           <FlatList
             data={activeData}
-            renderItem={({ item }) => renderProfileCard(item as any)}
-            keyExtractor={(item) => (item as any).uid || (item as any).swiperId}
+            renderItem={({ item }) => renderProfileCard(item)}
+            keyExtractor={(item) => item.uid}
             contentContainerStyle={styles.listContent}
             numColumns={2}
             scrollEnabled={false}

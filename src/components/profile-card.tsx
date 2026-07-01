@@ -17,9 +17,8 @@ interface ProfileCardProps {
   profile: Profile | null;
   isFavorite?: boolean;
   onLike?: () => void;
-  onNope?: () => void;
   onFavorite?: () => void;
-  onViewProfile?: () => void;
+  onMessage?: () => void;
 }
 
 const { width, height } = Dimensions.get('window');
@@ -28,9 +27,8 @@ export function ProfileCard({
   profile,
   isFavorite = false,
   onLike,
-  onNope,
   onFavorite,
-  onViewProfile,
+  onMessage,
 }: ProfileCardProps) {
   if (!profile) {
     return (
@@ -73,7 +71,7 @@ export function ProfileCard({
             <Text style={styles.name}>
               {profile.displayName || profile.name}, {age}
             </Text>
-            {isFavorite && <Ionicons name="heart" size={20} color={Colors.primary} />}
+            {isFavorite && <Ionicons name="star" size={20} color={Colors.primary} />}
           </View>
 
           {profile.location?.city && (
@@ -99,16 +97,12 @@ export function ProfileCard({
 
       {/* Action Buttons */}
       <View style={styles.actionsContainer}>
-        <TouchableOpacity style={styles.nopButton} onPress={onNope}>
-          <Ionicons name="close" size={28} color={Colors.primary} />
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.infoButton} onPress={onViewProfile}>
-          <Ionicons name="information-circle" size={28} color={Colors.textSecondary} />
+        <TouchableOpacity style={styles.messageButton} onPress={onMessage}>
+          <Ionicons name="chatbubble-outline" size={24} color={Colors.text} />
         </TouchableOpacity>
 
         <TouchableOpacity style={styles.favoriteButton} onPress={onFavorite}>
-          <Ionicons name={isFavorite ? 'heart' : 'heart-outline'} size={28} color={Colors.primary} />
+          <Ionicons name={isFavorite ? 'star' : 'star-outline'} size={24} color={Colors.primary} />
         </TouchableOpacity>
 
         <LinearGradient
@@ -206,29 +200,21 @@ const styles = StyleSheet.create({
   },
   actionsContainer: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
+    justifyContent: 'center',
     alignItems: 'center',
+    gap: 24,
     marginTop: 24,
     paddingHorizontal: 16,
   },
-  nopButton: {
+  messageButton: {
     width: 56,
     height: 56,
     borderRadius: BorderRadius.full,
-    backgroundColor: Colors.background,
+    backgroundColor: Colors.cardSurface,
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 2,
-    borderColor: Colors.primary,
-    ...Shadows.soft,
-  },
-  infoButton: {
-    width: 56,
-    height: 56,
-    borderRadius: BorderRadius.full,
-    backgroundColor: Colors.secondary,
-    justifyContent: 'center',
-    alignItems: 'center',
+    borderColor: Colors.textSecondary,
     ...Shadows.soft,
   },
   favoriteButton: {

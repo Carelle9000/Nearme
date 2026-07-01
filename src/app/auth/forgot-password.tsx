@@ -31,12 +31,12 @@ export default function ForgotPasswordScreen() {
 
   const handleSendReset = async () => {
     if (!email.trim()) {
-      Alert.alert(t('error'), 'Veuillez entrer votre adresse email');
+      Alert.alert(t('error'), t('emailRequired'));
       return;
     }
 
     if (!signupService.isEmailValid(email)) {
-      Alert.alert(t('error'), 'Veuillez entrer une adresse email valide');
+      Alert.alert(t('error'), t('invalidEmail'));
       return;
     }
 
@@ -44,8 +44,8 @@ export default function ForgotPasswordScreen() {
     try {
       await sendPasswordReset(email);
       Alert.alert(
-        'Email envoyé',
-        'Vérifiez votre email pour le lien de réinitialisation. Entrez le code reçu ci-dessous.'
+        t('resetEmailSent'),
+        t('resetEmailSentDesc')
       );
       setStep('reset');
     } catch (error: any) {
@@ -58,23 +58,23 @@ export default function ForgotPasswordScreen() {
 
   const handleResetPassword = async () => {
     if (!oobCode.trim()) {
-      Alert.alert(t('error'), 'Veuillez entrer le code de réinitialisation');
+      Alert.alert(t('error'), t('resetCodeRequired'));
       return;
     }
 
     if (!newPassword || !confirmPassword) {
-      Alert.alert(t('error'), 'Veuillez remplir tous les champs');
+      Alert.alert(t('error'), t('fillAllFields'));
       return;
     }
 
     if (newPassword !== confirmPassword) {
-      Alert.alert(t('error'), 'Les mots de passe ne correspondent pas');
+      Alert.alert(t('error'), t('passwordsMustMatch'));
       return;
     }
 
     const passwordValidation = signupService.isPasswordStrong(newPassword);
     if (!passwordValidation.valid) {
-      Alert.alert('Mot de passe faible', passwordValidation.reason);
+      Alert.alert(t('weakPassword'), passwordValidation.reason);
       return;
     }
 
@@ -84,7 +84,7 @@ export default function ForgotPasswordScreen() {
       await resetPassword(oobCode, newPassword);
       Alert.alert(
         t('success'),
-        'Votre mot de passe a été réinitialisé. Vous pouvez maintenant vous connecter.'
+        t('passwordResetSuccess')
       );
       router.replace('/auth/login');
     } catch (error: any) {
@@ -108,10 +108,9 @@ export default function ForgotPasswordScreen() {
         <>
           <View style={styles.headerContainer}>
             <Ionicons name="lock-open" size={48} color={Colors.primary} style={styles.icon} />
-            <Text style={styles.title}>Mot de passe oublié?</Text>
+            <Text style={styles.title}>{t('forgotPasswordTitle')}</Text>
             <Text style={styles.subtitle}>
-              Entrez votre adresse email et nous vous enverrons un lien pour réinitialiser votre
-              mot de passe.
+              {t('forgotPasswordDesc')}
             </Text>
           </View>
 
@@ -120,7 +119,7 @@ export default function ForgotPasswordScreen() {
               <Ionicons name="mail" size={20} color={Colors.primary} style={styles.inputIcon} />
               <TextInput
                 style={styles.input}
-                placeholder="Adresse email"
+                placeholder={t('emailPlaceholder')}
                 placeholderTextColor={Colors.textSecondary}
                 value={email}
                 onChangeText={setEmail}
@@ -144,7 +143,7 @@ export default function ForgotPasswordScreen() {
                 {isLoading ? (
                   <ActivityIndicator color={Colors.text} />
                 ) : (
-                  <Text style={styles.buttonText}>Envoyer le lien</Text>
+                  <Text style={styles.buttonText}>{t('sendResetLink')}</Text>
                 )}
               </TouchableOpacity>
             </LinearGradient>
@@ -154,18 +153,18 @@ export default function ForgotPasswordScreen() {
         <>
           <View style={styles.headerContainer}>
             <Ionicons name="checkmark-circle" size={48} color={Colors.primary} />
-            <Text style={styles.title}>Réinitialiser le mot de passe</Text>
+            <Text style={styles.title}>{t('resetPasswordTitle')}</Text>
             <Text style={styles.subtitle}>
-              Entrez le code reçu dans votre email et votre nouveau mot de passe.
+              {t('resetPasswordDesc')}
             </Text>
           </View>
 
           <View style={styles.form}>
-            <Text style={styles.label}>CODE DE RÉINITIALISATION</Text>
+            <Text style={styles.label}>{t('resetCodeLabel')}</Text>
             <View style={styles.inputContainer}>
               <TextInput
                 style={styles.input}
-                placeholder="Entrez le code"
+                placeholder={t('resetCodePlaceholder')}
                 placeholderTextColor={Colors.textSecondary}
                 value={oobCode}
                 onChangeText={setOobCode}
@@ -174,7 +173,7 @@ export default function ForgotPasswordScreen() {
               />
             </View>
 
-            <Text style={styles.label}>NOUVEAU MOT DE PASSE</Text>
+            <Text style={styles.label}>{t('newPasswordLabel')}</Text>
             <View style={styles.inputContainer}>
               <Ionicons
                 name="lock-closed"

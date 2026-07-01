@@ -17,7 +17,7 @@ interface DiscoverFiltersContextType {
 const DEFAULT_FILTERS: DiscoverFilters = {
   minAge: 18,
   maxAge: 65,
-  maxDistance: 50,
+  maxDistance: 500,
   interests: [],
   gender: 'all',
 };

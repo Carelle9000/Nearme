@@ -5,6 +5,9 @@ const { getStorage } = require('firebase-admin/storage');
 const fs = require('fs');
 const path = require('path');
 const https = require('https');
+const ngeohash = require('ngeohash');
+
+const GEOHASH_STORAGE_PRECISION = 7;
 
 // Initialize Firebase Admin
 const serviceAccountPath = path.join(__dirname, '../serviceAccountKey.json');
@@ -26,7 +29,28 @@ const auth = getAuth(app);
 const db = getDatabase(app);
 const storage = getStorage(app);
 
-// 20 complete French test users
+// Paris center point
+const PARIS_LAT = 48.8566;
+const PARIS_LON = 2.3522;
+const RADIUS_KM = 200;
+
+// Function to generate random location around Paris
+function generateRandomLocationAroundParis() {
+  const angle = Math.random() * 360;
+  const angleRad = (angle * Math.PI) / 180;
+  const distance = Math.random() * RADIUS_KM;
+  const R = 6371;
+
+  const latOffset = (distance * Math.cos(angleRad)) / 111;
+  const lonOffset = (distance * Math.sin(angleRad)) / (111 * Math.cos((PARIS_LAT * Math.PI) / 180));
+
+  return {
+    latitude: PARIS_LAT + latOffset,
+    longitude: PARIS_LON + lonOffset,
+  };
+}
+
+// 20 complete French test users - All around Paris
 const testUsers = [
   {
     email: 'alice.johnson@test.com',
@@ -34,8 +58,7 @@ const testUsers = [
     name: 'Alice Johnson',
     gender: 'female',
     city: 'Paris',
-    latitude: 48.8566,
-    longitude: 2.3522,
+    ...generateRandomLocationAroundParis(),
     birthYear: 1998,
     bio: '🌍 Voyageuse passionnée par les nouvelles cultures, adore les musées',
     interests: ['Travel', 'Art', 'Food', 'Photography'],
@@ -45,9 +68,8 @@ const testUsers = [
     password: 'TestPass123!@',
     name: 'Bob Smith',
     gender: 'male',
-    city: 'Lyon',
-    latitude: 45.7640,
-    longitude: 4.8357,
+    city: 'Paris',
+    ...generateRandomLocationAroundParis(),
     birthYear: 1996,
     bio: '⚽ Amateur de sport et de fitness, passionné par la musculation',
     interests: ['Sport', 'Fitness', 'Gaming', 'Traveling'],
@@ -57,9 +79,8 @@ const testUsers = [
     password: 'TestPass123!@',
     name: 'Clara Martin',
     gender: 'female',
-    city: 'Marseille',
-    latitude: 43.2965,
-    longitude: 5.3698,
+    city: 'Paris',
+    ...generateRandomLocationAroundParis(),
     birthYear: 2000,
     bio: '🎵 Musicienne et productrice, j\'adore les concerts live',
     interests: ['Music', 'Art', 'Movies', 'Festivals'],
@@ -69,9 +90,8 @@ const testUsers = [
     password: 'TestPass123!@',
     name: 'David Laurent',
     gender: 'male',
-    city: 'Toulouse',
-    latitude: 43.6047,
-    longitude: 1.4422,
+    city: 'Paris',
+    ...generateRandomLocationAroundParis(),
     birthYear: 1997,
     bio: '📚 Bookworm et coffee addict, toujours en train de lire',
     interests: ['Books', 'Food', 'Travel', 'Coffee'],
@@ -81,9 +101,8 @@ const testUsers = [
     password: 'TestPass123!@',
     name: 'Emma Wilson',
     gender: 'female',
-    city: 'Nice',
-    latitude: 43.7102,
-    longitude: 7.2620,
+    city: 'Paris',
+    ...generateRandomLocationAroundParis(),
     birthYear: 1999,
     bio: '🎨 Artiste et designer graphique, créative et passionnée',
     interests: ['Art', 'Design', 'Photography', 'Fashion'],
@@ -93,9 +112,8 @@ const testUsers = [
     password: 'TestPass123!@',
     name: 'Frank Brown',
     gender: 'male',
-    city: 'Bordeaux',
-    latitude: 44.8378,
-    longitude: -0.5792,
+    city: 'Paris',
+    ...generateRandomLocationAroundParis(),
     birthYear: 1995,
     bio: '🍷 Wine enthusiast et gourmet, amoureux de la bonne cuisine',
     interests: ['Food', 'Wine', 'Travel', 'Cooking'],
@@ -105,9 +123,8 @@ const testUsers = [
     password: 'TestPass123!@',
     name: 'Grace Lee',
     gender: 'female',
-    city: 'Lille',
-    latitude: 50.6292,
-    longitude: 3.0573,
+    city: 'Paris',
+    ...generateRandomLocationAroundParis(),
     birthYear: 2001,
     bio: '💪 Fitness coach et nutritionniste, je suis la santé et le bien-être',
     interests: ['Fitness', 'Health', 'Sport', 'Wellness'],
@@ -117,9 +134,8 @@ const testUsers = [
     password: 'TestPass123!@',
     name: 'Henry Chen',
     gender: 'male',
-    city: 'Monaco',
-    latitude: 43.7384,
-    longitude: 7.4246,
+    city: 'Paris',
+    ...generateRandomLocationAroundParis(),
     birthYear: 1994,
     bio: '🎬 Film director et cinéphile, j\'aime les bons films',
     interests: ['Movies', 'Photography', 'Art', 'Entertainment'],
@@ -129,9 +145,8 @@ const testUsers = [
     password: 'TestPass123!@',
     name: 'Iris Moreau',
     gender: 'female',
-    city: 'Strasbourg',
-    latitude: 48.5734,
-    longitude: 7.7521,
+    city: 'Paris',
+    ...generateRandomLocationAroundParis(),
     birthYear: 1998,
     bio: '🌱 Eco-friendly lifestyle advocate, sustainable et responsable',
     interests: ['Travel', 'Fitness', 'Food', 'Nature'],
@@ -141,9 +156,8 @@ const testUsers = [
     password: 'TestPass123!@',
     name: 'Jack Anderson',
     gender: 'male',
-    city: 'Nantes',
-    latitude: 47.2184,
-    longitude: -1.5536,
+    city: 'Paris',
+    ...generateRandomLocationAroundParis(),
     birthYear: 1997,
     bio: '🚀 Tech enthusiast et entrepreneur, passionné d\'innovation',
     interests: ['Gaming', 'Travel', 'Books', 'Technology'],
@@ -154,8 +168,7 @@ const testUsers = [
     name: 'Kara Dupont',
     gender: 'female',
     city: 'Paris',
-    latitude: 48.8566,
-    longitude: 2.3522,
+    ...generateRandomLocationAroundParis(),
     birthYear: 1999,
     bio: '✨ Fashionista et lifestyle blogger, toujours tendance',
     interests: ['Fashion', 'Shopping', 'Travel', 'Photography'],
@@ -165,9 +178,8 @@ const testUsers = [
     password: 'TestPass123!@',
     name: 'Léo Rousseau',
     gender: 'male',
-    city: 'Lyon',
-    latitude: 45.7640,
-    longitude: 4.8357,
+    city: 'Paris',
+    ...generateRandomLocationAroundParis(),
     birthYear: 1998,
     bio: '🏔️ Aventurier et randonneur, j\'aime la montagne',
     interests: ['Hiking', 'Sport', 'Nature', 'Travel'],
@@ -177,9 +189,8 @@ const testUsers = [
     password: 'TestPass123!@',
     name: 'Marina Belmont',
     gender: 'female',
-    city: 'Marseille',
-    latitude: 43.2965,
-    longitude: 5.3698,
+    city: 'Paris',
+    ...generateRandomLocationAroundParis(),
     birthYear: 2001,
     bio: '🌊 Beach lover et surfeuse, accro à la mer',
     interests: ['Water Sports', 'Beach', 'Travel', 'Fitness'],
@@ -189,9 +200,8 @@ const testUsers = [
     password: 'TestPass123!@',
     name: 'Nathan Grey',
     gender: 'male',
-    city: 'Toulouse',
-    latitude: 43.6047,
-    longitude: 1.4422,
+    city: 'Paris',
+    ...generateRandomLocationAroundParis(),
     birthYear: 1996,
     bio: '🎮 Gamer professionnel et streamer, passionné par les jeux vidéo',
     interests: ['Gaming', 'Technology', 'Streaming', 'Esports'],
@@ -201,9 +211,8 @@ const testUsers = [
     password: 'TestPass123!@',
     name: 'Olivia Patel',
     gender: 'female',
-    city: 'Nice',
-    latitude: 43.7102,
-    longitude: 7.2620,
+    city: 'Paris',
+    ...generateRandomLocationAroundParis(),
     birthYear: 1997,
     bio: '🧘 Yogi et coach de bien-être, croyante en l\'équilibre',
     interests: ['Yoga', 'Wellness', 'Meditation', 'Health'],
@@ -213,9 +222,8 @@ const testUsers = [
     password: 'TestPass123!@',
     name: 'Pierre Vincent',
     gender: 'male',
-    city: 'Bordeaux',
-    latitude: 44.8378,
-    longitude: -0.5792,
+    city: 'Paris',
+    ...generateRandomLocationAroundParis(),
     birthYear: 1995,
     bio: '🍽️ Chef amateur et amateur de cuisine fusion',
     interests: ['Food', 'Cooking', 'Wine', 'Travel'],
@@ -225,9 +233,8 @@ const testUsers = [
     password: 'TestPass123!@',
     name: 'Quinn Moreau',
     gender: 'female',
-    city: 'Lille',
-    latitude: 50.6292,
-    longitude: 3.0573,
+    city: 'Paris',
+    ...generateRandomLocationAroundParis(),
     birthYear: 2000,
     bio: '📖 Autrice et critique littéraire, passionnée par les histoires',
     interests: ['Books', 'Writing', 'Art', 'Travel'],
@@ -237,9 +244,8 @@ const testUsers = [
     password: 'TestPass123!@',
     name: 'Raphaël Martin',
     gender: 'male',
-    city: 'Monaco',
-    latitude: 43.7384,
-    longitude: 7.4246,
+    city: 'Paris',
+    ...generateRandomLocationAroundParis(),
     birthYear: 1994,
     bio: '🎹 Musicien classique et passionné de piano',
     interests: ['Music', 'Classical', 'Art', 'Travel'],
@@ -249,9 +255,8 @@ const testUsers = [
     password: 'TestPass123!@',
     name: 'Sophie Bernard',
     gender: 'female',
-    city: 'Strasbourg',
-    latitude: 48.5734,
-    longitude: 7.7521,
+    city: 'Paris',
+    ...generateRandomLocationAroundParis(),
     birthYear: 1999,
     bio: '🌸 Paysagiste et amante de la nature, créative',
     interests: ['Nature', 'Gardening', 'Photography', 'Travel'],
@@ -261,34 +266,48 @@ const testUsers = [
     password: 'TestPass123!@',
     name: 'Thomas Leclerc',
     gender: 'male',
-    city: 'Nantes',
-    latitude: 47.2184,
-    longitude: -1.5536,
+    city: 'Paris',
+    ...generateRandomLocationAroundParis(),
     birthYear: 1997,
     bio: '🚗 Auto enthusiast et passionné de mécanique',
     interests: ['Cars', 'Technology', 'Travel', 'DIY'],
   },
 ];
 
-// Function to download an image from URL
-function downloadImage(url) {
-  return new Promise((resolve, reject) => {
-    https.get(url, (response) => {
-      const chunks = [];
-      response.on('data', (chunk) => chunks.push(chunk));
-      response.on('end', () => {
-        resolve(Buffer.concat(chunks));
-      });
-    }).on('error', reject);
-  });
+// Available local profile photos
+const AVAILABLE_PHOTOS = [
+  'photo1.jpg',
+  'photo2.jpg',
+  'photo3.jpg',
+  'photo4.jpg',
+  'photo5.jpg',
+  'photo6.jpg',
+  'photo7.jpg',
+  'photo8.jpg',
+  'photo9.jpg',
+  'photo10.jpg',
+  'photo11.jpg',
+  'photo8.webp',
+];
+
+// Get photo for user by cycling through available photos
+function getPhotoForUser(index) {
+  return AVAILABLE_PHOTOS[index % AVAILABLE_PHOTOS.length];
 }
 
-// Generate avatar URL using DiceBear
-function getAvatarUrl(name, gender) {
-  // Use DiceBear API for consistent avatars
-  const style = gender === 'male' ? 'adventurer' : 'adventurer-neutral';
-  const seed = name.replace(/\s+/g, '');
-  return `https://api.dicebear.com/7.x/${style}/png?seed=${encodeURIComponent(seed)}&size=200`;
+// Read local photo file
+function readLocalPhoto(filename) {
+  try {
+    const photoPath = path.join(__dirname, '../assets/images', filename);
+    if (!fs.existsSync(photoPath)) {
+      console.log(`   ⚠️  Photo file not found: ${filename}`);
+      return null;
+    }
+    return fs.readFileSync(photoPath);
+  } catch (error) {
+    console.error(`   ❌ Error reading photo ${filename}:`, error.message);
+    return null;
+  }
 }
 
 // Upload photo to Firebase Storage
@@ -297,9 +316,19 @@ async function uploadPhotoToStorage(userId, imageBuffer, filename) {
     const bucket = storage.bucket();
     const file = bucket.file(`photos/${userId}/${filename}`);
 
+    // Determine content type based on file extension
+    const ext = path.extname(filename).toLowerCase();
+    const contentTypeMap = {
+      '.jpg': 'image/jpeg',
+      '.jpeg': 'image/jpeg',
+      '.png': 'image/png',
+      '.webp': 'image/webp',
+    };
+    const contentType = contentTypeMap[ext] || 'image/jpeg';
+
     await file.save(imageBuffer, {
       metadata: {
-        contentType: 'image/png',
+        contentType,
       },
     });
 
@@ -351,27 +380,34 @@ async function seedUsers() {
       const now = Date.now();
       const isoDate = new Date(now).toISOString();
 
-      // Download and upload avatar photo
+      // Load and upload local profile photo
       let photoUrl = null;
       try {
-        console.log(`   📸 Downloading avatar...`);
-        const avatarUrl = getAvatarUrl(userData.name, userData.gender);
-        const imageBuffer = await downloadImage(avatarUrl);
+        const userIndex = createdUsers.length;
+        const photoFilename = getPhotoForUser(userIndex);
+        console.log(`   📸 Loading profile photo: ${photoFilename}`);
 
-        console.log(`   ☁️  Uploading to Storage...`);
-        const filename = `profile_${Date.now()}.png`;
-        photoUrl = await uploadPhotoToStorage(uid, imageBuffer, filename);
-
-        if (photoUrl) {
-          console.log(`   ✅ Photo uploaded successfully`);
+        const imageBuffer = readLocalPhoto(photoFilename);
+        if (!imageBuffer) {
+          console.log(`   ⚠️  Could not load photo, continuing without photo`);
         } else {
-          console.log(`   ⚠️  Photo upload failed, continuing without photo`);
+          console.log(`   ☁️  Uploading to Storage...`);
+          const ext = path.extname(photoFilename);
+          const uploadFilename = `profile_${Date.now()}${ext}`;
+          photoUrl = await uploadPhotoToStorage(uid, imageBuffer, uploadFilename);
+
+          if (photoUrl) {
+            console.log(`   ✅ Photo uploaded successfully`);
+          } else {
+            console.log(`   ⚠️  Photo upload failed, continuing without photo`);
+          }
         }
       } catch (error) {
         console.error(`   ❌ Error handling photo:`, error.message);
       }
 
       // Create profile in RTDB
+      const geohash = ngeohash.encode(userData.latitude, userData.longitude, GEOHASH_STORAGE_PRECISION);
       const profileData = {
         uid,
         name: userData.name,
@@ -387,6 +423,7 @@ async function seedUsers() {
           longitude: userData.longitude,
           city: userData.city,
         },
+        geohash,
         verified: true,
         isAgeVerified: true,
         createdAt: isoDate,

@@ -58,8 +58,8 @@ export default function SignupStep3() {
         } else {
           setErrorModal({
             visible: true,
-            title: 'Limite atteinte',
-            message: 'Vous pouvez ajouter maximum 6 photos',
+            title: t('photoLimit'),
+            message: t('photoLimitMessage'),
           });
         }
       }
@@ -67,7 +67,7 @@ export default function SignupStep3() {
       setErrorModal({
         visible: true,
         title: t('error'),
-        message: 'Impossible de charger la photo',
+        message: t('photoLoadError'),
       });
     }
   };
@@ -89,7 +89,7 @@ export default function SignupStep3() {
       setErrorModal({
         visible: true,
         title: t('error'),
-        message: 'Veuillez remplir tous les champs obligatoires correctement',
+        message: t('fillAllFields'),
       });
       return;
     }
@@ -98,7 +98,7 @@ export default function SignupStep3() {
       setErrorModal({
         visible: true,
         title: t('error'),
-        message: 'Vous devez avoir au moins 18 ans pour utiliser cette application',
+        message: t('ageVerificationDescription'),
       });
       return;
     }
@@ -109,7 +109,7 @@ export default function SignupStep3() {
       setErrorModal({
         visible: true,
         title: t('error'),
-        message: 'Utilisateur non authentifié. Veuillez recommencer l\'inscription.',
+        message: t('error'),
       });
       return;
     }
@@ -162,26 +162,26 @@ export default function SignupStep3() {
 
       {/* Step Indicator */}
       <View style={styles.stepIndicator}>
-        <StepIndicatorItem number={1} label="Compte" completed />
+        <StepIndicatorItem number={1} label={t('accountStep')} completed />
         <View style={styles.stepConnector} />
-        <StepIndicatorItem number={2} label="Règles" completed />
+        <StepIndicatorItem number={2} label={t('rulesStep')} completed />
         <View style={styles.stepConnector} />
-        <StepIndicatorItem number={3} label="Profil" active />
+        <StepIndicatorItem number={3} label={t('profileStep')} active />
       </View>
 
       {/* Title */}
-      <Text style={styles.title}>Créez votre profil</Text>
-      <Text style={styles.subtitle}>Ces informations aideront à vous trouver des correspondances parfaites</Text>
+      <Text style={styles.title}>{t('step3Title')}</Text>
+      <Text style={styles.subtitle}>{t('step3Subtitle')}</Text>
 
       {/* Form */}
       <View style={styles.form}>
         {/* First Name */}
         <View style={styles.fieldGroup}>
-          <Text style={styles.label}>PRÉNOM</Text>
+          <Text style={styles.label}>{t('firstNameLabel')}</Text>
           <View style={styles.inputContainer}>
             <TextInput
               style={styles.input}
-              placeholder="Votre prénom"
+              placeholder={t('firstNamePlaceholder')}
               placeholderTextColor={Colors.textSecondary}
               value={data.firstName}
               onChangeText={(firstName) => updateData({ firstName })}
@@ -193,15 +193,15 @@ export default function SignupStep3() {
         {/* Birth Year */}
         <View style={styles.fieldGroup}>
           <View style={styles.birthYearHeader}>
-            <Text style={styles.label}>ANNÉE DE NAISSANCE</Text>
+            <Text style={styles.label}>{t('birthYearLabel')}</Text>
             {calculateAge(data.birthYear) && (
-              <Text style={styles.ageLabel}>{calculateAge(data.birthYear)} ans</Text>
+              <Text style={styles.ageLabel}>{calculateAge(data.birthYear)} {t('ageLabel')}</Text>
             )}
           </View>
           <View style={styles.inputContainer}>
             <TextInput
               style={styles.input}
-              placeholder="Ex: 1998"
+              placeholder={t('birthYearPlaceholder')}
               placeholderTextColor={Colors.textSecondary}
               value={data.birthYear}
               onChangeText={(birthYear) => updateData({ birthYear })}
@@ -214,7 +214,7 @@ export default function SignupStep3() {
 
         {/* Gender */}
         <View style={styles.fieldGroup}>
-          <Text style={styles.label}>GENRE</Text>
+          <Text style={styles.label}>{t('genderLabel')}</Text>
           <View style={styles.genderGrid}>
             {GENDERS.map((gender) => (
               <TouchableOpacity

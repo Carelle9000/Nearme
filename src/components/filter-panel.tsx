@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import {
   View,
   Text,
@@ -11,12 +11,15 @@ import Slider from '@react-native-community/slider';
 import { Ionicons } from '@expo/vector-icons';
 import { useDiscoverFilters } from '../context/discover-filters-context';
 import { useDiscover } from '../context/discover-context';
+import { locationService } from '../services/location.service';
 import { Colors } from '../constants/theme';
 
 export function FilterPanel() {
   const { filters, updateFilters, resetFilters } = useDiscoverFilters();
-  const { applyFilters } = useDiscover();
+  const { applyFilters, loadNearbyProfiles } = useDiscover();
   const [showModal, setShowModal] = useState(false);
+  // Bug #9: remember the distance at open time to detect a real change on apply.
+  const distanceAtOpenRef = useRef<number>(filters.maxDistance);
 
   const handleAgeChange = (ages: number[]) => {
     updateFilters({
@@ -29,9 +32,27 @@ export function FilterPanel() {
     updateFilters({ maxDistance: distance });
   };
 
-  const handleApplyFilters = () => {
+  const handleApplyFilters = async () => {
     applyFilters(filters);
     setShowModal(false);
+
+    // Bug #9: if the distance radius changed, reload from the server so we don't
+    // just re-filter a stale set of nearby profiles.
+    if (filters.maxDistance !== distanceAtOpenRef.current) {
+      try {
+        const loc = await locationService.getCurrentLocation();
+        if (loc) {
+          await loadNearbyProfiles(loc.latitude, loc.longitude);
+        }
+      } catch (err) {
+        console.error('[FilterPanel] Failed to reload profiles on distance change:', err);
+      }
+    }
+  };
+
+  const handleOpenModal = () => {
+    distanceAtOpenRef.current = filters.maxDistance;
+    setShowModal(true);
   };
 
   const handleResetFilters = () => {
@@ -40,7 +61,7 @@ export function FilterPanel() {
 
   return (
     <>
-      <TouchableOpacity style={styles.filterButton} onPress={() => setShowModal(true)}>
+      <TouchableOpacity style={styles.filterButton} onPress={handleOpenModal}>
         <Ionicons name="funnel" size={20} color="#fff" />
         <Text style={styles.filterButtonText}>Filtres</Text>
       </TouchableOpacity>
@@ -104,7 +125,7 @@ export function FilterPanel() {
                 <Slider
                   style={styles.slider}
                   minimumValue={5}
-                  maximumValue={100}
+                  maximumValue={500}
                   step={5}
                   value={filters.maxDistance}
                   onValueChange={handleDistanceChange}

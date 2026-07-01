@@ -1,9 +1,8 @@
 import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
-import { storage, functions } from '../config/firebase';
-import { httpsCallable } from 'firebase/functions';
+import { storage } from '../config/firebase';
 import * as ImagePicker from 'expo-image-picker';
-import { readAsStringAsync, EncodingType } from 'expo-file-system/legacy';
 import { Platform } from 'react-native';
+import { readAsStringAsync, EncodingType } from 'expo-file-system/legacy';
 
 class PhotoService {
   async requestPermissions(): Promise<boolean> {
@@ -144,7 +143,15 @@ class PhotoService {
     try {
       console.log('Converting URI to blob:', uri);
 
-      // Use legacy API to read file as base64
+      // On web, use fetch to convert URI to blob
+      if (Platform.OS === 'web') {
+        const response = await fetch(uri);
+        const blob = await response.blob();
+        console.log('Blob created from web URI, size:', blob.size);
+        return blob;
+      }
+
+      // On mobile, use expo-file-system
       const base64 = await readAsStringAsync(uri, {
         encoding: EncodingType.Base64,
       });

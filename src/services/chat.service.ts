@@ -4,14 +4,26 @@ import {
   get,
   push,
   update,
-  query,
-  orderByChild,
-  limitToLast,
   onValue,
   Unsubscribe,
 } from 'firebase/database';
 import { rtdb } from '../config/firebase';
 import { Conversation, Message } from '../models/user';
+
+function normalizeParticipants(raw: unknown): string[] {
+  if (Array.isArray(raw)) return raw.filter((v): v is string => typeof v === 'string');
+  if (raw && typeof raw === 'object') return Object.keys(raw);
+  return [];
+}
+
+function normalizeConversation(data: any): Conversation {
+  return {
+    ...data,
+    participants: normalizeParticipants(data?.participants),
+    createdAt: new Date(data?.createdAt ?? Date.now()),
+    updatedAt: new Date(data?.updatedAt ?? Date.now()),
+  };
+}
 
 class ChatService {
   async createConversation(
@@ -23,7 +35,18 @@ class ChatService {
     const conversationId = [userId1, userId2].sort().join('_');
     const now = Date.now();
 
-    const conversation: Conversation = {
+    await set(ref(rtdb, `conversations/${conversationId}`), {
+      id: conversationId,
+      participants: { [userId1]: true, [userId2]: true },
+      participantNames: {
+        [userId1]: user1Name,
+        [userId2]: user2Name,
+      },
+      createdAt: now,
+      updatedAt: now,
+    });
+
+    return {
       id: conversationId,
       participants: [userId1, userId2],
       participantNames: {
@@ -33,14 +56,6 @@ class ChatService {
       createdAt: new Date(now),
       updatedAt: new Date(now),
     };
-
-    await set(ref(rtdb, `conversations/${conversationId}`), {
-      ...conversation,
-      createdAt: now,
-      updatedAt: now,
-    });
-
-    return conversation;
   }
 
   async getOrCreateConversation(
@@ -53,12 +68,7 @@ class ChatService {
     const snapshot = await get(ref(rtdb, `conversations/${conversationId}`));
 
     if (snapshot.exists()) {
-      const data = snapshot.val();
-      return {
-        ...data,
-        createdAt: new Date(data.createdAt),
-        updatedAt: new Date(data.updatedAt),
-      };
+      return normalizeConversation(snapshot.val());
     }
 
     return this.createConversation(userId1, userId2, user1Name, user2Name);
@@ -131,13 +141,8 @@ class ChatService {
 
       const conversationsObj = snapshot.val();
       const conversations = Object.entries(conversationsObj)
-        .map(([id, data]: any) => ({
-          id,
-          ...data,
-          createdAt: new Date(data.createdAt),
-          updatedAt: new Date(data.updatedAt),
-        }))
-        .filter((conv: any) => conv.participants.includes(userId))
+        .map(([id, data]: any) => normalizeConversation({ id, ...data }))
+        .filter((conv) => conv.participants.includes(userId))
         .sort((a: any, b: any) => (b.lastMessageAt || 0) - (a.lastMessageAt || 0));
 
       return conversations;

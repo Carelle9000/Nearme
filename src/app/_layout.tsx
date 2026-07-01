@@ -16,13 +16,13 @@ export default function RootLayout() {
         <AuthProvider>
           <NotificationProvider>
             <ProfileProvider>
-              <DiscoverProvider>
-                <DiscoverFiltersProvider>
+              <DiscoverFiltersProvider>
+                <DiscoverProvider>
                   <ChatProvider>
                     <Slot />
                   </ChatProvider>
-                </DiscoverFiltersProvider>
-              </DiscoverProvider>
+                </DiscoverProvider>
+              </DiscoverFiltersProvider>
             </ProfileProvider>
           </NotificationProvider>
         </AuthProvider>

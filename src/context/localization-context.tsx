@@ -15,8 +15,8 @@ interface LocalizationContextType {
 const LocalizationContext = createContext<LocalizationContextType | undefined>(undefined);
 
 export function LocalizationProvider({ children }: { children: ReactNode }) {
-  const [language, setLanguageState] = useState<string>('fr');
-  const [country, setCountryState] = useState<string>('FR');
+  const [language, setLanguageState] = useState<string>('en');
+  const [country, setCountryState] = useState<string>('US');
   const [hasConfigured, setHasConfigured] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
@@ -29,9 +29,13 @@ export function LocalizationProvider({ children }: { children: ReactNode }) {
         if (savedLanguage) {
           setLanguageState(savedLanguage);
           setHasConfigured(true);
+          console.log(`[Localization] Loaded saved language: ${savedLanguage}`);
+        } else {
+          console.log('[Localization] No saved language, using default: en');
         }
         if (savedCountry) {
           setCountryState(savedCountry);
+          console.log(`[Localization] Loaded saved country: ${savedCountry}`);
         }
       } catch (error) {
         console.error('Error loading localization:', error);
@@ -48,6 +52,7 @@ export function LocalizationProvider({ children }: { children: ReactNode }) {
       await localizationService.setLanguage(code);
       setLanguageState(code);
       setHasConfigured(true);
+      console.log(`[Localization] Language changed to: ${code}`);
     } catch (error) {
       console.error('Error setting language:', error);
       throw error;

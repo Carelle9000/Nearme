@@ -6,5 +6,10 @@ module.exports = defineConfig([
   expoConfig,
   {
     ignores: ["dist/*"],
+  },
+  {
+    rules: {
+      'react/no-unescaped-entities': 'off', // Not applicable to React Native (uses JS strings, not HTML)
+    },
   }
 ]);

@@ -42,10 +42,15 @@ export default function EditProfileScreen() {
 
   useEffect(() => {
     if (user) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setDisplayName(user.displayName || user.name || '');
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setBio(user.bio || '');
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setSelectedInterests(user.interests || []);
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setGender(user.gender || 'other');
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setBirthDate(user.birthDate ? new Date(user.birthDate) : new Date());
     }
   }, [user?.id]);

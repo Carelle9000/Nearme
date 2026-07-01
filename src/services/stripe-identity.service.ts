@@ -1,7 +1,6 @@
 import { httpsCallable } from 'firebase/functions';
-import { functions } from '../config/firebase';
+import { functions, rtdb } from '../config/firebase';
 import { ref, update } from 'firebase/database';
-import { rtdb } from '../config/firebase';
 
 interface VerificationResult {
   status: 'verified' | 'requires_input' | 'failed';

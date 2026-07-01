@@ -28,6 +28,7 @@
     "expo-system-ui": "~56.0.5",
     "expo-web-browser": "~56.0.5",
     "firebase": "^12.15.0",
+    "ngeohash": "^0.6.3",
     "react": "19.2.3",
     "react-dom": "19.2.3",
     "react-native": "0.85.3",
@@ -43,6 +44,7 @@
     "eslint": "^9.0.0",
     "eslint-config-expo": "~56.0.4",
     "firebase-admin": "^14.1.0",
+    "patch-package": "^8.0.1",
     "playwright": "^1.61.1",
     "typescript": "~6.0.3"
   },

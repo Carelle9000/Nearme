@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useRef, useCallback } from 'react';
 import { Conversation, Message } from '../models/user';
 import { chatService } from '../services/chat.service';
 import { userService } from '../services/user.service';
@@ -27,9 +27,25 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [messageUnsubscriber, setMessageUnsubscriber] = useState<(() => void) | null>(null);
 
-  const loadConversations = async () => {
+  // Bug #11: use a ref for the message listener so subscribing/unsubscribing
+  // doesn't cause a re-render, and store the current conversation id we're
+  // subscribed to so we can skip work when nothing changed.
+  const messageUnsubscribeRef = useRef<null | (() => void)>(null);
+  const subscribedConversationIdRef = useRef<string | null>(null);
+  // Read latest conversations without adding to selectConversation's deps.
+  const conversationsRef = useRef(conversations);
+  useEffect(() => { conversationsRef.current = conversations; }, [conversations]);
+
+  const teardownMessagesListener = useCallback(() => {
+    if (messageUnsubscribeRef.current) {
+      messageUnsubscribeRef.current();
+      messageUnsubscribeRef.current = null;
+    }
+    subscribedConversationIdRef.current = null;
+  }, []);
+
+  const loadConversations = useCallback(async () => {
     if (!user?.id) return;
 
     setIsLoading(true);
@@ -43,47 +59,50 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [user?.id]);
 
   useEffect(() => {
     if (user?.id) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       loadConversations();
     }
-  }, [user?.id]);
+  }, [user?.id, loadConversations]);
 
-  const selectConversation = async (conversationId: string) => {
+  const selectConversation = useCallback(async (conversationId: string) => {
     if (!user?.id) return;
 
+    // Already subscribed to this conversation — nothing to do. This is the
+    // primary guard against listener pile-up when the caller's useEffect re-runs.
+    if (subscribedConversationIdRef.current === conversationId) return;
+
+    const conversation = conversationsRef.current.find((c) => c.id === conversationId);
+    if (!conversation) return;
+
+    // Tear down any previous listener BEFORE creating the new one so we can
+    // never have two active at once.
+    teardownMessagesListener();
+
+    setCurrentConversation(conversation);
+    setIsLoading(true);
+
     try {
-      const conversation = conversations.find((c) => c.id === conversationId);
-      if (!conversation) return;
-
-      setCurrentConversation(conversation);
-      setIsLoading(true);
-
-      // Clean up previous listener
-      if (messageUnsubscriber) {
-        messageUnsubscriber();
-      }
-
-      // Load messages and set up real-time listener
       const initialMessages = await chatService.getMessages(conversationId);
       setMessages(initialMessages);
 
-      const unsubscribe = chatService.onMessageUpdate(conversationId, (newMessages) => {
-        setMessages(newMessages);
-      });
-
-      setMessageUnsubscriber(() => unsubscribe);
+      messageUnsubscribeRef.current = chatService.onMessageUpdate(
+        conversationId,
+        (newMessages) => setMessages(newMessages)
+      );
+      subscribedConversationIdRef.current = conversationId;
     } catch (err: any) {
       setError(err.message || 'Impossible de charger les messages');
       console.error('Error loading messages:', err);
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [user?.id, teardownMessagesListener]);
 
-  const sendMessage = async (conversationId: string, content: string) => {
+  const sendMessage = useCallback(async (conversationId: string, content: string) => {
     if (!user?.id) return;
 
     try {
@@ -93,9 +112,9 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
       setError(err.message || 'Impossible d\'envoyer le message');
       console.error('Error sending message:', err);
     }
-  };
+  }, [user?.id]);
 
-  const createOrGetConversation = async (otherUserId: string): Promise<Conversation> => {
+  const createOrGetConversation = useCallback(async (otherUserId: string): Promise<Conversation> => {
     if (!user?.id) throw new Error('Utilisateur non authentifié');
 
     try {
@@ -109,7 +128,6 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
         otherUser.name || ''
       );
 
-      // Update conversations list
       setConversations((prev) => {
         const exists = prev.some((c) => c.id === conversation.id);
         if (exists) {
@@ -123,24 +141,18 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
       setError(err.message || 'Impossible de créer la conversation');
       throw err;
     }
-  };
+  }, [user?.id, user?.name]);
 
-  const markAsRead = async (conversationId: string, messageId: string) => {
+  const markAsRead = useCallback(async (conversationId: string, messageId: string) => {
     try {
       await chatService.markMessageAsRead(conversationId, messageId);
     } catch (err: any) {
       console.error('Error marking message as read:', err);
     }
-  };
+  }, []);
 
-  // Cleanup on unmount
-  useEffect(() => {
-    return () => {
-      if (messageUnsubscriber) {
-        messageUnsubscriber();
-      }
-    };
-  }, [messageUnsubscriber]);
+  // Tear down the listener on unmount only. No re-run on unrelated state changes.
+  useEffect(() => teardownMessagesListener, [teardownMessagesListener]);
 
   return (
     <ChatContext.Provider

@@ -1,8 +1,10 @@
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
+import { get, ref } from 'firebase/database';
+import { rtdb } from '../config/firebase';
 import { Profile } from '../models/user';
 import { userService } from '../services/user.service';
 import { useAuth } from './auth-context';
-import { DiscoverFilters } from './discover-filters-context';
+import { DiscoverFilters, useDiscoverFilters } from './discover-filters-context';
 
 interface DiscoverContextType {
   profiles: Profile[];
@@ -13,10 +15,12 @@ interface DiscoverContextType {
   nopeIds: Set<string>;
   favoriteIds: Set<string>;
   currentIndex: number;
+  lastMatch: { targetId: string; matchId: string } | null;
+  clearLastMatch: () => void;
 
   loadNearbyProfiles: (latitude: number, longitude: number) => Promise<void>;
   applyFilters: (filters: DiscoverFilters, profilesToFilter?: Profile[]) => void;
-  like: (targetId: string) => Promise<void>;
+  like: (targetId: string) => Promise<{ isMatch: boolean }>;
   nope: (targetId: string) => Promise<void>;
   favorite: (targetId: string) => Promise<void>;
   nextProfile: () => void;
@@ -28,6 +32,7 @@ const DiscoverContext = createContext<DiscoverContextType | undefined>(undefined
 
 export function DiscoverProvider({ children }: { children: React.ReactNode }) {
   const { user } = useAuth();
+  const { filters } = useDiscoverFilters();
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [filteredProfiles, setFilteredProfiles] = useState<Profile[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -37,6 +42,17 @@ export function DiscoverProvider({ children }: { children: React.ReactNode }) {
   const [favoriteIds, setFavoriteIds] = useState<Set<string>>(new Set());
   const [currentIndex, setCurrentIndex] = useState(0);
   const [currentFilters, setCurrentFilters] = useState<DiscoverFilters | null>(null);
+  const [lastMatch, setLastMatch] = useState<{ targetId: string; matchId: string } | null>(null);
+
+  const clearLastMatch = useCallback(() => setLastMatch(null), []);
+
+  // Bug #4: refs kept in sync so loadNearbyProfiles stays stable across likes/nopes.
+  const likedIdsRef = useRef(likedIds);
+  const nopeIdsRef = useRef(nopeIds);
+  const filtersRef = useRef(filters);
+  useEffect(() => { likedIdsRef.current = likedIds; }, [likedIds]);
+  useEffect(() => { nopeIdsRef.current = nopeIds; }, [nopeIds]);
+  useEffect(() => { filtersRef.current = filters; }, [filters]);
 
   const calculateAge = (birthDate: string | undefined): number | null => {
     if (!birthDate) return null;
@@ -57,10 +73,9 @@ export function DiscoverProvider({ children }: { children: React.ReactNode }) {
     const filtered = sourcesToFilter.filter((profile) => {
       const age = calculateAge(profile.birthDate);
 
-      // Filter by age
-      if (age && (age < filters.minAge || age > filters.maxAge)) {
-        return false;
-      }
+      // Bug #6: reject profiles with unknown age when an age filter is active.
+      if (age === null) return false;
+      if (age < filters.minAge || age > filters.maxAge) return false;
 
       // Filter by gender
       if (filters.gender && filters.gender !== 'all' && profile.gender !== filters.gender) {
@@ -88,8 +103,14 @@ export function DiscoverProvider({ children }: { children: React.ReactNode }) {
   const loadUserInteractions = async () => {
     if (!user?.id) return;
     try {
-      const likes = await userService.getSentLikes(user.id);
+      const [likes, favSnap, nopeSnap] = await Promise.all([
+        userService.getSentLikes(user.id),
+        get(ref(rtdb, `profiles/${user.id}/favorites`)),
+        get(ref(rtdb, `profiles/${user.id}/nopes`)),
+      ]);
       setLikedIds(new Set(likes));
+      setFavoriteIds(new Set(favSnap.val() ? Object.keys(favSnap.val()) : []));
+      setNopeIds(new Set(nopeSnap.val() ? Object.keys(nopeSnap.val()) : []));
     } catch (err) {
       console.error('Error loading user interactions:', err);
     }
@@ -120,8 +141,16 @@ export function DiscoverProvider({ children }: { children: React.ReactNode }) {
     try {
       console.log(`[Discover] Loading profiles for user ${user.id} at location (${latitude}, ${longitude})`);
 
-      // Save user's location to their profile if not already saved
-      if (!user.location || user.location.latitude === 0) {
+      // Bug #8: use a robust "has valid coordinates" check instead of latitude===0
+      // (0 is a valid latitude — equator).
+      const hasValidUserCoords =
+        user.location &&
+        typeof user.location.latitude === 'number' &&
+        typeof user.location.longitude === 'number' &&
+        Number.isFinite(user.location.latitude) &&
+        Number.isFinite(user.location.longitude);
+
+      if (!hasValidUserCoords) {
         console.log(`[Discover] Saving user location to profile...`);
         try {
           await userService.updateProfile(user.id, {
@@ -136,12 +165,15 @@ export function DiscoverProvider({ children }: { children: React.ReactNode }) {
         }
       }
 
-      const nearbyProfiles = await userService.getNearbyProfiles(latitude, longitude, 50);
-      console.log(`[Discover] Got ${nearbyProfiles.length} nearby profiles`);
+      const maxDistance = filtersRef.current?.maxDistance || 500;
+      const nearbyProfiles = await userService.getNearbyProfiles(latitude, longitude, maxDistance);
+      console.log(`[Discover] Got ${nearbyProfiles.length} nearby profiles within ${maxDistance}km`);
 
-      // Filter out current user, already liked/noped
+      // Filter out current user, already liked/noped (read via refs to keep callback stable).
+      const currentLiked = likedIdsRef.current;
+      const currentNoped = nopeIdsRef.current;
       const filtered = nearbyProfiles.filter(
-        (p) => p.uid !== user.id && !likedIds.has(p.uid) && !nopeIds.has(p.uid)
+        (p) => p.uid !== user.id && !currentLiked.has(p.uid) && !currentNoped.has(p.uid)
       );
 
       console.log(`[Discover] After filtering: ${filtered.length} profiles remain`);
@@ -155,14 +187,16 @@ export function DiscoverProvider({ children }: { children: React.ReactNode }) {
     } finally {
       setIsLoading(false);
     }
-  }, [user?.id, likedIds, nopeIds]);
+  }, [user]);
 
   // Apply filters when profiles change (separate effect to avoid infinite loop)
   useEffect(() => {
     if (profiles.length > 0) {
       if (currentFilters) {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         applyFilters(currentFilters, profiles);
       } else {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setFilteredProfiles(profiles);
       }
     }
@@ -180,19 +214,29 @@ export function DiscoverProvider({ children }: { children: React.ReactNode }) {
     setCurrentIndex(Math.max(0, Math.min(index, filteredProfiles.length - 1)));
   }, [filteredProfiles.length]);
 
-  const like = useCallback(async (targetId: string) => {
-    if (!user?.id) return;
+  // eslint-disable-next-line react-hooks/preserve-manual-memoization
+  const like = useCallback(async (targetId: string): Promise<{ isMatch: boolean }> => {
+    if (!user?.id) return { isMatch: false };
 
     try {
-      await userService.saveLike(user.id, targetId);
+      const result = await userService.saveLike(user.id, targetId);
       setLikedIds((prev) => new Set([...prev, targetId]));
+      if (result.isMatch && result.matchId) {
+        setLastMatch({ targetId, matchId: result.matchId });
+      }
       nextProfile();
-    } catch (err) {
+      return { isMatch: result.isMatch };
+    } catch (err: any) {
+      const msg = err?.code === 'PERMISSION_DENIED'
+        ? 'Action refusée : permissions insuffisantes'
+        : 'Impossible de liker le profil';
       console.error('Error liking profile:', err);
-      setError('Impossible de liker le profil');
+      setError(msg);
+      return { isMatch: false };
     }
   }, [user?.id, nextProfile]);
 
+  // eslint-disable-next-line react-hooks/preserve-manual-memoization
   const nope = useCallback(async (targetId: string) => {
     if (!user?.id) return;
 
@@ -200,21 +244,28 @@ export function DiscoverProvider({ children }: { children: React.ReactNode }) {
       await userService.saveNope(user.id, targetId);
       setNopeIds((prev) => new Set([...prev, targetId]));
       nextProfile();
-    } catch (err) {
+    } catch (err: any) {
+      const msg = err?.code === 'PERMISSION_DENIED'
+        ? 'Action refusée : permissions insuffisantes'
+        : 'Impossible de rejeter le profil';
       console.error('Error rejecting profile:', err);
-      setError('Impossible de rejeter le profil');
+      setError(msg);
     }
   }, [user?.id, nextProfile]);
 
+  // eslint-disable-next-line react-hooks/preserve-manual-memoization
   const favorite = useCallback(async (targetId: string) => {
     if (!user?.id) return;
 
     try {
       await userService.saveFavorite(user.id, targetId);
       setFavoriteIds((prev) => new Set([...prev, targetId]));
-    } catch (err) {
+    } catch (err: any) {
+      const msg = err?.code === 'PERMISSION_DENIED'
+        ? 'Action refusée : permissions insuffisantes'
+        : 'Impossible de mettre en favori le profil';
       console.error('Error favoriting profile:', err);
-      setError('Impossible de mettre en favori le profil');
+      setError(msg);
     }
   }, [user?.id]);
 
@@ -229,6 +280,8 @@ export function DiscoverProvider({ children }: { children: React.ReactNode }) {
         nopeIds,
         favoriteIds,
         currentIndex,
+        lastMatch,
+        clearLastMatch,
         loadNearbyProfiles,
         applyFilters,
         like,

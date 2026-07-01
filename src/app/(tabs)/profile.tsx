@@ -132,13 +132,6 @@ export default function ProfileScreen() {
             <Text style={[styles.actionButtonText, styles.logoutButtonText]}>Déconnexion</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity
-            style={[styles.actionButton, styles.deleteButton]}
-            onPress={() => router.push('/profile/delete-account')}
-          >
-            <Ionicons name="trash-outline" size={20} color="#fff" />
-            <Text style={[styles.actionButtonText, styles.deleteButtonText]}>Supprimer mon compte</Text>
-          </TouchableOpacity>
         </View>
       </ScrollView>
       </SafeAreaView>

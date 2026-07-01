@@ -1,7 +1,7 @@
 import * as admin from 'firebase-admin';
 import { onCall, HttpsError } from 'firebase-functions/v2/https';
 import Stripe from 'stripe';
-import { db } from './firebase';
+import { rtdb } from './firebase';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', {
   apiVersion: '2023-10-16',
@@ -33,11 +33,17 @@ export const createVerificationSession = onCall(
         },
       });
 
-      // Stocker la session dans Firestore
-      await db.collection('users').doc(userId).update({
+      // Stocker la session dans Realtime Database
+      await rtdb.ref(`profiles/${userId}`).update({
         verificationSessionId: verification.id,
         verificationStatus: 'pending',
-        verificationCreatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        verificationCreatedAt: Date.now(),
+      });
+
+      // Créer un index verificationSessionId -> userId pour les webhooks
+      await rtdb.ref(`verificationSessions/${verification.id}`).set({
+        userId,
+        createdAt: Date.now(),
       });
 
       console.log('Verification session created', {
@@ -127,9 +133,9 @@ export const checkVerificationStatus = onCall(
     try {
       const userId = context.uid;
 
-      // Récupérer le document utilisateur
-      const userDoc = await db.collection('users').doc(userId).get();
-      const userData = userDoc.data();
+      // Récupérer le profil utilisateur
+      const userSnapshot = await rtdb.ref(`profiles/${userId}`).get();
+      const userData = userSnapshot.val();
 
       if (!userData || !userData.verificationSessionId) {
         throw new Error('Pas de session de vérification trouvée');
@@ -142,17 +148,16 @@ export const checkVerificationStatus = onCall(
         sessionId
       );
 
-      // Mettre à jour Firestore avec le résultat
+      // Mettre à jour Realtime Database avec le résultat
       if (verification.status === 'verified') {
         const verifiedOutputs = verification.verified_outputs || {};
         const dob = (verifiedOutputs as any).dob?.date;
         const documentType = (verifiedOutputs as any).document?.type;
 
-        await db.collection('users').doc(userId).update({
+        await rtdb.ref(`profiles/${userId}`).update({
           ageVerified: true,
           verificationStatus: 'verified',
-          verificationVerifiedAt:
-            admin.firestore.FieldValue.serverTimestamp(),
+          verificationVerifiedAt: Date.now(),
           dateOfBirth: dob,
           documentType: documentType,
         });
@@ -162,7 +167,7 @@ export const checkVerificationStatus = onCall(
         verification.status === 'requires_input' ||
         verification.status === 'processing'
       ) {
-        await db.collection('users').doc(userId).update({
+        await rtdb.ref(`profiles/${userId}`).update({
           verificationStatus: verification.status,
           verificationError: verification.last_error?.code,
         });

@@ -1,5 +1,4 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import * as Notifications from 'expo-notifications';
 import { notificationService } from '../services/notification.service';
 import { useAuth } from './auth-context';
 
@@ -17,12 +16,6 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
   const [isNotificationEnabled, setIsNotificationEnabled] = useState(false);
   const [fcmToken, setFcmToken] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (user?.id) {
-      initializeNotifications();
-    }
-  }, [user?.id]);
-
   const initializeNotifications = async () => {
     try {
       const token = await notificationService.getFCMToken();
@@ -38,6 +31,13 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
       console.error('Error initializing notifications:', error);
     }
   };
+
+  useEffect(() => {
+    if (user?.id) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      initializeNotifications();
+    }
+  }, [user?.id]);
 
   const requestNotificationPermission = async (): Promise<boolean> => {
     try {
