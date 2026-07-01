@@ -1,4 +1,4 @@
-import { View, StyleSheet, ActivityIndicator, Alert, TouchableOpacity, Text } from 'react-native';
+import { View, StyleSheet, ActivityIndicator, Alert, TouchableOpacity, Text, Image } from 'react-native';
 import { useDiscover } from '../../context/discover-context';
 import { ProfileCard } from '../../components/profile-card';
 import { FilterPanel } from '../../components/filter-panel';
@@ -8,10 +8,12 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '../../constants/theme';
+import { useLocalization } from '../../context/localization-context';
 
 export default function DiscoverScreen() {
   const { profiles, currentIndex, isLoading, loadNearbyProfiles, like, nope, favorite, favoriteIds } =
     useDiscover();
+  const { t } = useLocalization();
 
   const loadProfiles = useCallback(async () => {
     try {
@@ -19,11 +21,11 @@ export default function DiscoverScreen() {
       if (location) {
         await loadNearbyProfiles(location.latitude, location.longitude);
       } else {
-        Alert.alert('Permission refusée', 'Veuillez activer les services de localisation pour découvrir des personnes');
+        Alert.alert(t('error'), 'Veuillez activer les services de localisation');
       }
     } catch (error) {
       console.error('Error loading profiles:', error);
-      Alert.alert('Erreur', 'Impossible de charger les profils');
+      Alert.alert(t('error'), t('noProfiles'));
     }
   }, [loadNearbyProfiles]);
 
@@ -48,7 +50,13 @@ export default function DiscoverScreen() {
         <SafeAreaView style={styles.safeArea}>
           {/* Header */}
           <View style={styles.header}>
-            <Text style={styles.logoText}>nearme</Text>
+            <View style={styles.logoContainer}>
+              <Image
+                source={require('../../../assets/images/logon.jpeg')}
+                style={styles.logo}
+              />
+              <Text style={styles.logoText}>nearme</Text>
+            </View>
             <View style={styles.headerActions}>
               <FilterPanel />
               <TouchableOpacity hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
@@ -60,15 +68,15 @@ export default function DiscoverScreen() {
           {/* Empty State */}
           <View style={styles.emptyContainer}>
             <Ionicons name="search-outline" size={64} color={Colors.primary} />
-            <Text style={styles.emptyTitle}>Aucun profil ne correspond</Text>
+            <Text style={styles.emptyTitle}>{t('noProfiles')}</Text>
             <Text style={styles.emptySubtitle}>
-              Essayez d&apos;ajuster vos filtres pour voir plus de profils
+              {t('noResults')}
             </Text>
             <TouchableOpacity
               style={styles.emptyButton}
               onPress={() => loadProfiles()}
             >
-              <Text style={styles.emptyButtonText}>Recharger</Text>
+              <Text style={styles.emptyButtonText}>{t('tryAgain')}</Text>
             </TouchableOpacity>
           </View>
         </SafeAreaView>
@@ -81,7 +89,13 @@ export default function DiscoverScreen() {
       <SafeAreaView style={styles.safeArea}>
         {/* Header */}
         <View style={styles.header}>
-          <Text style={styles.logoText}>nearme</Text>
+          <View style={styles.logoContainer}>
+            <Image
+              source={require('../../../assets/images/logon.jpeg')}
+              style={styles.logo}
+            />
+            <Text style={styles.logoText}>nearme</Text>
+          </View>
           <View style={styles.headerActions}>
             <FilterPanel />
             <TouchableOpacity hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
@@ -125,6 +139,16 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingVertical: 12,
     marginBottom: 16,
+  },
+  logoContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  logo: {
+    width: 32,
+    height: 32,
+    borderRadius: 8,
   },
   logoText: {
     fontSize: 24,

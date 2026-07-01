@@ -2,7 +2,7 @@ import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage
 import { storage, functions } from '../config/firebase';
 import { httpsCallable } from 'firebase/functions';
 import * as ImagePicker from 'expo-image-picker';
-import * as FileSystem from 'expo-file-system';
+import { readAsStringAsync, EncodingType } from 'expo-file-system/legacy';
 import { Platform } from 'react-native';
 
 class PhotoService {
@@ -87,10 +87,16 @@ class PhotoService {
       const blob = await this.uriToBlob(imageUri);
       console.log('Blob size:', blob.size);
 
+      if (blob.size === 0) {
+        throw new Error('L\'image est vide ou invalide');
+      }
+
       const fileName = `profile_${Date.now()}.jpg`;
       const storageRef = ref(storage, `photos/${userId}/${fileName}`);
 
       console.log('Uploading to Firebase Storage...');
+      console.log('Storage ref path:', storageRef.fullPath);
+
       const uploadResult = await uploadBytes(storageRef, blob, {
         contentType: 'image/jpeg',
       });
@@ -101,8 +107,22 @@ class PhotoService {
       return downloadURL;
     } catch (error: any) {
       console.error('Error uploading photo:', error);
-      throw new Error(error.message || 'Erreur lors du téléchargement de la photo');
+      const message = this.getErrorMessage(error.code || error.message);
+      throw new Error(message);
     }
+  }
+
+  private getErrorMessage(error: string): string {
+    if (error.includes('permission')) {
+      return 'Vous n\'avez pas la permission de télécharger des photos. Vérifiez les paramètres de sécurité.';
+    }
+    if (error.includes('storage/unauthenticated')) {
+      return 'Vous devez être connecté pour télécharger une photo';
+    }
+    if (error.includes('network')) {
+      return 'Erreur réseau. Vérifiez votre connexion Internet';
+    }
+    return error || 'Impossible de télécharger la photo. Veuillez réessayer.';
   }
 
   async uploadChatPhoto(conversationId: string, userId: string, imageUri: string): Promise<string> {
@@ -122,16 +142,24 @@ class PhotoService {
 
   private async uriToBlob(uri: string): Promise<Blob> {
     try {
-      // For Expo, read the file using FileSystem
-      const base64 = await FileSystem.readAsStringAsync(uri, {
-        encoding: FileSystem.EncodingType.Base64,
+      console.log('Converting URI to blob:', uri);
+
+      // Use legacy API to read file as base64
+      const base64 = await readAsStringAsync(uri, {
+        encoding: EncodingType.Base64,
       });
+
+      console.log('Base64 conversion successful, creating blob...');
+
       const binaryString = atob(base64);
       const bytes = new Uint8Array(binaryString.length);
       for (let i = 0; i < binaryString.length; i++) {
         bytes[i] = binaryString.charCodeAt(i);
       }
-      return new Blob([bytes], { type: 'image/jpeg' });
+
+      const blob = new Blob([bytes], { type: 'image/jpeg' });
+      console.log('Blob created successfully, size:', blob.size);
+      return blob;
     } catch (error) {
       console.error('Error converting URI to Blob:', error);
       throw new Error('Impossible de traiter l\'image. Veuillez réessayer.');

@@ -14,10 +14,12 @@ import { Ionicons } from '@expo/vector-icons';
 import { useState } from 'react';
 import * as ImagePicker from 'expo-image-picker';
 import { useSignup } from '../../context/signup-context';
-import { useAuth } from '../../context/auth-context';
 import { signupService } from '../../services/signup.service';
 import { Colors, BorderRadius, Shadows } from '../../constants/theme';
 import { useRouter } from 'expo-router';
+import { ConfirmationModal } from '../../components/ConfirmationModal';
+import { auth } from '../../config/firebase';
+import { useLocalization } from '../../context/localization-context';
 
 const GENDERS = ['Homme', 'Femme', 'Non-binaire', 'Autre'];
 const INTERESTS = ['Travel', 'Music', 'Sport', 'Art', 'Food', 'Gaming', 'Books', 'Movies', 'Fitness'];
@@ -25,9 +27,21 @@ const INTERESTS = ['Travel', 'Music', 'Sport', 'Art', 'Food', 'Gaming', 'Books',
 export default function SignupStep3() {
   const router = useRouter();
   const { data, updateData, prevStep, clearSensitiveData } = useSignup();
-  const { user: authUser } = useAuth();
+  const { t } = useLocalization();
   const [isLoading, setIsLoading] = useState(false);
   const [photos, setPhotos] = useState<string[]>([]);
+  const [errorModal, setErrorModal] = useState<{ visible: boolean; title: string; message: string }>({
+    visible: false,
+    title: '',
+    message: '',
+  });
+
+  const calculateAge = (birthYear: string): number | null => {
+    if (!birthYear || birthYear.length !== 4) return null;
+    const year = parseInt(birthYear, 10);
+    if (isNaN(year)) return null;
+    return new Date().getFullYear() - year;
+  };
 
   const handleAddPhoto = async () => {
     try {
@@ -42,11 +56,19 @@ export default function SignupStep3() {
         if (photos.length < 6) {
           setPhotos([...photos, result.assets[0].uri]);
         } else {
-          Alert.alert('Limite atteinte', 'Vous pouvez ajouter maximum 6 photos');
+          setErrorModal({
+            visible: true,
+            title: 'Limite atteinte',
+            message: 'Vous pouvez ajouter maximum 6 photos',
+          });
         }
       }
     } catch (error) {
-      Alert.alert('Erreur', 'Impossible de charger la photo');
+      setErrorModal({
+        visible: true,
+        title: t('error'),
+        message: 'Impossible de charger la photo',
+      });
     }
   };
 
@@ -64,49 +86,71 @@ export default function SignupStep3() {
 
   const handleCreateProfile = async () => {
     if (!isFormValid) {
-      Alert.alert('Erreur', 'Veuillez remplir tous les champs obligatoires correctement');
+      setErrorModal({
+        visible: true,
+        title: t('error'),
+        message: 'Veuillez remplir tous les champs obligatoires correctement',
+      });
       return;
     }
 
     if (!signupService.isAgeValid(parseInt(data.birthYear))) {
-      Alert.alert('Erreur', 'Vous devez avoir au moins 18 ans pour utiliser cette application');
+      setErrorModal({
+        visible: true,
+        title: t('error'),
+        message: 'Vous devez avoir au moins 18 ans pour utiliser cette application',
+      });
       return;
     }
 
-    if (!authUser) {
-      Alert.alert('Erreur', 'Utilisateur non authentifié');
+    // Get current user from Firebase Auth
+    const currentUser = auth.currentUser;
+    if (!currentUser) {
+      setErrorModal({
+        visible: true,
+        title: t('error'),
+        message: 'Utilisateur non authentifié. Veuillez recommencer l\'inscription.',
+      });
       return;
     }
 
     setIsLoading(true);
     try {
+      console.log('Creating profile for user:', currentUser.uid);
       // Update display name in Firebase Auth
-      await signupService.updateDisplayName(authUser, data.firstName);
+      await signupService.updateDisplayName(currentUser, data.firstName);
 
-      // Create profile in Firestore with photos and interests
+      // Create profile in Realtime Database with photos and interests
       const profileData = {
         ...data,
         photos: photos,
         interests: data.interests || [],
       };
 
-      await signupService.createProfile(authUser.uid, profileData);
+      await signupService.createProfile(currentUser.uid, profileData);
 
       // Clear sensitive data from memory
       clearSensitiveData();
 
-      // Navigate to login page
-      router.replace('/auth/login');
+      console.log('Profile created successfully, navigating to discover');
+      // Navigate to home page
+      router.replace('/(tabs)/discover');
     } catch (error: any) {
+      console.error('Error creating profile:', error);
       const message = signupService.getErrorMessage(error.code || error.message);
-      Alert.alert('Erreur', message);
+      setErrorModal({
+        visible: true,
+        title: t('error'),
+        message: message,
+      });
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false}>
+    <>
+      <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false}>
       {/* Back Button */}
       <TouchableOpacity
         style={styles.backButton}
@@ -148,7 +192,12 @@ export default function SignupStep3() {
 
         {/* Birth Year */}
         <View style={styles.fieldGroup}>
-          <Text style={styles.label}>ANNÉE DE NAISSANCE</Text>
+          <View style={styles.birthYearHeader}>
+            <Text style={styles.label}>ANNÉE DE NAISSANCE</Text>
+            {calculateAge(data.birthYear) && (
+              <Text style={styles.ageLabel}>{calculateAge(data.birthYear)} ans</Text>
+            )}
+          </View>
           <View style={styles.inputContainer}>
             <TextInput
               style={styles.input}
@@ -293,25 +342,41 @@ export default function SignupStep3() {
       </View>
 
       {/* Submit Button */}
-      <LinearGradient
-        colors={[Colors.primary, '#C82E42']}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-        style={[styles.buttonGradient, Shadows.glow, { opacity: isFormValid ? 1 : 0.6 }]}
+      <TouchableOpacity
+        onPress={handleCreateProfile}
+        disabled={!isFormValid || isLoading}
+        activeOpacity={isFormValid ? 0.7 : 1}
       >
-        <TouchableOpacity
-          style={styles.button}
-          onPress={handleCreateProfile}
-          disabled={!isFormValid || isLoading}
+        <LinearGradient
+          colors={[Colors.primary, '#C82E42']}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={[
+            styles.buttonGradient,
+            Shadows.glow,
+            (!isFormValid || isLoading) && styles.buttonDisabled,
+          ]}
         >
-          {isLoading ? (
-            <ActivityIndicator color={Colors.text} />
-          ) : (
-            <Text style={styles.buttonText}>Créer mon profil</Text>
-          )}
-        </TouchableOpacity>
-      </LinearGradient>
+          <View style={styles.button}>
+            {isLoading ? (
+              <ActivityIndicator color={Colors.text} />
+            ) : (
+              <Text style={styles.buttonText}>Créer mon profil</Text>
+            )}
+          </View>
+        </LinearGradient>
+      </TouchableOpacity>
+
+      <ConfirmationModal
+        visible={errorModal.visible}
+        title={errorModal.title}
+        message={errorModal.message}
+        confirmText="OK"
+        onCancel={() => setErrorModal({ ...errorModal, visible: false })}
+        onConfirm={() => setErrorModal({ ...errorModal, visible: false })}
+      />
     </ScrollView>
+    </>
   );
 }
 
@@ -506,6 +571,9 @@ const styles = StyleSheet.create({
     marginHorizontal: 20,
     marginBottom: 16,
   },
+  buttonDisabled: {
+    opacity: 0.6,
+  },
   button: {
     paddingVertical: 16,
     alignItems: 'center',
@@ -578,5 +646,16 @@ const styles = StyleSheet.create({
   interestTextActive: {
     color: Colors.text,
     fontWeight: '700',
+  },
+  birthYearHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  ageLabel: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: Colors.primary,
+    letterSpacing: 0.3,
   },
 });

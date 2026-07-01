@@ -10,7 +10,7 @@ import {
 import { LinearGradient } from 'expo-linear-gradient';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../../context/auth-context';
 import { Colors, BorderRadius, Shadows } from '../../constants/theme';
 import {
@@ -24,7 +24,7 @@ import {
 import { db } from '../../config/firebase';
 import { Profile } from '../../models/user';
 
-type Tab = 'likes' | 'favorites' | 'blocked';
+type Tab = 'matches' | 'likes' | 'favorites' | 'blocked';
 
 interface Like {
   swiperId: string;
@@ -34,7 +34,8 @@ interface Like {
 
 export default function ActivityScreen() {
   const { user } = useAuth();
-  const [activeTab, setActiveTab] = useState<Tab>('likes');
+  const [activeTab, setActiveTab] = useState<Tab>('matches');
+  const [matches, setMatches] = useState<Profile[]>([]);
   const [likes, setLikes] = useState<Like[]>([]);
   const [favorites, setFavorites] = useState<Profile[]>([]);
   const [blocked, setBlocked] = useState<Profile[]>([]);
@@ -44,28 +45,36 @@ export default function ActivityScreen() {
     if (user?.id) {
       loadActivityData();
     }
-  }, [user?.id, activeTab]);
+  }, [user?.id, loadActivityData]);
 
-  const loadActivityData = async () => {
+  const loadMatches = useCallback(async () => {
     if (!user?.id) return;
-    setIsLoading(true);
-
     try {
-      if (activeTab === 'likes') {
-        await loadLikes();
-      } else if (activeTab === 'favorites') {
-        await loadFavorites();
-      } else if (activeTab === 'blocked') {
-        await loadBlocked();
-      }
-    } catch (error) {
-      console.error('Error loading activity:', error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+      const q1 = query(collection(db, 'swipes'), where('swiped_id', '==', user.id), where('action', '==', 'like'));
+      const likesSnapshot = await getDocs(q1);
+      const likerIds = likesSnapshot.docs.map(doc => doc.data().swiper_id);
 
-  const loadLikes = async () => {
+      const q2 = query(collection(db, 'swipes'), where('swiper_id', '==', user.id), where('action', '==', 'like'));
+      const likedSnapshot = await getDocs(q2);
+      const likedIds = likedSnapshot.docs.map(doc => doc.data().swiped_id);
+
+      const matchIds = likerIds.filter(id => likedIds.includes(id));
+
+      const matchProfiles: Profile[] = [];
+      for (const matchId of matchIds) {
+        const profileRef = doc(db, 'users', matchId);
+        const profileDoc = await getDoc(profileRef);
+        if (profileDoc.exists()) {
+          matchProfiles.push({ uid: profileDoc.id, ...profileDoc.data() } as Profile);
+        }
+      }
+      setMatches(matchProfiles);
+    } catch (error) {
+      console.error('Error loading matches:', error);
+    }
+  }, [user?.id]);
+
+  const loadLikes = useCallback(async () => {
     if (!user?.id) return;
     try {
       const q = query(collection(db, 'swipes'), where('swiped_id', '==', user.id));
@@ -85,9 +94,9 @@ export default function ActivityScreen() {
     } catch (error) {
       console.error('Error loading likes:', error);
     }
-  };
+  }, [user?.id]);
 
-  const loadFavorites = async () => {
+  const loadFavorites = useCallback(async () => {
     if (!user?.id) return;
     try {
       const userRef = doc(db, 'users', user.id);
@@ -106,9 +115,9 @@ export default function ActivityScreen() {
     } catch (error) {
       console.error('Error loading favorites:', error);
     }
-  };
+  }, [user?.id]);
 
-  const loadBlocked = async () => {
+  const loadBlocked = useCallback(async () => {
     if (!user?.id) return;
     try {
       const q = query(collection(db, 'blocks'), where('blocker_id', '==', user.id));
@@ -127,23 +136,48 @@ export default function ActivityScreen() {
     } catch (error) {
       console.error('Error loading blocked:', error);
     }
-  };
+  }, [user?.id]);
+
+  const loadActivityData = useCallback(async () => {
+    if (!user?.id) return;
+    setIsLoading(true);
+
+    try {
+      if (activeTab === 'matches') {
+        await loadMatches();
+      } else if (activeTab === 'likes') {
+        await loadLikes();
+      } else if (activeTab === 'favorites') {
+        await loadFavorites();
+      } else if (activeTab === 'blocked') {
+        await loadBlocked();
+      }
+    } catch (error) {
+      console.error('Error loading activity:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [activeTab, loadMatches, loadLikes, loadFavorites, loadBlocked]);
 
   const renderEmptyState = (title: string) => (
     <View style={styles.emptyState}>
       <View style={styles.emptyIconContainer}>
         <Ionicons
-          name={activeTab === 'likes' ? 'heart' : activeTab === 'favorites' ? 'star' : 'ban'}
+          name={
+            activeTab === 'matches'
+              ? 'heart'
+              : activeTab === 'likes'
+              ? 'heart'
+              : activeTab === 'favorites'
+              ? 'star'
+              : 'ban'
+          }
           size={64}
           color={Colors.primary}
         />
       </View>
       <Text style={styles.emptyText}>{`Pas encore de ${title}`}</Text>
-      <Text style={styles.emptySubtext}>
-        {activeTab === 'likes' && 'Les profils qui vous ont aimé apparaîtront ici'}
-        {activeTab === 'favorites' && 'Les profils que vous avez aimés apparaîtront ici'}
-        {activeTab === 'blocked' && 'Les profils que vous avez bloqués apparaîtront ici'}
-      </Text>
+      <Text style={styles.emptySubtext}>{getEmptyMessage()}</Text>
     </View>
   );
 
@@ -180,6 +214,8 @@ export default function ActivityScreen() {
 
   const getActiveData = () => {
     switch (activeTab) {
+      case 'matches':
+        return matches;
       case 'likes':
         return likes;
       case 'favorites':
@@ -193,12 +229,29 @@ export default function ActivityScreen() {
 
   const getEmptyTitle = () => {
     switch (activeTab) {
+      case 'matches':
+        return 'match';
       case 'likes':
         return 'like';
       case 'favorites':
         return 'favoris';
       case 'blocked':
         return 'blocages';
+      default:
+        return '';
+    }
+  };
+
+  const getEmptyMessage = () => {
+    switch (activeTab) {
+      case 'matches':
+        return 'Vos correspondances mutuelles apparaîtront ici';
+      case 'likes':
+        return 'Les profils qui vous ont aimé apparaîtront ici';
+      case 'favorites':
+        return 'Les profils que vous avez aimés apparaîtront ici';
+      case 'blocked':
+        return 'Les profils que vous avez bloqués apparaîtront ici';
       default:
         return '';
     }
@@ -228,11 +281,27 @@ export default function ActivityScreen() {
         {/* Tabs */}
         <View style={styles.tabsContainer}>
           <TouchableOpacity
+            style={[styles.tab, activeTab === 'matches' && styles.activeTab]}
+            onPress={() => setActiveTab('matches')}
+          >
+            <Ionicons
+              name="heart"
+              size={20}
+              color={activeTab === 'matches' ? Colors.primary : Colors.textSecondary}
+            />
+            <Text
+              style={[styles.tabText, activeTab === 'matches' && styles.activeTabText]}
+            >
+              Matches
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
             style={[styles.tab, activeTab === 'likes' && styles.activeTab]}
             onPress={() => setActiveTab('likes')}
           >
             <Ionicons
-              name="heart"
+              name="heart-outline"
               size={20}
               color={activeTab === 'likes' ? Colors.primary : Colors.textSecondary}
             />

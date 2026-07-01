@@ -12,12 +12,6 @@ export default function MatchProfileScreen() {
   const { user } = useAuth();
   const [profile, setProfile] = useState<Profile | null>(null);
 
-  useEffect(() => {
-    if (id) {
-      loadProfile();
-    }
-  }, [id]);
-
   const loadProfile = async () => {
     try {
       const data = await userService.getProfile(id!);
@@ -26,6 +20,12 @@ export default function MatchProfileScreen() {
       console.error('Error loading profile:', error);
     }
   };
+
+  useEffect(() => {
+    if (id) {
+      loadProfile();
+    }
+  }, [id]);
 
   if (!profile) {
     return (

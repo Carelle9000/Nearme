@@ -1,8 +1,10 @@
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { useRouter } from 'expo-router';
+import { useLocalization } from '../../context/localization-context';
 
 export default function AgeVerificationScreen() {
   const router = useRouter();
+  const { t } = useLocalization();
 
   const handleVerifyLater = () => {
     router.replace('/(tabs)/discover');

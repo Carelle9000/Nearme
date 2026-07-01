@@ -14,9 +14,11 @@ import * as DocumentPicker from 'expo-document-picker';
 import { useSignup } from '../../context/signup-context';
 import { Colors, BorderRadius, Shadows } from '../../constants/theme';
 import { stripeIdentityService } from '../../services/stripe-identity.service';
+import { useLocalization } from '../../context/localization-context';
 
 export default function SignupStep2() {
   const { data, updateData, nextStep, prevStep } = useSignup();
+  const { t } = useLocalization();
   const [documentSelected, setDocumentSelected] = useState(false);
   const [isValidating, setIsValidating] = useState(false);
   const [verificationStatus, setVerificationStatus] = useState('');
@@ -55,7 +57,7 @@ export default function SignupStep2() {
         setDocumentSelected(false);
       }
     } catch (error: any) {
-      Alert.alert('Erreur', 'Impossible de charger le document. Veuillez réessayer.');
+      Alert.alert(t('error'), 'Impossible de charger le document. Veuillez réessayer.');
       console.error('Document upload error:', error);
     } finally {
       setIsValidating(false);

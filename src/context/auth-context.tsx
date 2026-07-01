@@ -73,11 +73,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const logout = useCallback(async () => {
+    console.log('Auth context: Starting logout');
     setIsLoading(true);
     try {
+      console.log('Auth context: Calling authService.logout()');
       await authService.logout();
+      console.log('Auth context: authService.logout() completed');
       setUser(null);
       setNeedsAgeVerif(false);
+      console.log('Auth context: User state cleared');
+    } catch (error: any) {
+      console.error('Auth context: Error during logout:', error);
+      // Still clear the user even if logout fails
+      setUser(null);
+      setNeedsAgeVerif(false);
+      throw error;
     } finally {
       setIsLoading(false);
     }

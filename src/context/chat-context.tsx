@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import React, { createContext, useContext, useState, useEffect } from 'react';
 import { Conversation, Message } from '../models/user';
 import { chatService } from '../services/chat.service';
 import { userService } from '../services/user.service';
@@ -29,12 +29,6 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
   const [error, setError] = useState<string | null>(null);
   const [messageUnsubscriber, setMessageUnsubscriber] = useState<(() => void) | null>(null);
 
-  useEffect(() => {
-    if (user?.id) {
-      loadConversations();
-    }
-  }, [user?.id]);
-
   const loadConversations = async () => {
     if (!user?.id) return;
 
@@ -50,6 +44,12 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
       setIsLoading(false);
     }
   };
+
+  useEffect(() => {
+    if (user?.id) {
+      loadConversations();
+    }
+  }, [user?.id]);
 
   const selectConversation = async (conversationId: string) => {
     if (!user?.id) return;

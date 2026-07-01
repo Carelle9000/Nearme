@@ -42,25 +42,42 @@ export function ProfileProvider({ children }: { children: React.ReactNode }) {
   }, [user?.id, user?.photos]);
 
   const pickAndUploadPhoto = async (): Promise<boolean> => {
-    if (!user?.id) return false;
+    console.log('pickAndUploadPhoto: user.id=', user?.id);
+    if (!user?.id) {
+      const msg = 'Vous devez être connecté pour télécharger une photo';
+      setError(msg);
+      return false;
+    }
 
     setIsUploadingPhoto(true);
     setError(null);
     try {
+      console.log('Picking image...');
       const imageUri = await photoService.pickImage();
-      if (!imageUri) return false;
+      console.log('Image URI:', imageUri);
+      if (!imageUri) {
+        const msg = 'Aucune image sélectionnée';
+        setError(msg);
+        return false;
+      }
 
+      console.log('Uploading photo to Firebase Storage...');
       const photoUrl = await photoService.uploadProfilePhoto(user.id, imageUri);
+      console.log('Photo uploaded successfully:', photoUrl);
       const updatedPhotos = [...(profilePhotos || []), photoUrl];
       setProfilePhotos(updatedPhotos);
 
+      console.log('Updating user profile with photos...');
       // Update user profile with new photos
       await userService.updateProfile(user.id, {
         photos: updatedPhotos,
+        photoUrl: updatedPhotos[0], // Set first photo as profile photo
       });
+      console.log('Profile updated successfully');
       return true;
     } catch (err: any) {
-      setError(err.message || 'Impossible de télécharger la photo');
+      const errorMsg = err.message || 'Impossible de télécharger la photo';
+      setError(errorMsg);
       console.error('Error uploading photo:', err);
       return false;
     } finally {
@@ -69,15 +86,26 @@ export function ProfileProvider({ children }: { children: React.ReactNode }) {
   };
 
   const takeAndUploadPhoto = async (): Promise<boolean> => {
-    if (!user?.id) return false;
+    console.log('takeAndUploadPhoto: user.id=', user?.id);
+    if (!user?.id) {
+      setError('Vous devez être connecté');
+      return false;
+    }
 
     setIsUploadingPhoto(true);
     setError(null);
     try {
+      console.log('Taking photo...');
       const imageUri = await photoService.takePhoto();
-      if (!imageUri) return false;
+      console.log('Photo URI:', imageUri);
+      if (!imageUri) {
+        setError('Prise de photo annulée');
+        return false;
+      }
 
+      console.log('Uploading photo...');
       const photoUrl = await photoService.uploadProfilePhoto(user.id, imageUri);
+      console.log('Photo uploaded:', photoUrl);
       const updatedPhotos = [...(profilePhotos || []), photoUrl];
       setProfilePhotos(updatedPhotos);
 
@@ -87,7 +115,8 @@ export function ProfileProvider({ children }: { children: React.ReactNode }) {
       });
       return true;
     } catch (err: any) {
-      setError(err.message || 'Impossible de prendre une photo');
+      const errorMsg = err.message || 'Impossible de prendre une photo';
+      setError(errorMsg);
       console.error('Error taking photo:', err);
       return false;
     } finally {

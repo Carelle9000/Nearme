@@ -6,6 +6,7 @@ import { useAuth } from '../../context/auth-context';
 import { useRouter, Link } from 'expo-router';
 import { Colors, BorderRadius, Shadows } from '../../constants/theme';
 import { signupService } from '../../services/signup.service';
+import { useLocalization } from '../../context/localization-context';
 
 export default function LoginScreen() {
   const [email, setEmail] = useState('');
@@ -17,6 +18,7 @@ export default function LoginScreen() {
   const [passwordError, setPasswordError] = useState('');
   const { login, getRememberedEmail } = useAuth();
   const router = useRouter();
+  const { t } = useLocalization();
 
   const loginAttemptsRef = useRef(0);
   const lastLoginAttemptRef = useRef(0);
@@ -42,18 +44,18 @@ export default function LoginScreen() {
     setPasswordError('');
 
     if (!email.trim()) {
-      setEmailError('L\'email est requis');
+      setEmailError(t('emailRequired'));
       isValid = false;
     } else if (!signupService.isEmailValid(email)) {
-      setEmailError('Veuillez entrer une adresse email valide');
+      setEmailError(t('invalidEmail'));
       isValid = false;
     }
 
     if (!password) {
-      setPasswordError('Le mot de passe est requis');
+      setPasswordError(t('passwordRequired'));
       isValid = false;
     } else if (password.length < 6) {
-      setPasswordError('Le mot de passe doit contenir au moins 6 caractères');
+      setPasswordError(t('passwordMinLength'));
       isValid = false;
     }
 
@@ -70,8 +72,8 @@ export default function LoginScreen() {
 
     if (now - lastLoginAttemptRef.current < delayMs && loginAttemptsRef.current > 0) {
       Alert.alert(
-        'Trop de tentatives',
-        'Veuillez réessayer dans quelques secondes.'
+        t('tooManyAttempts'),
+        t('tryAgainLater')
       );
       return;
     }
@@ -86,7 +88,7 @@ export default function LoginScreen() {
       loginAttemptsRef.current++;
       lastLoginAttemptRef.current = now;
       const message = signupService.getErrorMessage(error.code || error.message);
-      Alert.alert('Erreur de connexion', message);
+      Alert.alert(t('loginError'), message);
     } finally {
       setIsLoading(false);
     }
@@ -102,7 +104,7 @@ export default function LoginScreen() {
             style={styles.logo}
           />
           <Text style={styles.title}>NearMe</Text>
-          <Text style={styles.subtitle}>Connectez-vous à votre compte</Text>
+          <Text style={styles.subtitle}>{t('login')}</Text>
         </View>
 
         {/* Form */}
@@ -113,7 +115,7 @@ export default function LoginScreen() {
               <Ionicons name="mail" size={20} color={Colors.primary} style={styles.inputIcon} />
               <TextInput
                 style={styles.input}
-                placeholder="Adresse email"
+                placeholder={t('email')}
                 placeholderTextColor={Colors.textSecondary}
                 value={email}
                 onChangeText={(text) => {
@@ -134,7 +136,7 @@ export default function LoginScreen() {
               <Ionicons name="lock-closed" size={20} color={Colors.primary} style={styles.inputIcon} />
               <TextInput
                 style={styles.input}
-                placeholder="Mot de passe"
+                placeholder={t('password')}
                 placeholderTextColor={Colors.textSecondary}
                 value={password}
                 onChangeText={(text) => {
@@ -175,12 +177,12 @@ export default function LoginScreen() {
                   <Ionicons name="checkmark" size={14} color={Colors.text} />
                 )}
               </View>
-              <Text style={styles.rememberMeText}>Se souvenir de moi</Text>
+              <Text style={styles.rememberMeText}>{t('rememberMe')}</Text>
             </TouchableOpacity>
 
             <Link href="/auth/forgot-password" asChild>
               <TouchableOpacity disabled={isLoading}>
-                <Text style={styles.forgotPasswordLink}>Mot de passe oublié?</Text>
+                <Text style={styles.forgotPasswordLink}>{t('forgotPassword')}</Text>
               </TouchableOpacity>
             </Link>
           </View>
@@ -202,7 +204,7 @@ export default function LoginScreen() {
               ) : (
                 <>
                   <Ionicons name="log-in" size={18} color={Colors.text} style={styles.buttonIcon} />
-                  <Text style={styles.buttonText}>Se connecter</Text>
+                  <Text style={styles.buttonText}>{t('login')}</Text>
                 </>
               )}
             </TouchableOpacity>
@@ -211,10 +213,10 @@ export default function LoginScreen() {
 
         {/* Signup Link */}
         <View style={styles.footer}>
-          <Text style={styles.footerText}>Vous n&apos;avez pas de compte? </Text>
+          <Text style={styles.footerText}>{t('noAccount')} </Text>
           <Link href="/auth/signup" asChild>
             <TouchableOpacity disabled={isLoading}>
-              <Text style={styles.signupLink}>S&apos;inscrire</Text>
+              <Text style={styles.signupLink}>{t('signUp')}</Text>
             </TouchableOpacity>
           </Link>
         </View>

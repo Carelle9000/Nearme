@@ -5,6 +5,7 @@ export interface SignupData {
   password: string;
   firstName: string;
   birthYear: string;
+  birthDate?: string; // ISO string format YYYY-MM-DD
   gender: string;
   city: string;
   bio: string;

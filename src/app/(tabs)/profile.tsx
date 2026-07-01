@@ -5,40 +5,36 @@ import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Colors, BorderRadius, Shadows } from '../../constants/theme';
+import { ConfirmationModal } from '../../components/ConfirmationModal';
+import { useState } from 'react';
+import { useLocalization } from '../../context/localization-context';
 
 export default function ProfileScreen() {
   const { user, logout } = useAuth();
   const router = useRouter();
+  const { t } = useLocalization();
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
 
-  const handleLogout = async () => {
-    Alert.alert(
-      'Déconnexion',
-      'Êtes-vous sûr de vouloir vous déconnecter ?',
-      [
-        {
-          text: 'Annuler',
-          style: 'cancel',
-          onPress: () => {},
-        },
-        {
-          text: 'Déconnecter',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              await logout();
-              setTimeout(() => {
-                router.replace('/auth/login');
-              }, 100);
-            } catch (error: any) {
-              console.error('Logout error:', error);
-              const errorMessage = error?.message || 'Une erreur est survenue lors de la déconnexion';
-              Alert.alert('Erreur de déconnexion', errorMessage);
-            }
-          },
-        },
-      ],
-      { cancelable: false }
-    );
+  const handleLogout = () => {
+    setShowLogoutConfirm(true);
+  };
+
+  const confirmLogout = async () => {
+    setIsLoggingOut(true);
+    try {
+      console.log('Starting logout...');
+      await logout();
+      console.log('Logout successful, redirecting to login...');
+      setShowLogoutConfirm(false);
+      router.replace('/auth/login');
+    } catch (error: any) {
+      console.error('Logout error:', error);
+      const errorMessage = error?.message || 'Une erreur est survenue lors de la déconnexion';
+      setIsLoggingOut(false);
+      setShowLogoutConfirm(false);
+      Alert.alert(t('error'), errorMessage);
+    }
   };
 
   if (!user) {
@@ -52,6 +48,17 @@ export default function ProfileScreen() {
   return (
     <LinearGradient colors={[Colors.background, Colors.cardSurface]} style={styles.container}>
       <SafeAreaView style={styles.safeArea}>
+        <ConfirmationModal
+          visible={showLogoutConfirm}
+          title="Déconnexion"
+          message="Êtes-vous sûr de vouloir vous déconnecter ?"
+          cancelText="Annuler"
+          confirmText="Déconnecter"
+          isDangerous={false}
+          isLoading={isLoggingOut}
+          onCancel={() => setShowLogoutConfirm(false)}
+          onConfirm={confirmLogout}
+        />
       <ScrollView contentContainerStyle={styles.scrollContent}>
         {/* Profile Header */}
         <View style={styles.profileHeader}>
@@ -120,10 +127,17 @@ export default function ProfileScreen() {
           <TouchableOpacity
             style={[styles.actionButton, styles.logoutButton]}
             onPress={handleLogout}
-            disabled={false}
           >
             <Ionicons name="log-out-outline" size={20} color={Colors.text} />
             <Text style={[styles.actionButtonText, styles.logoutButtonText]}>Déconnexion</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[styles.actionButton, styles.deleteButton]}
+            onPress={() => router.push('/profile/delete-account')}
+          >
+            <Ionicons name="trash-outline" size={20} color="#fff" />
+            <Text style={[styles.actionButtonText, styles.deleteButtonText]}>Supprimer mon compte</Text>
           </TouchableOpacity>
         </View>
       </ScrollView>
@@ -251,6 +265,14 @@ const styles = StyleSheet.create({
   },
   logoutButtonText: {
     color: Colors.text,
+  },
+  deleteButton: {
+    backgroundColor: '#E74C3C',
+    borderColor: '#E74C3C',
+    marginTop: 8,
+  },
+  deleteButtonText: {
+    color: '#fff',
   },
 });
 

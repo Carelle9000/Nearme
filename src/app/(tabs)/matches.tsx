@@ -5,8 +5,7 @@ import { matchService, userService } from '../../services';
 import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { Ionicons } from '@expo/vector-icons';
-import { Match } from '../../models/user';
-import { Profile } from '../../models/user';
+import { Match, Profile } from '../../models/user';
 import { Colors, BorderRadius, Shadows } from '../../constants/theme';
 
 interface MatchItem extends Match {
@@ -18,12 +17,6 @@ export default function MatchesScreen() {
   const router = useRouter();
   const [matches, setMatches] = useState<MatchItem[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-
-  useEffect(() => {
-    if (user?.id) {
-      loadMatches();
-    }
-  }, [user?.id]);
 
   const loadMatches = async () => {
     if (!user?.id) return;
@@ -48,6 +41,12 @@ export default function MatchesScreen() {
       setIsLoading(false);
     }
   };
+
+  useEffect(() => {
+    if (user?.id) {
+      loadMatches();
+    }
+  }, [user?.id, loadMatches]);
 
   const renderMatch = ({ item }: { item: MatchItem }) => {
     const profile = item.otherUserProfile;
@@ -118,7 +117,7 @@ export default function MatchesScreen() {
       {matches.length === 0 ? (
         <View style={styles.emptyState}>
           <Ionicons name="heart-discard-outline" size={64} color="#ccc" />
-          <Text style={styles.emptyText}>Aucun match pour l'instant</Text>
+          <Text style={styles.emptyText}>Aucun match pour l&apos;instant</Text>
           <Text style={styles.emptySubtext}>Continuez à découvrir pour trouver votre match !</Text>
         </View>
       ) : (

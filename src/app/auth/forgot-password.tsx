@@ -15,6 +15,7 @@ import { useAuth } from '../../context/auth-context';
 import { useRouter } from 'expo-router';
 import { Colors, BorderRadius, Shadows } from '../../constants/theme';
 import { signupService } from '../../services/signup.service';
+import { useLocalization } from '../../context/localization-context';
 
 export default function ForgotPasswordScreen() {
   const [step, setStep] = useState<'email' | 'reset'>('email');
@@ -26,15 +27,16 @@ export default function ForgotPasswordScreen() {
   const [showPassword, setShowPassword] = useState(false);
   const { sendPasswordReset, resetPassword, verifyResetCode } = useAuth();
   const router = useRouter();
+  const { t } = useLocalization();
 
   const handleSendReset = async () => {
     if (!email.trim()) {
-      Alert.alert('Erreur', 'Veuillez entrer votre adresse email');
+      Alert.alert(t('error'), 'Veuillez entrer votre adresse email');
       return;
     }
 
     if (!signupService.isEmailValid(email)) {
-      Alert.alert('Erreur', 'Veuillez entrer une adresse email valide');
+      Alert.alert(t('error'), 'Veuillez entrer une adresse email valide');
       return;
     }
 
@@ -48,7 +50,7 @@ export default function ForgotPasswordScreen() {
       setStep('reset');
     } catch (error: any) {
       const message = signupService.getErrorMessage(error.message);
-      Alert.alert('Erreur', message);
+      Alert.alert(t('error'), message);
     } finally {
       setIsLoading(false);
     }
@@ -56,17 +58,17 @@ export default function ForgotPasswordScreen() {
 
   const handleResetPassword = async () => {
     if (!oobCode.trim()) {
-      Alert.alert('Erreur', 'Veuillez entrer le code de réinitialisation');
+      Alert.alert(t('error'), 'Veuillez entrer le code de réinitialisation');
       return;
     }
 
     if (!newPassword || !confirmPassword) {
-      Alert.alert('Erreur', 'Veuillez remplir tous les champs');
+      Alert.alert(t('error'), 'Veuillez remplir tous les champs');
       return;
     }
 
     if (newPassword !== confirmPassword) {
-      Alert.alert('Erreur', 'Les mots de passe ne correspondent pas');
+      Alert.alert(t('error'), 'Les mots de passe ne correspondent pas');
       return;
     }
 
@@ -81,13 +83,13 @@ export default function ForgotPasswordScreen() {
       await verifyResetCode(oobCode);
       await resetPassword(oobCode, newPassword);
       Alert.alert(
-        'Succès',
+        t('success'),
         'Votre mot de passe a été réinitialisé. Vous pouvez maintenant vous connecter.'
       );
       router.replace('/auth/login');
     } catch (error: any) {
       const message = signupService.getErrorMessage(error.message);
-      Alert.alert('Erreur', message);
+      Alert.alert(t('error'), message);
     } finally {
       setIsLoading(false);
     }

@@ -16,9 +16,11 @@ import { useSignup } from '../../context/signup-context';
 import { signupService } from '../../services/signup.service';
 import { Colors, BorderRadius, Shadows } from '../../constants/theme';
 import { Link } from 'expo-router';
+import { useLocalization } from '../../context/localization-context';
 
 export default function SignupStep1() {
   const { data, updateData, nextStep } = useSignup();
+  const { t } = useLocalization();
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -35,31 +37,31 @@ export default function SignupStep1() {
 
     // Validate email
     if (!data.email.trim()) {
-      setEmailError('L\'email est requis');
+      setEmailError(t('emailRequired'));
       isValid = false;
     } else if (!signupService.isEmailValid(data.email)) {
-      setEmailError('Veuillez entrer une adresse email valide');
+      setEmailError(t('invalidEmail'));
       isValid = false;
     }
 
     // Validate password
     if (!data.password) {
-      setPasswordError('Le mot de passe est requis');
+      setPasswordError(t('passwordRequired'));
       isValid = false;
     } else {
       const passwordValidation = signupService.isPasswordStrong(data.password);
       if (!passwordValidation.valid) {
-        setPasswordError(passwordValidation.reason || 'Le mot de passe n\'est pas assez fort');
+        setPasswordError(passwordValidation.reason || t('passwordMinLength'));
         isValid = false;
       }
     }
 
     // Validate confirm password
     if (!confirmPassword) {
-      setConfirmPasswordError('Veuillez confirmer le mot de passe');
+      setConfirmPasswordError(t('confirmPassword'));
       isValid = false;
     } else if (confirmPassword !== data.password) {
-      setConfirmPasswordError('Les mots de passe ne correspondent pas');
+      setConfirmPasswordError(t('passwordsMustMatch'));
       isValid = false;
     }
 
@@ -79,7 +81,7 @@ export default function SignupStep1() {
       nextStep();
     } catch (error: any) {
       const message = signupService.getErrorMessage(error.code || error.message);
-      Alert.alert('Erreur lors de l\'inscription', message);
+      Alert.alert(t('loginError'), message);
     } finally {
       setIsLoading(false);
     }
@@ -93,7 +95,7 @@ export default function SignupStep1() {
           source={require('../../../assets/images/logon.jpeg')}
           style={styles.logo}
         />
-        <Text style={styles.title}>Créer un compte</Text>
+        <Text style={styles.title}>{t('createAccount')}</Text>
         <Text style={styles.subtitle}>Commencez à rencontrer des personnes près de chez vous</Text>
       </View>
 

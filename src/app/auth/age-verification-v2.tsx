@@ -12,6 +12,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { IdentityVerification } from '../../components/IdentityVerification';
 import { Colors, BorderRadius } from '../../constants/theme';
+import { useLocalization } from '../../context/localization-context';
 
 export default function AgeVerificationV2() {
   const router = useRouter();

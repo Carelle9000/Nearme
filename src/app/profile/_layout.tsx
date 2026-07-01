@@ -5,6 +5,7 @@ export default function ProfileLayout() {
     <Stack screenOptions={{ headerShown: false }}>
       <Stack.Screen name="edit" />
       <Stack.Screen name="photos" />
+      <Stack.Screen name="delete-account" />
     </Stack>
   );
 }

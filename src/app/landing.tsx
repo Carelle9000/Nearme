@@ -4,9 +4,27 @@ import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Colors, BorderRadius, Shadows } from '../constants/theme';
+import { useLocalization } from '../context/localization-context';
 
 export default function LandingScreen() {
   const router = useRouter();
+  const { hasConfigured, t } = useLocalization();
+
+  const handleNavigateRegister = () => {
+    if (hasConfigured) {
+      router.push('/auth/register');
+    } else {
+      router.push('/language-country?next=register');
+    }
+  };
+
+  const handleNavigateLogin = () => {
+    if (hasConfigured) {
+      router.push('/auth/login');
+    } else {
+      router.push('/language-country?next=login');
+    }
+  };
 
   return (
     <LinearGradient colors={[Colors.background, Colors.cardSurface]} style={styles.container}>
@@ -22,28 +40,28 @@ export default function LandingScreen() {
             </View>
             <TouchableOpacity
               style={styles.loginButton}
-              onPress={() => router.push('/auth/login')}
+              onPress={handleNavigateLogin}
             >
-              <Text style={styles.loginButtonText}>Log in</Text>
+              <Text style={styles.loginButtonText}>{t('loginButton')}</Text>
             </TouchableOpacity>
           </View>
 
           {/* Badge */}
           <View style={styles.badge}>
             <Ionicons name="location" size={16} color={Colors.primary} />
-            <Text style={styles.badgeText}>GEOLOCATED · VERIFIED</Text>
+            <Text style={styles.badgeText}>{t('geolocatedVerified')}</Text>
           </View>
 
           {/* Hero Section */}
           <View style={styles.heroSection}>
             <Text style={styles.heroMain}>
-              Good people,
+              {t('goodPeople')}
             </Text>
             <View style={styles.heroHighlight}>
-              <Text style={styles.heroHighlightText}>near you.</Text>
+              <Text style={styles.heroHighlightText}>{t('nearYou')}</Text>
             </View>
             <Text style={styles.heroSubtitle}>
-              NearMe connects neighbors in your area. Verified profiles, genuine conversations, zero waste.
+              {t('landingSubtitle')}
             </Text>
           </View>
 
@@ -57,9 +75,9 @@ export default function LandingScreen() {
             >
               <TouchableOpacity
                 style={styles.primaryButton}
-                onPress={() => router.push('/auth/register')}
+                onPress={handleNavigateRegister}
               >
-                <Text style={styles.primaryButtonText}>Create my profile</Text>
+                <Text style={styles.primaryButtonText}>{t('createProfile')}</Text>
               </TouchableOpacity>
             </LinearGradient>
 
@@ -67,7 +85,7 @@ export default function LandingScreen() {
               style={styles.secondaryButton}
               onPress={() => router.push('/how-it-works')}
             >
-              <Text style={styles.secondaryButtonText}>How it works</Text>
+              <Text style={styles.secondaryButtonText}>{t('howItWorks')}</Text>
             </TouchableOpacity>
           </View>
 
@@ -88,7 +106,7 @@ export default function LandingScreen() {
               <View style={styles.profileHeader}>
                 <Text style={styles.profileName}>Sarah, 28</Text>
                 <View style={styles.onlineStatus}>
-                  <Text style={styles.onlineText}>ONLINE</Text>
+                  <Text style={styles.onlineText}>{t('online')}</Text>
                 </View>
               </View>
 
@@ -126,7 +144,7 @@ export default function LandingScreen() {
                 <Ionicons name="heart" size={20} color={Colors.text} />
               </View>
               <View style={styles.matchText}>
-                <Text style={styles.matchLabel}>NEW MATCH</Text>
+                <Text style={styles.matchLabel}>{t('newMatch')}</Text>
                 <Text style={styles.matchTitle}>« Do you know this café from the 11th? »</Text>
               </View>
             </View>
@@ -136,24 +154,24 @@ export default function LandingScreen() {
           <View style={styles.featuresSection}>
             <FeatureCard
               icon="shield-checkmark"
-              title="Safety first"
-              description="Identity verification, blocking, and 24/7 moderation."
+              title={t('safetyFirst')}
+              description={t('safetyDescription')}
             />
             <FeatureCard
               icon="star"
-              title="Genuine profiles"
-              description="We value real interests and real connections."
+              title={t('genuineProfiles')}
+              description={t('genuineDescription')}
             />
             <FeatureCard
               icon="location"
-              title="Truly local"
-              description="Meet people in your neighborhood, not across the globe."
+              title={t('trulyLocal')}
+              description={t('trulyLocalDescription')}
             />
           </View>
 
           {/* Footer CTA */}
           <View style={styles.footerCTA}>
-            <Text style={styles.footerText}>Ready to meet someone?</Text>
+            <Text style={styles.footerText}>{t('readyToMeet')}</Text>
             <LinearGradient
               colors={[Colors.primary, '#C82E42']}
               start={{ x: 0, y: 0 }}
@@ -162,9 +180,9 @@ export default function LandingScreen() {
             >
               <TouchableOpacity
                 style={styles.footerButton}
-                onPress={() => router.push('/auth/register')}
+                onPress={handleNavigateRegister}
               >
-                <Text style={styles.footerButtonText}>Get started</Text>
+                <Text style={styles.footerButtonText}>{t('getStarted')}</Text>
               </TouchableOpacity>
             </LinearGradient>
           </View>

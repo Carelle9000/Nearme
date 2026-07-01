@@ -18,10 +18,12 @@ import { Colors, BorderRadius, Shadows } from '../constants/theme';
 import { ref, remove } from 'firebase/database';
 import { rtdb, auth } from '../config/firebase';
 import { deleteUser } from 'firebase/auth';
+import { useLocalization } from '../context/localization-context';
 
 export default function SettingsScreen() {
   const router = useRouter();
   const { user, logout } = useAuth();
+  const { t } = useLocalization();
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
   const [locationEnabled, setLocationEnabled] = useState(true);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -109,7 +111,7 @@ export default function SettingsScreen() {
         errorMessage = error.message;
       }
 
-      Alert.alert('Erreur', errorMessage);
+      Alert.alert(t('error'), errorMessage);
       setIsDeleting(false);
     }
   };

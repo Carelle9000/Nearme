@@ -1,11 +1,28 @@
 import React, { useState } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, Alert, ActivityIndicator, TextInput } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { useAuth } from '../context/auth-context';
 import { authService } from '../services/auth.service';
 import { userService } from '../services/user.service';
 import { chatService } from '../services/chat.service';
 import { rtdb, auth } from '../config/firebase';
 import { ref, get } from 'firebase/database';
+
+const TestButton = ({ title, onPress, color = '#007AFF', loading = false }: any) => (
+  <TouchableOpacity
+    style={{
+      backgroundColor: color,
+      padding: 12,
+      marginVertical: 8,
+      borderRadius: 8,
+    }}
+    onPress={onPress}
+    disabled={loading}
+  >
+    <Text style={{ color: 'white', fontWeight: 'bold', textAlign: 'center' }}>
+      {title}
+    </Text>
+  </TouchableOpacity>
+);
 
 export default function DebugScreen() {
   const { user } = useAuth();
@@ -216,23 +233,6 @@ export default function DebugScreen() {
       setLoading(false);
     }
   };
-
-  const TestButton = ({ title, onPress, color = '#007AFF' }: any) => (
-    <TouchableOpacity
-      style={{
-        backgroundColor: color,
-        padding: 12,
-        marginVertical: 8,
-        borderRadius: 8,
-      }}
-      onPress={onPress}
-      disabled={loading}
-    >
-      <Text style={{ color: 'white', fontWeight: 'bold', textAlign: 'center' }}>
-        {title}
-      </Text>
-    </TouchableOpacity>
-  );
 
   return (
     <ScrollView style={{ flex: 1, backgroundColor: '#fff', padding: 16 }}>

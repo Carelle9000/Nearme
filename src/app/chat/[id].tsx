@@ -1,4 +1,4 @@
-import { View, FlatList, TextInput, TouchableOpacity, StyleSheet, ActivityIndicator } from 'react-native';
+import { View, FlatList, TextInput, TouchableOpacity, StyleSheet, ActivityIndicator, Text } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useChat } from '../../context/chat-context';
@@ -6,7 +6,6 @@ import { useAuth } from '../../context/auth-context';
 import { useEffect, useState } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import { Message } from '../../models/user';
-import { Text } from 'react-native';
 import { Colors, BorderRadius, Shadows } from '../../constants/theme';
 
 export default function ConversationScreen() {
@@ -21,7 +20,7 @@ export default function ConversationScreen() {
     if (id) {
       selectConversation(id);
     }
-  }, [id]);
+  }, [id, selectConversation]);
 
   const handleSendMessage = async () => {
     if (!messageText.trim() || !id) return;

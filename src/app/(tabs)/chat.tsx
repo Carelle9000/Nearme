@@ -15,10 +15,12 @@ import { Ionicons } from '@expo/vector-icons';
 import { Conversation } from '../../models/user';
 import { Colors, BorderRadius, Shadows } from '../../constants/theme';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useLocalization } from '../../context/localization-context';
 
 export default function ChatScreen() {
   const { conversations, isLoading, loadConversations } = useChat();
   const router = useRouter();
+  const { t } = useLocalization();
 
   useEffect(() => {
     loadConversations();

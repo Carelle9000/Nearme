@@ -9,6 +9,7 @@ import {
   ActivityIndicator,
   FlatList,
   Modal,
+  Platform,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -19,14 +20,17 @@ import { userService } from '../../services';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Colors, BorderRadius, Shadows } from '../../constants/theme';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useLocalization } from '../../context/localization-context';
 
 export default function ManagePhotosScreen() {
   const router = useRouter();
   const { user } = useAuth();
+  const { t } = useLocalization();
   const { profilePhotos, isUploadingPhoto, error, pickAndUploadPhoto, takeAndUploadPhoto, deletePhoto, clearError } =
     useProfile();
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [showPreview, setShowPreview] = useState(false);
+  const [showSourceMenu, setShowSourceMenu] = useState(false);
 
   useEffect(() => {
     if (user?.location) {
@@ -39,35 +43,38 @@ export default function ManagePhotosScreen() {
   }, [user?.id, clearError]);
 
   const handleUploadPhoto = () => {
-    Alert.alert('Ajouter une photo', 'Choisir une source', [
-      {
-        text: 'Appareil photo',
-        onPress: async () => {
-          try {
-            const success = await takeAndUploadPhoto();
-            if (success) {
-              Alert.alert('Succès', 'Votre photo a été uploadée');
-            }
-          } catch (error: any) {
-            Alert.alert('Erreur', error.message || 'Impossible de prendre une photo');
-          }
-        },
-      },
-      {
-        text: 'Galerie',
-        onPress: async () => {
-          try {
-            const success = await pickAndUploadPhoto();
-            if (success) {
-              Alert.alert('Succès', 'Votre photo a été uploadée');
-            }
-          } catch (error: any) {
-            Alert.alert('Erreur', error.message || 'Impossible de charger la photo');
-          }
-        },
-      },
-      { text: 'Annuler', style: 'cancel' },
-    ]);
+    console.log('handleUploadPhoto called');
+    setShowSourceMenu(true);
+  };
+
+  const handleCameraOption = async () => {
+    setShowSourceMenu(false);
+    console.log('Camera option selected');
+    try {
+      const success = await takeAndUploadPhoto();
+      console.log('takeAndUploadPhoto result:', success);
+      if (success) {
+        Alert.alert(t('success'), 'Votre photo a été uploadée');
+      }
+    } catch (error: any) {
+      console.error('Camera error:', error);
+      Alert.alert(t('error'), error.message || 'Impossible de prendre une photo');
+    }
+  };
+
+  const handleGalleryOption = async () => {
+    setShowSourceMenu(false);
+    console.log('Gallery option selected');
+    try {
+      const success = await pickAndUploadPhoto();
+      console.log('pickAndUploadPhoto result:', success);
+      if (success) {
+        Alert.alert(t('success'), 'Votre photo a été uploadée');
+      }
+    } catch (error: any) {
+      console.error('Gallery error:', error);
+      Alert.alert(t('error'), error.message || 'Impossible de charger la photo');
+    }
   };
 
   const handleDeletePhoto = (photoUrl: string) => {
@@ -198,6 +205,41 @@ export default function ManagePhotosScreen() {
             </View>
           </View>
         </ScrollView>
+
+        {/* Source Selection Modal */}
+        <Modal visible={showSourceMenu} transparent animationType="fade" onRequestClose={() => setShowSourceMenu(false)}>
+          <View style={styles.modalOverlay}>
+            <View style={styles.modalContent}>
+              <Text style={styles.modalTitle}>Ajouter une photo</Text>
+              <Text style={styles.modalSubtitle}>Choisir une source</Text>
+
+              <TouchableOpacity
+                style={styles.modalOption}
+                onPress={handleCameraOption}
+                disabled={isUploadingPhoto}
+              >
+                <Ionicons name="camera" size={24} color={Colors.primary} />
+                <Text style={styles.modalOptionText}>Appareil photo</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.modalOption}
+                onPress={handleGalleryOption}
+                disabled={isUploadingPhoto}
+              >
+                <Ionicons name="images" size={24} color={Colors.primary} />
+                <Text style={styles.modalOptionText}>Galerie</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[styles.modalOption, styles.modalCancelOption]}
+                onPress={() => setShowSourceMenu(false)}
+              >
+                <Text style={styles.modalCancelText}>Annuler</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </Modal>
 
         {/* Photo Preview Modal */}
         <Modal visible={showPreview} transparent animationType="fade" onRequestClose={() => setShowPreview(false)}>
@@ -495,5 +537,54 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 14,
     fontWeight: '500',
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'flex-end',
+  },
+  modalContent: {
+    backgroundColor: Colors.cardSurface,
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    paddingHorizontal: 16,
+    paddingVertical: 24,
+    paddingBottom: 32,
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: Colors.text,
+    marginBottom: 4,
+  },
+  modalSubtitle: {
+    fontSize: 14,
+    color: Colors.textSecondary,
+    marginBottom: 20,
+  },
+  modalOption: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 16,
+    paddingHorizontal: 12,
+    borderRadius: BorderRadius.base,
+    marginBottom: 12,
+    backgroundColor: Colors.secondary,
+    gap: 12,
+  },
+  modalOptionText: {
+    fontSize: 16,
+    fontWeight: '500',
+    color: Colors.text,
+  },
+  modalCancelOption: {
+    backgroundColor: 'transparent',
+    borderWidth: 1,
+    borderColor: Colors.border,
+  },
+  modalCancelText: {
+    fontSize: 16,
+    fontWeight: '500',
+    color: Colors.textSecondary,
   },
 });
