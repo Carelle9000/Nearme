@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -10,9 +10,9 @@ import {
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { IdentityVerification } from '../../components/IdentityVerification';
-import { Colors, BorderRadius } from '../../constants/theme';
-import { useLocalization } from '../../context/localization-context';
+import { IdentityVerification } from '@/components/IdentityVerification';
+import { Colors, BorderRadius } from '@/constants/theme';
+import { useLocalization } from '@/context/localization-context';
 
 export default function AgeVerificationV2() {
   const router = useRouter();
@@ -38,7 +38,7 @@ export default function AgeVerificationV2() {
   };
 
   const handleVerificationError = (error: Error) => {
-    Alert.alert('Erreur de vérification', error.message);
+    Alert.alert('Erreur de vÃ©rification', error.message);
   };
 
   if (verificationStep === 'verification') {
@@ -66,16 +66,16 @@ export default function AgeVerificationV2() {
             <Ionicons name="checkmark-circle" size={80} color="#4ADE80" />
           </View>
 
-          <Text style={styles.successTitle}>Vérification réussie!</Text>
+          <Text style={styles.successTitle}>VÃ©rification rÃ©ussie!</Text>
           <Text style={styles.successDescription}>
-            Votre âge a été vérifié avec succès. Vous pouvez maintenant accéder
-            à toutes les fonctionnalités de l'application.
+            Votre Ã¢ge a Ã©tÃ© vÃ©rifiÃ© avec succÃ¨s. Vous pouvez maintenant accÃ©der
+            Ã  toutes les fonctionnalitÃ©s de l'application.
           </Text>
 
           <View style={styles.featuresList}>
-            <FeatureItem icon="heart" text="Accès complet aux profils" />
-            <FeatureItem icon="chatbubble" text="Messagerie illimitée" />
-            <FeatureItem icon="location" text="Localisation précise" />
+            <FeatureItem icon="heart" text="AccÃ¨s complet aux profils" />
+            <FeatureItem icon="chatbubble" text="Messagerie illimitÃ©e" />
+            <FeatureItem icon="location" text="Localisation prÃ©cise" />
           </View>
         </ScrollView>
       </LinearGradient>
@@ -94,10 +94,10 @@ export default function AgeVerificationV2() {
         {/* Header */}
         <View style={styles.header}>
           <Ionicons name="shield-checkmark" size={60} color="#FFFFFF" />
-          <Text style={styles.title}>Vérification d'âge</Text>
+          <Text style={styles.title}>VÃ©rification d'Ã¢ge</Text>
           <Text style={styles.subtitle}>
-            Pour des raisons de sécurité et de conformité, nous devons vérifier
-            votre âge
+            Pour des raisons de sÃ©curitÃ© et de conformitÃ©, nous devons vÃ©rifier
+            votre Ã¢ge
           </Text>
         </View>
 
@@ -109,7 +109,7 @@ export default function AgeVerificationV2() {
           </Text>
           <View style={styles.documentList}>
             <DocumentItem type="Passeport" />
-            <DocumentItem type="Carte d'identité" />
+            <DocumentItem type="Carte d'identitÃ©" />
             <DocumentItem type="Permis de conduire" />
           </View>
         </View>
@@ -118,18 +118,18 @@ export default function AgeVerificationV2() {
         <View style={styles.stepsContainer}>
           <StepItem
             number={1}
-            title="Préparez votre document"
-            description="Ayez votre passeport, permis ou carte d'identité à portée de main"
+            title="PrÃ©parez votre document"
+            description="Ayez votre passeport, permis ou carte d'identitÃ© Ã  portÃ©e de main"
           />
           <StepItem
             number={2}
             title="Prenez une photo"
-            description="Notre système sécurisé analysera votre document"
+            description="Notre systÃ¨me sÃ©curisÃ© analysera votre document"
           />
           <StepItem
             number={3}
             title="Selfie de confirmation"
-            description="Prenez une photo de vous pour confirmer votre identité"
+            description="Prenez une photo de vous pour confirmer votre identitÃ©"
           />
         </View>
 
@@ -139,7 +139,7 @@ export default function AgeVerificationV2() {
           onPress={() => setVerificationStep('verification')}
         >
           <Text style={styles.primaryButtonText}>
-            Vérifier mon identité
+            VÃ©rifier mon identitÃ©
           </Text>
           <Ionicons name="arrow-forward" size={20} color="#FFFFFF" />
         </TouchableOpacity>
@@ -149,8 +149,8 @@ export default function AgeVerificationV2() {
           style={styles.secondaryButton}
           onPress={() => {
             Alert.alert(
-              'Vérification requise',
-              'La vérification d\'identité est obligatoire pour utiliser l\'application.'
+              'VÃ©rification requise',
+              'La vÃ©rification d\'identitÃ© est obligatoire pour utiliser l\'application.'
             );
           }}
         >
@@ -161,7 +161,7 @@ export default function AgeVerificationV2() {
         <View style={styles.securityInfo}>
           <Ionicons name="lock-closed" size={16} color="#999" />
           <Text style={styles.securityText}>
-            Vos données sont chiffrées et traitées de manière sécurisée par Stripe
+            Vos donnÃ©es sont chiffrÃ©es et traitÃ©es de maniÃ¨re sÃ©curisÃ©e par Stripe
           </Text>
         </View>
       </ScrollView>
@@ -391,3 +391,4 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
 });
+

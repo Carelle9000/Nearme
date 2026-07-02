@@ -7,6 +7,7 @@ export default function PremiumLayout() {
         headerShown: false,
       }}
     >
+      <Stack.Screen name="index" />
       <Stack.Screen name="liked" />
     </Stack>
   );

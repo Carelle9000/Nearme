@@ -1,12 +1,12 @@
-import { useState, useRef, useEffect } from 'react';
+﻿import { useState, useRef, useEffect } from 'react';
 import { View, TextInput, TouchableOpacity, Text, StyleSheet, Alert, ActivityIndicator, ScrollView, Image } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
-import { useAuth } from '../../context/auth-context';
+import { useAuth } from '@/context/auth-context';
 import { useRouter, Link } from 'expo-router';
-import { Colors, BorderRadius, Shadows } from '../../constants/theme';
-import { signupService } from '../../services/signup.service';
-import { useLocalization } from '../../context/localization-context';
+import { Colors, BorderRadius, Shadows } from '@/constants/theme';
+import { signupService } from '@/services/signup.service';
+import { useLocalization } from '@/context/localization-context';
 
 export default function LoginScreen() {
   const [email, setEmail] = useState('');
@@ -32,7 +32,7 @@ export default function LoginScreen() {
           setRememberMe(true);
         }
       } catch (error) {
-        console.error('Erreur lors du chargement de l&apos;email sauvegardé:', error);
+        console.error('Erreur lors du chargement de l&apos;email sauvegardÃ©:', error);
       }
     };
     loadRememberedEmail();
@@ -369,3 +369,4 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
 });
+

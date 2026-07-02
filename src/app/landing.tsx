@@ -1,10 +1,10 @@
-import { View, ScrollView, Text, StyleSheet, TouchableOpacity, Image } from 'react-native';
+﻿import { View, ScrollView, Text, StyleSheet, TouchableOpacity, Image } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Colors, BorderRadius, Shadows } from '../constants/theme';
-import { useLocalization } from '../context/localization-context';
+import { Colors, BorderRadius, Shadows } from '@/constants/theme';
+import { useLocalization } from '@/context/localization-context';
 
 export default function LandingScreen() {
   const router = useRouter();
@@ -110,7 +110,7 @@ export default function LandingScreen() {
                 </View>
               </View>
 
-              <Text style={styles.profileLocation}>1.2 km · Verified profile</Text>
+              <Text style={styles.profileLocation}>1.2 km Â· Verified profile</Text>
               <Text style={styles.profileBio}>
                 "Coffee in the morning, weekends out. Looking for someone attentive, fun, who loves cooking."
               </Text>
@@ -145,7 +145,7 @@ export default function LandingScreen() {
               </View>
               <View style={styles.matchText}>
                 <Text style={styles.matchLabel}>{t('newMatch')}</Text>
-                <Text style={styles.matchTitle}>« Do you know this café from the 11th? »</Text>
+                <Text style={styles.matchTitle}>Â« Do you know this cafÃ© from the 11th? Â»</Text>
               </View>
             </View>
           </LinearGradient>
@@ -486,3 +486,4 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
 });
+

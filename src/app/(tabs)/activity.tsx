@@ -1,4 +1,4 @@
-import {
+﻿import {
   View,
   Text,
   StyleSheet,
@@ -13,12 +13,12 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useRouter } from 'expo-router';
-import { useAuth } from '../../context/auth-context';
-import { Colors, BorderRadius, Shadows } from '../../constants/theme';
+import { useAuth } from '@/context/auth-context';
+import { Colors, BorderRadius, Shadows } from '@/constants/theme';
 import { ref, get, getDatabase } from 'firebase/database';
-import { firebaseApp } from '../../config/firebase';
-import { Profile } from '../../models/user';
-import { userService } from '../../services';
+import { firebaseApp } from '@/config/firebase';
+import { Profile } from '@/models/user';
+import { userService } from '@/services';
 
 type Tab = 'likes' | 'favorites' | 'blocked';
 
@@ -189,22 +189,22 @@ export default function ActivityScreen() {
     if (!user?.id) return;
 
     Alert.alert(
-      'Débloquer ce profil',
-      `Débloquer ${profile.displayName || profile.name} ?`,
+      'DÃ©bloquer ce profil',
+      `DÃ©bloquer ${profile.displayName || profile.name} ?`,
       [
         {
           text: 'Annuler',
           style: 'cancel',
         },
         {
-          text: 'Débloquer',
+          text: 'DÃ©bloquer',
           onPress: async () => {
             try {
               await userService.unblock(user.id, profile.uid);
               setBlocked(blocked.filter((p) => p.uid !== profile.uid));
             } catch (error) {
               console.error('Error unblocking:', error);
-              Alert.alert('Erreur', 'Impossible de débloquer ce profil');
+              Alert.alert('Erreur', 'Impossible de dÃ©bloquer ce profil');
             }
           },
         },
@@ -262,7 +262,7 @@ export default function ActivityScreen() {
             onPress={() => handleUnblock(profile)}
           >
             <Ionicons name="ban" size={16} color={Colors.text} />
-            <Text style={styles.unblockButtonText}>Débloquer</Text>
+            <Text style={styles.unblockButtonText}>DÃ©bloquer</Text>
           </TouchableOpacity>
         )}
       </View>
@@ -298,11 +298,11 @@ export default function ActivityScreen() {
   const getEmptyMessage = () => {
     switch (activeTab) {
       case 'likes':
-        return 'Les profils qui vous ont aimé apparaîtront ici';
+        return 'Les profils qui vous ont aimÃ© apparaÃ®tront ici';
       case 'favorites':
-        return 'Les profils que vous avez aimés apparaîtront ici';
+        return 'Les profils que vous avez aimÃ©s apparaÃ®tront ici';
       case 'blocked':
-        return 'Les profils que vous avez bloqués apparaîtront ici';
+        return 'Les profils que vous avez bloquÃ©s apparaÃ®tront ici';
       default:
         return '';
     }
@@ -326,7 +326,7 @@ export default function ActivityScreen() {
       <SafeAreaView style={styles.safeArea}>
         {/* Header */}
         <View style={styles.header}>
-          <Text style={styles.title}>Activité</Text>
+          <Text style={styles.title}>ActivitÃ©</Text>
         </View>
 
         {/* Tabs */}
@@ -375,7 +375,7 @@ export default function ActivityScreen() {
             <Text
               style={[styles.tabText, activeTab === 'blocked' && styles.activeTabText]}
             >
-              Bloqués
+              BloquÃ©s
             </Text>
           </TouchableOpacity>
         </View>
@@ -537,3 +537,4 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
 });
+

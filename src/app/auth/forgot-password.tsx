@@ -1,4 +1,4 @@
-import { useState } from 'react';
+﻿import { useState } from 'react';
 import {
   View,
   TextInput,
@@ -11,11 +11,11 @@ import {
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
-import { useAuth } from '../../context/auth-context';
+import { useAuth } from '@/context/auth-context';
 import { useRouter } from 'expo-router';
-import { Colors, BorderRadius, Shadows } from '../../constants/theme';
-import { signupService } from '../../services/signup.service';
-import { useLocalization } from '../../context/localization-context';
+import { Colors, BorderRadius, Shadows } from '@/constants/theme';
+import { signupService } from '@/services/signup.service';
+import { useLocalization } from '@/context/localization-context';
 
 export default function ForgotPasswordScreen() {
   const [step, setStep] = useState<'email' | 'reset'>('email');
@@ -222,7 +222,7 @@ export default function ForgotPasswordScreen() {
             </View>
 
             <Text style={styles.passwordHint}>
-              Le mot de passe doit contenir 12+ caractères avec minuscules, majuscules, chiffres
+              Le mot de passe doit contenir 12+ caractÃ¨res avec minuscules, majuscules, chiffres
               et symboles.
             </Text>
 
@@ -240,7 +240,7 @@ export default function ForgotPasswordScreen() {
                 {isLoading ? (
                   <ActivityIndicator color={Colors.text} />
                 ) : (
-                  <Text style={styles.buttonText}>Réinitialiser le mot de passe</Text>
+                  <Text style={styles.buttonText}>RÃ©initialiser le mot de passe</Text>
                 )}
               </TouchableOpacity>
             </LinearGradient>
@@ -332,3 +332,4 @@ const styles = StyleSheet.create({
     color: Colors.text,
   },
 });
+

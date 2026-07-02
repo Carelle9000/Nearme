@@ -1,4 +1,4 @@
-import {
+﻿import {
   View,
   Text,
   StyleSheet,
@@ -13,14 +13,14 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { useProfile } from '../../context/profile-context';
+import { useProfile } from '@/context/profile-context';
 import { useEffect, useState } from 'react';
-import { useAuth } from '../../context/auth-context';
-import { userService } from '../../services';
+import { useAuth } from '@/context/auth-context';
+import { userService } from '@/services';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Colors, BorderRadius, Shadows } from '../../constants/theme';
+import { Colors, BorderRadius, Shadows } from '@/constants/theme';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useLocalization } from '../../context/localization-context';
+import { useLocalization } from '@/context/localization-context';
 
 export default function ManagePhotosScreen() {
   const router = useRouter();
@@ -54,7 +54,7 @@ export default function ManagePhotosScreen() {
       const success = await takeAndUploadPhoto();
       console.log('takeAndUploadPhoto result:', success);
       if (success) {
-        Alert.alert(t('success'), 'Votre photo a été uploadée');
+        Alert.alert(t('success'), 'Votre photo a Ã©tÃ© uploadÃ©e');
       }
     } catch (error: any) {
       console.error('Camera error:', error);
@@ -69,7 +69,7 @@ export default function ManagePhotosScreen() {
       const success = await pickAndUploadPhoto();
       console.log('pickAndUploadPhoto result:', success);
       if (success) {
-        Alert.alert(t('success'), 'Votre photo a été uploadée');
+        Alert.alert(t('success'), 'Votre photo a Ã©tÃ© uploadÃ©e');
       }
     } catch (error: any) {
       console.error('Gallery error:', error);
@@ -78,7 +78,7 @@ export default function ManagePhotosScreen() {
   };
 
   const handleDeletePhoto = (photoUrl: string) => {
-    Alert.alert('Supprimer la photo', 'Êtes-vous sûr de vouloir supprimer cette photo ?', [
+    Alert.alert('Supprimer la photo', 'ÃŠtes-vous sÃ»r de vouloir supprimer cette photo ?', [
       {
         text: 'Supprimer',
         style: 'destructive',
@@ -124,7 +124,7 @@ export default function ManagePhotosScreen() {
           <TouchableOpacity onPress={() => router.replace('/(tabs)/profile')}>
             <Ionicons name="chevron-back" size={28} color={Colors.primary} />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>Gérer mes photos</Text>
+          <Text style={styles.headerTitle}>GÃ©rer mes photos</Text>
           <View style={{ width: 28 }} />
         </View>
 
@@ -146,7 +146,7 @@ export default function ManagePhotosScreen() {
               Mes photos ({profilePhotos.length}/6)
             </Text>
             <Text style={styles.sectionDescription}>
-              La première photo sera votre photo de profil
+              La premiÃ¨re photo sera votre photo de profil
             </Text>
           </View>
 
@@ -154,7 +154,7 @@ export default function ManagePhotosScreen() {
             <View style={styles.emptyState}>
               <Ionicons name="image-outline" size={64} color={Colors.accent} />
               <Text style={styles.emptyText}>Aucune photo pour l'instant</Text>
-              <Text style={styles.emptySubtext}>Ajoutez votre première photo pour commencer</Text>
+              <Text style={styles.emptySubtext}>Ajoutez votre premiÃ¨re photo pour commencer</Text>
             </View>
           ) : (
             <FlatList
@@ -189,7 +189,7 @@ export default function ManagePhotosScreen() {
             <Text style={styles.tipsTitle}>Conseils pour de bonnes photos</Text>
             <View style={styles.tipItem}>
               <Ionicons name="checkmark-circle" size={20} color={Colors.primary} />
-              <Text style={styles.tipText}>Utilisez des photos claires et récentes de vous seul</Text>
+              <Text style={styles.tipText}>Utilisez des photos claires et rÃ©centes de vous seul</Text>
             </View>
             <View style={styles.tipItem}>
               <Ionicons name="checkmark-circle" size={20} color={Colors.primary} />
@@ -197,11 +197,11 @@ export default function ManagePhotosScreen() {
             </View>
             <View style={styles.tipItem}>
               <Ionicons name="checkmark-circle" size={20} color={Colors.primary} />
-              <Text style={styles.tipText}>Évitez les filtres ou les retouches excessives</Text>
+              <Text style={styles.tipText}>Ã‰vitez les filtres ou les retouches excessives</Text>
             </View>
             <View style={styles.tipItem}>
               <Ionicons name="checkmark-circle" size={20} color={Colors.primary} />
-              <Text style={styles.tipText}>Ajoutez de la variété à vos photos</Text>
+              <Text style={styles.tipText}>Ajoutez de la variÃ©tÃ© Ã  vos photos</Text>
             </View>
           </View>
         </ScrollView>
@@ -249,7 +249,7 @@ export default function ManagePhotosScreen() {
                 <TouchableOpacity onPress={() => setShowPreview(false)}>
                   <Ionicons name="close" size={28} color={Colors.text} />
                 </TouchableOpacity>
-                <Text style={styles.previewTitle}>Aperçu</Text>
+                <Text style={styles.previewTitle}>AperÃ§u</Text>
                 <View style={{ width: 28 }} />
               </View>
 
@@ -588,3 +588,4 @@ const styles = StyleSheet.create({
     color: Colors.textSecondary,
   },
 });
+

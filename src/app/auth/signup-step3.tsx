@@ -1,4 +1,4 @@
-import {
+﻿import {
   View,
   Text,
   TouchableOpacity,
@@ -13,13 +13,13 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { useState } from 'react';
 import * as ImagePicker from 'expo-image-picker';
-import { useSignup } from '../../context/signup-context';
-import { signupService } from '../../services/signup.service';
-import { Colors, BorderRadius, Shadows } from '../../constants/theme';
+import { useSignup } from '@/context/signup-context';
+import { signupService } from '@/services/signup.service';
+import { Colors, BorderRadius, Shadows } from '@/constants/theme';
 import { useRouter } from 'expo-router';
-import { ConfirmationModal } from '../../components/ConfirmationModal';
-import { auth } from '../../config/firebase';
-import { useLocalization } from '../../context/localization-context';
+import { ConfirmationModal } from '@/components/ConfirmationModal';
+import { auth } from '@/config/firebase';
+import { useLocalization } from '@/context/localization-context';
 
 const GENDERS = ['Homme', 'Femme', 'Non-binaire', 'Autre'];
 const INTERESTS = ['Travel', 'Music', 'Sport', 'Art', 'Food', 'Gaming', 'Books', 'Movies', 'Fitness'];
@@ -286,7 +286,7 @@ export default function SignupStep3() {
 
         {/* Interests */}
         <View style={styles.fieldGroup}>
-          <Text style={styles.label}>MES INTÉRÊTS</Text>
+          <Text style={styles.label}>MES INTÃ‰RÃŠTS</Text>
           <View style={styles.interestsGrid}>
             {INTERESTS.map((interest) => {
               const isSelected = data.interests?.includes(interest);
@@ -345,7 +345,7 @@ export default function SignupStep3() {
       {/* Bug Z3: the button used to be disabled while !isFormValid, which meant
           a fast "type last field + tap submit" got the previous render's
           disabled=true and swallowed the first tap. We now always accept the
-          tap and validate inside handleCreateProfile — the visual "disabled"
+          tap and validate inside handleCreateProfile â€” the visual "disabled"
           look is kept via the gradient style so nothing changes for the eye. */}
       <TouchableOpacity
         onPress={handleCreateProfile}
@@ -366,7 +366,7 @@ export default function SignupStep3() {
             {isLoading ? (
               <ActivityIndicator color={Colors.text} />
             ) : (
-              <Text style={styles.buttonText}>Créer mon profil</Text>
+              <Text style={styles.buttonText}>CrÃ©er mon profil</Text>
             )}
           </View>
         </LinearGradient>
@@ -664,3 +664,4 @@ const styles = StyleSheet.create({
     letterSpacing: 0.3,
   },
 });
+

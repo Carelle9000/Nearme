@@ -1,15 +1,15 @@
-import { View, ScrollView, Text, StyleSheet, TouchableOpacity, Image, Alert } from 'react-native';
+﻿import { View, ScrollView, Text, StyleSheet, TouchableOpacity, Image, Alert } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useAuth } from '../../context/auth-context';
-import { usePremium } from '../../context/premium-context';
+import { useAuth } from '@/context/auth-context';
+import { usePremium } from '@/context/premium-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Colors, BorderRadius, Shadows } from '../../constants/theme';
-import { ConfirmationModal } from '../../components/ConfirmationModal';
-import { AnalyticsCard } from '../../components/AnalyticsCard';
+import { Colors, BorderRadius, Shadows } from '@/constants/theme';
+import { ConfirmationModal } from '@/components/ConfirmationModal';
+import { AnalyticsCard } from '@/components/AnalyticsCard';
 import { useState } from 'react';
-import { useLocalization } from '../../context/localization-context';
+import { useLocalization } from '@/context/localization-context';
 
 export default function ProfileScreen() {
   const { user, logout } = useAuth();
@@ -33,7 +33,7 @@ export default function ProfileScreen() {
       router.replace('/auth/login');
     } catch (error: any) {
       console.error('Logout error:', error);
-      const errorMessage = error?.message || 'Une erreur est survenue lors de la déconnexion';
+      const errorMessage = error?.message || 'Une erreur est survenue lors de la dÃ©connexion';
       setIsLoggingOut(false);
       setShowLogoutConfirm(false);
       Alert.alert(t('error'), errorMessage);
@@ -53,10 +53,10 @@ export default function ProfileScreen() {
       <SafeAreaView style={styles.safeArea}>
         <ConfirmationModal
           visible={showLogoutConfirm}
-          title="Déconnexion"
-          message="Êtes-vous sûr de vouloir vous déconnecter ?"
+          title="DÃ©connexion"
+          message="ÃŠtes-vous sÃ»r de vouloir vous dÃ©connecter ?"
           cancelText="Annuler"
-          confirmText="Déconnecter"
+          confirmText="DÃ©connecter"
           isDangerous={false}
           isLoading={isLoggingOut}
           onCancel={() => setShowLogoutConfirm(false)}
@@ -99,7 +99,7 @@ export default function ProfileScreen() {
         {/* Interests Section */}
         {user.interests && user.interests.length > 0 && (
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Intérêts</Text>
+            <Text style={styles.sectionTitle}>IntÃ©rÃªts</Text>
             <View style={styles.interestsList}>
               {user.interests.map((interest, index) => (
                 <View key={index} style={styles.interestBadge}>
@@ -131,12 +131,12 @@ export default function ProfileScreen() {
 
           <TouchableOpacity style={styles.actionButton} onPress={() => router.push('/profile/photos')}>
             <Ionicons name="image-outline" size={20} color={Colors.primary} />
-            <Text style={styles.actionButtonText}>Gérer mes photos</Text>
+            <Text style={styles.actionButtonText}>GÃ©rer mes photos</Text>
           </TouchableOpacity>
 
           <TouchableOpacity style={styles.actionButton} onPress={() => router.push('/settings')}>
             <Ionicons name="settings-outline" size={20} color={Colors.primary} />
-            <Text style={styles.actionButtonText}>Paramètres</Text>
+            <Text style={styles.actionButtonText}>ParamÃ¨tres</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -144,7 +144,7 @@ export default function ProfileScreen() {
             onPress={handleLogout}
           >
             <Ionicons name="log-out-outline" size={20} color={Colors.text} />
-            <Text style={[styles.actionButtonText, styles.logoutButtonText]}>Déconnexion</Text>
+            <Text style={[styles.actionButtonText, styles.logoutButtonText]}>DÃ©connexion</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -291,4 +291,5 @@ const styles = StyleSheet.create({
     color: '#fff',
   },
 });
+
 

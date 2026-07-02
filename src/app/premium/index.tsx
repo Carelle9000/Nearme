@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+﻿import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -13,10 +13,10 @@ import {
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Colors, BorderRadius, Spacing, Shadows } from '../constants/theme';
-import { useAuth } from '../context/auth-context';
-import { usePremium } from '../context/premium-context';
-import { PremiumBadge } from '../components/PremiumBadge';
+import { Colors, BorderRadius, Spacing, Shadows } from '@/constants/theme';
+import { useAuth } from '@/context/auth-context';
+import { usePremium } from '@/context/premium-context';
+import { PremiumBadge } from '@/components/PremiumBadge';
 
 /**
  * Premium Subscription Page
@@ -34,50 +34,50 @@ export default function PremiumScreen() {
 
   const features = [
     {
-      icon: '⭐',
+      icon: 'â­',
       title: 'Profils mis en avant',
       description: 'Soyez visible en premier pour les autres premium',
       premium: true,
     },
     {
-      icon: '🔄',
-      title: 'Undo illimité',
+      icon: 'ðŸ”„',
+      title: 'Undo illimitÃ©',
       description: 'Revenir sur vos likes et dislikes',
       premium: true,
     },
     {
-      icon: '👀',
-      title: 'Qui m\'a aimé',
-      description: 'Voyez qui vous a liké sans attendre un match',
+      icon: 'ðŸ‘€',
+      title: 'Qui m\'a aimÃ©',
+      description: 'Voyez qui vous a likÃ© sans attendre un match',
       premium: true,
     },
     {
-      icon: '💬',
+      icon: 'ðŸ’¬',
       title: 'Message sans match',
-      description: 'Contactez quelqu\'un sans correspondance préalable',
+      description: 'Contactez quelqu\'un sans correspondance prÃ©alable',
       premium: true,
     },
     {
-      icon: '📊',
-      title: 'Statistiques détaillées',
-      description: 'Analyser vos vues et likes reçus',
+      icon: 'ðŸ“Š',
+      title: 'Statistiques dÃ©taillÃ©es',
+      description: 'Analyser vos vues et likes reÃ§us',
       premium: true,
     },
     {
-      icon: '🌍',
-      title: 'Rayon illimité',
-      description: 'Recherchez au-delà de 50km',
+      icon: 'ðŸŒ',
+      title: 'Rayon illimitÃ©',
+      description: 'Recherchez au-delÃ  de 50km',
       premium: true,
     },
     {
-      icon: '🎚️',
-      title: 'Filtres avancés',
-      description: 'Critères de recherche plus précis',
+      icon: 'ðŸŽšï¸',
+      title: 'Filtres avancÃ©s',
+      description: 'CritÃ¨res de recherche plus prÃ©cis',
       premium: true,
     },
     {
-      icon: '✨',
-      title: 'Profil stylisé',
+      icon: 'âœ¨',
+      title: 'Profil stylisÃ©',
       description: 'Badge premium visible par tous',
       premium: true,
     },
@@ -95,12 +95,12 @@ export default function PremiumScreen() {
       } else {
         Alert.alert(
           'Erreur',
-          'Impossible d\'ouvrir le lien de paiement. Veuillez réessayer.'
+          'Impossible d\'ouvrir le lien de paiement. Veuillez rÃ©essayer.'
         );
       }
     } catch (error) {
       console.error('Subscription error:', error);
-      Alert.alert('Erreur', 'Une erreur est survenue lors de l\'accès au paiement');
+      Alert.alert('Erreur', 'Une erreur est survenue lors de l\'accÃ¨s au paiement');
     } finally {
       setIsProcessing(false);
     }
@@ -140,7 +140,7 @@ export default function PremiumScreen() {
             <View style={[styles.card, styles.statusCard]}>
               <View style={styles.statusContent}>
                 <PremiumBadge size="large" />
-                <Text style={styles.statusTitle}>Vous êtes Premium ! 🎉</Text>
+                <Text style={styles.statusTitle}>Vous Ãªtes Premium ! ðŸŽ‰</Text>
                 {subscriptionInfo.daysRemaining !== undefined && (
                   <Text style={styles.statusSubtitle}>
                     Renouvellement dans {subscriptionInfo.daysRemaining} jours
@@ -148,7 +148,7 @@ export default function PremiumScreen() {
                 )}
               </View>
               <TouchableOpacity style={styles.manageButton}>
-                <Text style={styles.manageButtonText}>Gérer l'abonnement</Text>
+                <Text style={styles.manageButtonText}>GÃ©rer l'abonnement</Text>
               </TouchableOpacity>
             </View>
           )}
@@ -157,7 +157,7 @@ export default function PremiumScreen() {
           {!isPremium && (
             <View style={[styles.card, styles.priceCard]}>
               <View style={styles.priceHeader}>
-                <Text style={styles.priceLabel}>Accès Premium</Text>
+                <Text style={styles.priceLabel}>AccÃ¨s Premium</Text>
                 <View style={styles.bestValueBadge}>
                   <Text style={styles.bestValueText}>MEILLEURE VALEUR</Text>
                 </View>
@@ -169,7 +169,7 @@ export default function PremiumScreen() {
                 <Text style={styles.pricePeriod}>/mois</Text>
               </View>
 
-              <Text style={styles.priceDescription}>Essai gratuit 7 jours • Annulation facile</Text>
+              <Text style={styles.priceDescription}>Essai gratuit 7 jours â€¢ Annulation facile</Text>
 
               <TouchableOpacity
                 style={styles.subscribeButton}
@@ -190,17 +190,17 @@ export default function PremiumScreen() {
               <View style={styles.securityContainer}>
                 <View style={styles.securityBadge}>
                   <Ionicons name="lock-closed" size={16} color={Colors.success} />
-                  <Text style={styles.securityText}>Paiement sécurisé</Text>
+                  <Text style={styles.securityText}>Paiement sÃ©curisÃ©</Text>
                 </View>
                 <View style={styles.securityBadge}>
                   <Ionicons name="shield-checkmark" size={16} color={Colors.success} />
-                  <Text style={styles.securityText}>Crypté SSL</Text>
+                  <Text style={styles.securityText}>CryptÃ© SSL</Text>
                 </View>
               </View>
 
               <View style={styles.trustContainer}>
-                <Text style={styles.trustIcon}>🔒</Text>
-                <Text style={styles.trustText}>Stripe • Paiement 100% sécurisé</Text>
+                <Text style={styles.trustIcon}>ðŸ”’</Text>
+                <Text style={styles.trustText}>Stripe â€¢ Paiement 100% sÃ©curisÃ©</Text>
               </View>
 
               {!isPremium && (
@@ -213,7 +213,7 @@ export default function PremiumScreen() {
 
           {/* Features */}
           <View style={styles.featuresSection}>
-            <Text style={styles.sectionTitle}>Fonctionnalités Premium</Text>
+            <Text style={styles.sectionTitle}>FonctionnalitÃ©s Premium</Text>
 
             <View style={styles.featuresList}>
               {features.map((feature, index) => (
@@ -234,23 +234,23 @@ export default function PremiumScreen() {
             <Text style={styles.sectionTitle}>Questions</Text>
 
             <View style={[styles.card, styles.faqItem]}>
-              <Text style={styles.faqQuestion}>❓ Puis-je annuler mon abonnement ?</Text>
+              <Text style={styles.faqQuestion}>â“ Puis-je annuler mon abonnement ?</Text>
               <Text style={styles.faqAnswer}>
-                Oui, vous pouvez annuler votre abonnement à tout moment. Aucune pénalité.
+                Oui, vous pouvez annuler votre abonnement Ã  tout moment. Aucune pÃ©nalitÃ©.
               </Text>
             </View>
 
             <View style={[styles.card, styles.faqItem]}>
-              <Text style={styles.faqQuestion}>❓ Comment ça marche l'essai gratuit ?</Text>
+              <Text style={styles.faqQuestion}>â“ Comment Ã§a marche l'essai gratuit ?</Text>
               <Text style={styles.faqAnswer}>
-                7 jours gratuits, puis renouvellement automatique. Vous pouvez annuler avant la fin de la période d'essai.
+                7 jours gratuits, puis renouvellement automatique. Vous pouvez annuler avant la fin de la pÃ©riode d'essai.
               </Text>
             </View>
 
             <View style={[styles.card, styles.faqItem]}>
-              <Text style={styles.faqQuestion}>❓ Puis-je changer de plan ?</Text>
+              <Text style={styles.faqQuestion}>â“ Puis-je changer de plan ?</Text>
               <Text style={styles.faqAnswer}>
-                Bien sûr ! Vous pouvez mettre à jour ou rétrograder à tout moment.
+                Bien sÃ»r ! Vous pouvez mettre Ã  jour ou rÃ©trograder Ã  tout moment.
               </Text>
             </View>
           </View>
@@ -260,7 +260,7 @@ export default function PremiumScreen() {
             <Text style={styles.termsText}>
               En vous abonnant, vous acceptez nos{' '}
               <Text style={styles.termsLink}>Conditions d'utilisation</Text> et notre{' '}
-              <Text style={styles.termsLink}>Politique de confidentialité</Text>
+              <Text style={styles.termsLink}>Politique de confidentialitÃ©</Text>
             </Text>
           </View>
         </ScrollView>
@@ -522,3 +522,4 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
 });
+

@@ -1,4 +1,4 @@
-import { useAuth } from '../context/auth-context';
+﻿import { useAuth } from '@/context/auth-context';
 import { Stack, useRouter } from 'expo-router';
 import { ActivityIndicator, View } from 'react-native';
 import { useEffect } from 'react';
@@ -31,3 +31,4 @@ export default function RootIndex() {
 
   return <Stack />;
 }
+

@@ -1,13 +1,13 @@
 import { View, FlatList, TextInput, TouchableOpacity, StyleSheet, ActivityIndicator, Text, Alert } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useChat } from '../../context/chat-context';
-import { useAuth } from '../../context/auth-context';
+import { useChat } from '@/context/chat-context';
+import { useAuth } from '@/context/auth-context';
 import { useEffect, useState } from 'react';
 import { Ionicons } from '@expo/vector-icons';
-import { Message } from '../../models/user';
-import { Colors, BorderRadius, Shadows } from '../../constants/theme';
-import { userService } from '../../services/user.service';
+import { Message } from '@/models/user';
+import { Colors, BorderRadius, Shadows } from '@/constants/theme';
+import { userService } from '@/services/user.service';
 
 export default function ConversationScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();

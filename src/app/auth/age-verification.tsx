@@ -1,6 +1,6 @@
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+﻿import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { useRouter } from 'expo-router';
-import { useLocalization } from '../../context/localization-context';
+import { useLocalization } from '@/context/localization-context';
 
 export default function AgeVerificationScreen() {
   const router = useRouter();
@@ -12,23 +12,23 @@ export default function AgeVerificationScreen() {
 
   const handleVerifyNow = () => {
     // TODO: Integrate Stripe Identity
-    alert('La vérification de l\'âge sera disponible bientôt');
+    alert('La vÃ©rification de l\'Ã¢ge sera disponible bientÃ´t');
   };
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Vérification de l'âge</Text>
+      <Text style={styles.title}>VÃ©rification de l'Ã¢ge</Text>
       <Text style={styles.message}>
-        Nous devons vérifier votre âge pour respecter la législation locale.
+        Nous devons vÃ©rifier votre Ã¢ge pour respecter la lÃ©gislation locale.
       </Text>
 
       <View style={styles.buttonContainer}>
         <TouchableOpacity style={styles.primaryButton} onPress={handleVerifyNow}>
-          <Text style={styles.buttonText}>Vérifier maintenant</Text>
+          <Text style={styles.buttonText}>VÃ©rifier maintenant</Text>
         </TouchableOpacity>
 
         <TouchableOpacity style={styles.secondaryButton} onPress={handleVerifyLater}>
-          <Text style={styles.secondaryButtonText}>Vérifier plus tard</Text>
+          <Text style={styles.secondaryButtonText}>VÃ©rifier plus tard</Text>
         </TouchableOpacity>
       </View>
     </View>
@@ -83,3 +83,4 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
 });
+

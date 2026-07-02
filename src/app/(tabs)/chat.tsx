@@ -1,4 +1,4 @@
-import {
+﻿import {
   View,
   FlatList,
   Text,
@@ -8,16 +8,16 @@ import {
   Image,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useChat } from '../../context/chat-context';
-import { useAuth } from '../../context/auth-context';
-import { usePremium } from '../../context/premium-context';
+import { useChat } from '@/context/chat-context';
+import { useAuth } from '@/context/auth-context';
+import { usePremium } from '@/context/premium-context';
 import { useRouter } from 'expo-router';
 import { useEffect } from 'react';
 import { Ionicons } from '@expo/vector-icons';
-import { Conversation } from '../../models/user';
-import { Colors, BorderRadius, Shadows } from '../../constants/theme';
+import { Conversation } from '@/models/user';
+import { Colors, BorderRadius, Shadows } from '@/constants/theme';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useLocalization } from '../../context/localization-context';
+import { useLocalization } from '@/context/localization-context';
 
 export default function ChatScreen() {
   const { conversations, isLoading, loadConversations } = useChat();
@@ -86,7 +86,7 @@ export default function ChatScreen() {
             )}
           </View>
           <Text style={styles.lastMessage} numberOfLines={1}>
-            {item.lastMessage || 'Démarrer une conversation'}
+            {item.lastMessage || 'DÃ©marrer une conversation'}
           </Text>
         </View>
 
@@ -280,3 +280,4 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
 });
+

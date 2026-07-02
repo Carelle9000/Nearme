@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+﻿import React, { useEffect, useState } from 'react';
 import {
   View,
   StyleSheet,
@@ -11,12 +11,12 @@ import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Text } from 'react-native';
-import { Colors, BorderRadius, Spacing, Shadows } from '../../constants/theme';
-import { useAuth } from '../../context/auth-context';
-import { usePremium } from '../../context/premium-context';
-import { WhoLikedYou } from '../../components/WhoLikedYou';
-import { FeatureLock } from '../../components/FeatureLock';
-import { Profile } from '../../models/user';
+import { Colors, BorderRadius, Spacing, Shadows } from '@/constants/theme';
+import { useAuth } from '@/context/auth-context';
+import { usePremium } from '@/context/premium-context';
+import { WhoLikedYou } from '@/components/WhoLikedYou';
+import { FeatureLock } from '@/components/FeatureLock';
+import { Profile } from '@/models/user';
 
 /**
  * Who Liked You Page
@@ -54,7 +54,7 @@ export default function WhoLikedYouScreen() {
             <TouchableOpacity onPress={() => router.back()}>
               <Ionicons name="chevron-back" size={28} color={Colors.text} />
             </TouchableOpacity>
-            <Text style={styles.headerTitle}>Qui m'a aimé</Text>
+            <Text style={styles.headerTitle}>Qui m'a aimÃ©</Text>
             <View style={{ width: 28 }} />
           </View>
 
@@ -62,8 +62,8 @@ export default function WhoLikedYouScreen() {
           <View style={styles.lockedContent}>
             <FeatureLock
               isLocked={true}
-              featureName="Qui m'a aimé"
-              description="Déverrouillez premium pour découvrir qui vous a liké"
+              featureName="Qui m'a aimÃ©"
+              description="DÃ©verrouillez premium pour dÃ©couvrir qui vous a likÃ©"
               size="large"
               onUnlockPress={() => router.push('/premium')}
             />
@@ -81,7 +81,7 @@ export default function WhoLikedYouScreen() {
           <TouchableOpacity onPress={() => router.back()}>
             <Ionicons name="chevron-back" size={28} color={Colors.text} />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>Qui m'a aimé</Text>
+          <Text style={styles.headerTitle}>Qui m'a aimÃ©</Text>
           <TouchableOpacity onPress={handleRefresh} disabled={isRefreshing}>
             {isRefreshing ? (
               <ActivityIndicator color={Colors.primary} size="small" />
@@ -95,7 +95,7 @@ export default function WhoLikedYouScreen() {
         <View style={[styles.card, styles.statsCard]}>
           <View style={styles.statItem}>
             <Text style={styles.statValue}>{whoLikedYou.length}</Text>
-            <Text style={styles.statLabel}>Vous ont aimé</Text>
+            <Text style={styles.statLabel}>Vous ont aimÃ©</Text>
           </View>
           <View style={styles.statDivider} />
           <View style={styles.statItem}>
@@ -179,3 +179,4 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.three,
   },
 });
+

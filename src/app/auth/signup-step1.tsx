@@ -1,4 +1,4 @@
-import {
+﻿import {
   View,
   Text,
   TextInput,
@@ -12,11 +12,11 @@ import {
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { useState } from 'react';
-import { useSignup } from '../../context/signup-context';
-import { signupService } from '../../services/signup.service';
-import { Colors, BorderRadius, Shadows } from '../../constants/theme';
+import { useSignup } from '@/context/signup-context';
+import { signupService } from '@/services/signup.service';
+import { Colors, BorderRadius, Shadows } from '@/constants/theme';
 import { Link } from 'expo-router';
-import { useLocalization } from '../../context/localization-context';
+import { useLocalization } from '@/context/localization-context';
 
 export default function SignupStep1() {
   const { data, updateData, nextStep } = useSignup();
@@ -412,3 +412,4 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
 });
+

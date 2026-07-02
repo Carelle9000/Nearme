@@ -1,10 +1,10 @@
 import { View, Text, StyleSheet, TouchableOpacity, Image, ScrollView } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useAuth } from '../../context/auth-context';
-import { userService } from '../../services';
+import { useAuth } from '@/context/auth-context';
+import { userService } from '@/services';
 import { useEffect, useState } from 'react';
 import { Ionicons } from '@expo/vector-icons';
-import { Profile } from '../../models/user';
+import { Profile } from '@/models/user';
 
 export default function MatchProfileScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();

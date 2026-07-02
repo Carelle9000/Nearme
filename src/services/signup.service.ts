@@ -30,24 +30,16 @@ export const signupService = {
    * Create user account with email and password
    */
   async createAccount(email: string, password: string): Promise<User> {
-    try {
-      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-      return userCredential.user;
-    } catch (error: any) {
-      throw new Error(this.getErrorMessage(error.code));
-    }
+    const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+    return userCredential.user;
   },
 
   /**
    * Sign in with email and password
    */
   async signIn(email: string, password: string): Promise<User> {
-    try {
-      const userCredential = await signInWithEmailAndPassword(auth, email, password);
-      return userCredential.user;
-    } catch (error: any) {
-      throw new Error(this.getErrorMessage(error.code));
-    }
+    const userCredential = await signInWithEmailAndPassword(auth, email, password);
+    return userCredential.user;
   },
 
   /**
@@ -177,29 +169,4 @@ export const signupService = {
     return emailRegex.test(email);
   },
 
-  /**
-   * Convert Firebase error codes to user-friendly messages
-   */
-  getErrorMessage(code: string): string {
-    const errorMessages: { [key: string]: string } = {
-      'auth/email-already-in-use': 'Cet email est déjà utilisé. Veuillez vous connecter ou utiliser une autre adresse.',
-      'auth/invalid-email': 'Veuillez entrer une adresse email valide.',
-      'auth/weak-password': 'Le mot de passe doit contenir 12+ caractères avec minuscules, majuscules, chiffres et symboles.',
-      'auth/user-not-found': 'Identifiants invalides. Veuillez réessayer.',
-      'auth/wrong-password': 'Identifiants invalides. Veuillez réessayer.',
-      'auth/too-many-requests': 'Trop de tentatives. Veuillez réessayer dans quelques minutes.',
-      'auth/operation-not-allowed': 'Cette opération n\'est pas autorisée. Veuillez contacter le support.',
-      'auth/invalid-credential': 'Identifiants invalides. Veuillez réessayer.',
-      'auth/network-request-failed': 'Erreur réseau. Vérifiez votre connexion Internet.',
-      'auth/service-disabled': 'Le service d\'authentification est temporairement indisponible.',
-      'auth/invalid-api-key': 'Configuration invalide. Veuillez contacter le support.',
-      'auth/app-not-authorized': 'L\'application n\'est pas autorisée. Veuillez contacter le support.',
-      'auth/invalid-user-token': 'Votre session a expiré. Veuillez vous reconnecter.',
-      'auth/user-token-expired': 'Votre session a expiré. Veuillez vous reconnecter.',
-      'auth/null-user': 'Aucun utilisateur connecté.',
-      'auth/internal-error': 'Erreur interne. Veuillez réessayer.',
-    };
-
-    return errorMessages[code] || 'Une erreur s\'est produite. Veuillez réessayer.';
-  },
 };

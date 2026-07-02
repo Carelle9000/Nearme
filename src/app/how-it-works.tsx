@@ -1,9 +1,9 @@
-import { View, ScrollView, Text, StyleSheet, TouchableOpacity } from 'react-native';
+﻿import { View, ScrollView, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Colors, BorderRadius, Shadows } from '../constants/theme';
+import { Colors, BorderRadius, Shadows } from '@/constants/theme';
 
 export default function HowItWorksScreen() {
   const router = useRouter();
@@ -21,7 +21,7 @@ export default function HowItWorksScreen() {
       icon: 'heart',
       title: 'Discover with intention',
       description:
-        'No avalanche of profiles—we suggest people who match your criteria and your vibe.',
+        'No avalanche of profilesâ€”we suggest people who match your criteria and your vibe.',
     },
     {
       number: 3,
@@ -82,7 +82,7 @@ export default function HowItWorksScreen() {
               {rules.map((rule, index) => (
                 <View key={index} style={styles.ruleItem}>
                   <View style={styles.ruleBullet}>
-                    <Text style={styles.ruleBulletText}>•</Text>
+                    <Text style={styles.ruleBulletText}>â€¢</Text>
                   </View>
                   <Text style={styles.ruleText}>{rule}</Text>
                 </View>
@@ -120,7 +120,7 @@ function StepCard({ step }: { step: { number: number; icon: string; title: strin
           <Ionicons name={step.icon as any} size={28} color={Colors.text} />
         </View>
         <View style={styles.stepText}>
-          <Text style={styles.stepNumber}>ÉTAPE {step.number}</Text>
+          <Text style={styles.stepNumber}>Ã‰TAPE {step.number}</Text>
           <Text style={styles.stepTitle}>{step.title}</Text>
           <Text style={styles.stepDescription}>{step.description}</Text>
         </View>
@@ -262,3 +262,4 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
 });
+

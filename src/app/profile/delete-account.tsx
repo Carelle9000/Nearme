@@ -1,4 +1,4 @@
-import {
+﻿import {
   View,
   Text,
   StyleSheet,
@@ -11,10 +11,10 @@ import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useAuth } from '../../context/auth-context';
-import { Colors, BorderRadius, Shadows } from '../../constants/theme';
+import { useAuth } from '@/context/auth-context';
+import { Colors, BorderRadius, Shadows } from '@/constants/theme';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { ConfirmationModal } from '../../components/ConfirmationModal';
+import { ConfirmationModal } from '@/components/ConfirmationModal';
 
 export default function DeleteAccountScreen() {
   const router = useRouter();
@@ -34,7 +34,7 @@ export default function DeleteAccountScreen() {
 
     setIsDeleting(true);
     try {
-      // TODO: Implémenter deleteAccount dans AuthService
+      // TODO: ImplÃ©menter deleteAccount dans AuthService
       // await authService.deleteAccount(password);
 
       // Temporary: just logout
@@ -88,12 +88,12 @@ export default function DeleteAccountScreen() {
                 <Ionicons name="warning" size={48} color="#E74C3C" />
                 <Text style={styles.warningTitle}>Attention</Text>
                 <Text style={styles.warningText}>
-                  La suppression de votre compte est permanente et irréversible.
+                  La suppression de votre compte est permanente et irrÃ©versible.
                 </Text>
               </View>
 
               <View style={styles.section}>
-                <Text style={styles.sectionTitle}>Ce qui sera supprimé :</Text>
+                <Text style={styles.sectionTitle}>Ce qui sera supprimÃ© :</Text>
                 <View style={styles.listItem}>
                   <Ionicons name="close-circle" size={20} color="#E74C3C" />
                   <Text style={styles.listText}>Toutes vos photos de profil</Text>
@@ -108,7 +108,7 @@ export default function DeleteAccountScreen() {
                 </View>
                 <View style={styles.listItem}>
                   <Ionicons name="close-circle" size={20} color="#E74C3C" />
-                  <Text style={styles.listText}>Votre compte et vos données</Text>
+                  <Text style={styles.listText}>Votre compte et vos donnÃ©es</Text>
                 </View>
               </View>
 
@@ -135,7 +135,7 @@ export default function DeleteAccountScreen() {
               <View style={styles.confirmationBox}>
                 <Text style={styles.confirmationTitle}>Confirmez la suppression</Text>
                 <Text style={styles.confirmationText}>
-                  Cette action ne peut pas être annulée. Êtes-vous absolument certain de vouloir supprimer votre compte ?
+                  Cette action ne peut pas Ãªtre annulÃ©e. ÃŠtes-vous absolument certain de vouloir supprimer votre compte ?
                 </Text>
               </View>
 
@@ -144,7 +144,7 @@ export default function DeleteAccountScreen() {
                 onPress={() => setStep(3)}
                 disabled={isDeleting}
               >
-                <Text style={styles.dangerButtonText}>Je suis sûr, continuer</Text>
+                <Text style={styles.dangerButtonText}>Je suis sÃ»r, continuer</Text>
               </TouchableOpacity>
 
               <TouchableOpacity
@@ -152,7 +152,7 @@ export default function DeleteAccountScreen() {
                 onPress={() => setStep(1)}
                 disabled={isDeleting}
               >
-                <Text style={styles.cancelButtonText}>Revenir en arrière</Text>
+                <Text style={styles.cancelButtonText}>Revenir en arriÃ¨re</Text>
               </TouchableOpacity>
             </View>
           )}
@@ -161,7 +161,7 @@ export default function DeleteAccountScreen() {
             <View style={styles.stepContainer}>
               <Text style={styles.stepTitle}>Entrez votre mot de passe</Text>
               <Text style={styles.stepDescription}>
-                Pour des raisons de sécurité, veuillez confirmer votre mot de passe pour supprimer votre compte.
+                Pour des raisons de sÃ©curitÃ©, veuillez confirmer votre mot de passe pour supprimer votre compte.
               </Text>
 
               <TextInput
@@ -203,8 +203,8 @@ export default function DeleteAccountScreen() {
 
         <ConfirmationModal
           visible={showPasswordModal}
-          title="Dernière confirmation"
-          message="Êtes-vous absolument certain de vouloir supprimer votre compte ? Cette action est irréversible."
+          title="DerniÃ¨re confirmation"
+          message="ÃŠtes-vous absolument certain de vouloir supprimer votre compte ? Cette action est irrÃ©versible."
           cancelText="Non, annuler"
           confirmText="Oui, supprimer"
           isDangerous={true}
@@ -392,3 +392,4 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
 });
+

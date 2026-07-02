@@ -1,19 +1,19 @@
-import { View, StyleSheet, ActivityIndicator, Alert, TouchableOpacity, Text, Image } from 'react-native';
-import { useDiscover } from '../../context/discover-context';
-import { ProfileCard } from '../../components/profile-card';
-import { FilterPanel } from '../../components/filter-panel';
-import { UndoButton } from '../../components/UndoButton';
-import { locationService } from '../../services/location.service';
-import { chatService } from '../../services/chat.service';
+﻿import { View, StyleSheet, ActivityIndicator, Alert, TouchableOpacity, Text, Image } from 'react-native';
+import { useDiscover } from '@/context/discover-context';
+import { ProfileCard } from '@/components/profile-card';
+import { FilterPanel } from '@/components/filter-panel';
+import { UndoButton } from '@/components/UndoButton';
+import { locationService } from '@/services/location.service';
+import { chatService } from '@/services/chat.service';
 import { useEffect, useCallback } from 'react';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
-import { Colors } from '../../constants/theme';
-import { useLocalization } from '../../context/localization-context';
-import { useAuth } from '../../context/auth-context';
-import { usePremium } from '../../context/premium-context';
+import { Colors } from '@/constants/theme';
+import { useLocalization } from '@/context/localization-context';
+import { useAuth } from '@/context/auth-context';
+import { usePremium } from '@/context/premium-context';
 
 export default function DiscoverScreen() {
   const {
@@ -41,7 +41,7 @@ export default function DiscoverScreen() {
     if (!lastMatch) return;
     Alert.alert(
       "C'est un match !",
-      'Vous vous êtes mutuellement likés. Envoyez un message maintenant.',
+      'Vous vous Ãªtes mutuellement likÃ©s. Envoyez un message maintenant.',
       [
         { text: 'Plus tard', style: 'cancel', onPress: clearLastMatch },
         {
@@ -59,7 +59,7 @@ export default function DiscoverScreen() {
     try {
       // Prefer the profile's stored location (intent-based, kept fresh by
       // locationSyncService). Fall back to the device's live position only if
-      // no valid coords are on file — otherwise a user swiping abroad would
+      // no valid coords are on file â€” otherwise a user swiping abroad would
       // suddenly see profiles around their travel spot instead of home.
       const stored = user?.location;
       const hasStored =
@@ -105,14 +105,14 @@ export default function DiscoverScreen() {
       router.push(`/chat/${conversation.id}`);
     } catch (error) {
       console.error('Error creating conversation:', error);
-      Alert.alert(t('error'), 'Impossible de créer la conversation');
+      Alert.alert(t('error'), 'Impossible de crÃ©er la conversation');
     }
   }, [currentProfile, user, router]);
 
   const handleUndo = useCallback(async () => {
     try {
       await undo();
-      Alert.alert('Undo', 'Action annulée');
+      Alert.alert('Undo', 'Action annulÃ©e');
     } catch (error) {
       console.error('Undo error:', error);
       Alert.alert('Erreur', 'Impossible d\'annuler l\'action');
@@ -123,7 +123,7 @@ export default function DiscoverScreen() {
     // Show premium upsell
     Alert.alert(
       'Feature Premium',
-      'Déverrouillez le UNDO et d\'autres fonctionnalités premium',
+      'DÃ©verrouillez le UNDO et d\'autres fonctionnalitÃ©s premium',
       [
         { text: 'Plus tard', style: 'cancel' },
         {
@@ -305,3 +305,4 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
 });
+

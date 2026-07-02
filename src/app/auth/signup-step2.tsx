@@ -1,4 +1,4 @@
-import {
+﻿import {
   View,
   Text,
   TouchableOpacity,
@@ -11,10 +11,10 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { useState } from 'react';
 import * as DocumentPicker from 'expo-document-picker';
-import { useSignup } from '../../context/signup-context';
-import { Colors, BorderRadius, Shadows } from '../../constants/theme';
-import { stripeIdentityService } from '../../services/stripe-identity.service';
-import { useLocalization } from '../../context/localization-context';
+import { useSignup } from '@/context/signup-context';
+import { Colors, BorderRadius, Shadows } from '@/constants/theme';
+import { stripeIdentityService } from '@/services/stripe-identity.service';
+import { useLocalization } from '@/context/localization-context';
 
 export default function SignupStep2() {
   const { data, updateData, nextStep, prevStep } = useSignup();
@@ -156,14 +156,14 @@ export default function SignupStep2() {
                 <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}>
                   <Ionicons name="cloud-upload" size={20} color={Colors.text} style={{ marginRight: 8 }} />
                   <Text style={styles.buttonText}>
-                    {documentSelected ? 'Document vérifié ✓' : 'Télécharger un document'}
+                    {documentSelected ? 'Document vÃ©rifiÃ© âœ“' : 'TÃ©lÃ©charger un document'}
                   </Text>
                 </View>
               )}
             </TouchableOpacity>
           </LinearGradient>
           {verificationStatus ? (
-            <Text style={[styles.statusMessage, { color: verificationStatus.includes('réussie') ? Colors.success : Colors.warning }]}>
+            <Text style={[styles.statusMessage, { color: verificationStatus.includes('rÃ©ussie') ? Colors.success : Colors.warning }]}>
               {verificationStatus}
             </Text>
           ) : null}
@@ -454,3 +454,4 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
 });
+

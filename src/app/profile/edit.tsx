@@ -1,4 +1,4 @@
-import {
+﻿import {
   View,
   Text,
   StyleSheet,
@@ -13,17 +13,17 @@ import { useRouter } from 'expo-router';
 import { useState, useEffect } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useAuth } from '../../context/auth-context';
-import { useProfile } from '../../context/profile-context';
-import { Colors, BorderRadius, Shadows } from '../../constants/theme';
+import { useAuth } from '@/context/auth-context';
+import { useProfile } from '@/context/profile-context';
+import { Colors, BorderRadius, Shadows } from '@/constants/theme';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import DateTimePicker from '@react-native-community/datetimepicker';
-import { useLocalization } from '../../context/localization-context';
+import { useLocalization } from '@/context/localization-context';
 
 const INTERESTS_OPTIONS = [
-  'Voyages', 'Musique', 'Sport', 'Art', 'Cinéma', 'Cuisine',
+  'Voyages', 'Musique', 'Sport', 'Art', 'CinÃ©ma', 'Cuisine',
   'Lecture', 'Technologie', 'Nature', 'Photographie', 'Mode', 'Gaming',
-  'Yoga', 'Danse', 'Histoire', 'Science', 'Théâtre', 'Fitness',
+  'Yoga', 'Danse', 'Histoire', 'Science', 'ThÃ©Ã¢tre', 'Fitness',
 ];
 
 export default function EditProfileScreen() {
@@ -67,7 +67,7 @@ export default function EditProfileScreen() {
     try {
       const success = await pickAndUploadPhoto();
       if (success) {
-        Alert.alert(t('success'), 'Photo de profil mise à jour');
+        Alert.alert(t('success'), 'Photo de profil mise Ã  jour');
       }
     } catch (err: any) {
       Alert.alert(t('error'), err.message || 'Impossible de charger la photo');
@@ -95,7 +95,7 @@ export default function EditProfileScreen() {
     if (!user) return;
 
     if (!displayName.trim()) {
-      Alert.alert(t('error'), 'Le nom d\'affichage ne peut pas être vide');
+      Alert.alert(t('error'), 'Le nom d\'affichage ne peut pas Ãªtre vide');
       return;
     }
 
@@ -114,14 +114,14 @@ export default function EditProfileScreen() {
         gender,
         birthDate: birthDate.toISOString(),
       });
-      Alert.alert(t('success'), 'Votre profil a été mis à jour');
+      Alert.alert(t('success'), 'Votre profil a Ã©tÃ© mis Ã  jour');
       if (router.canGoBack()) {
         router.back();
       } else {
         router.replace('/(tabs)/profile');
       }
     } catch (error: any) {
-      Alert.alert(t('error'), error.message || 'Impossible de mettre à jour le profil');
+      Alert.alert(t('error'), error.message || 'Impossible de mettre Ã  jour le profil');
       console.error('Error updating profile:', error);
     } finally {
       setIsSaving(false);
@@ -336,10 +336,10 @@ export default function EditProfileScreen() {
             )}
           </View>
 
-          {/* Intérêts */}
+          {/* IntÃ©rÃªts */}
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>
-              Intérêts ({selectedInterests.length})
+              IntÃ©rÃªts ({selectedInterests.length})
             </Text>
             <View style={styles.interestsGrid}>
               {INTERESTS_OPTIONS.map((interest) => (
@@ -578,3 +578,4 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
 });
+

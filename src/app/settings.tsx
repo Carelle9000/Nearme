@@ -1,4 +1,4 @@
-import {
+﻿import {
   View,
   Text,
   StyleSheet,
@@ -13,12 +13,12 @@ import { useState } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useAuth } from '../context/auth-context';
-import { Colors, BorderRadius, Shadows } from '../constants/theme';
+import { useAuth } from '@/context/auth-context';
+import { Colors, BorderRadius, Shadows } from '@/constants/theme';
 import { ref, remove } from 'firebase/database';
-import { rtdb, auth } from '../config/firebase';
+import { rtdb, auth } from '@/config/firebase';
 import { deleteUser } from 'firebase/auth';
-import { useLocalization } from '../context/localization-context';
+import { useLocalization } from '@/context/localization-context';
 
 export default function SettingsScreen() {
   const router = useRouter();
@@ -31,7 +31,7 @@ export default function SettingsScreen() {
   const handleDeleteAccount = async () => {
     Alert.alert(
       'Supprimer le compte',
-      'Cette action est irréversible. Tous vos données seront définitivement supprimées.',
+      'Cette action est irrÃ©versible. Tous vos donnÃ©es seront dÃ©finitivement supprimÃ©es.',
       [
         {
           text: 'Annuler',
@@ -43,7 +43,7 @@ export default function SettingsScreen() {
           onPress: () => {
             Alert.alert(
               'Confirmation finale',
-              'Êtes-vous absolument certain ? Cette action ne peut pas être annulée.',
+              'ÃŠtes-vous absolument certain ? Cette action ne peut pas Ãªtre annulÃ©e.',
               [
                 {
                   text: 'Annuler',
@@ -85,8 +85,8 @@ export default function SettingsScreen() {
       }
 
       Alert.alert(
-        'Compte supprimé',
-        'Votre compte a été définitivement supprimé.',
+        'Compte supprimÃ©',
+        'Votre compte a Ã©tÃ© dÃ©finitivement supprimÃ©.',
         [
           {
             text: 'OK',
@@ -104,9 +104,9 @@ export default function SettingsScreen() {
       let errorMessage = 'Une erreur est survenue lors de la suppression du compte';
 
       if (error.code === 'auth/requires-recent-login') {
-        errorMessage = 'Veuillez vous déconnecter et vous reconnecter avant de supprimer votre compte.';
+        errorMessage = 'Veuillez vous dÃ©connecter et vous reconnecter avant de supprimer votre compte.';
       } else if (error.code === 'auth/user-not-found') {
-        errorMessage = 'Utilisateur non trouvé.';
+        errorMessage = 'Utilisateur non trouvÃ©.';
       } else if (error.message) {
         errorMessage = error.message;
       }
@@ -123,7 +123,7 @@ export default function SettingsScreen() {
           <TouchableOpacity onPress={() => router.back()}>
             <Ionicons name="chevron-back" size={28} color={Colors.primary} />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>Paramètres</Text>
+          <Text style={styles.headerTitle}>ParamÃ¨tres</Text>
           <View style={{ width: 28 }} />
         </View>
 
@@ -152,7 +152,7 @@ export default function SettingsScreen() {
               <View style={styles.settingLabel}>
                 <Text style={styles.settingName}>Partager ma localisation</Text>
                 <Text style={styles.settingDescription}>
-                  Montrez votre localisation à vos matches
+                  Montrez votre localisation Ã  vos matches
                 </Text>
               </View>
               <Switch
@@ -165,7 +165,7 @@ export default function SettingsScreen() {
           </View>
 
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>À propos</Text>
+            <Text style={styles.sectionTitle}>Ã€ propos</Text>
             <TouchableOpacity style={styles.settingRow} disabled>
               <Text style={styles.settingName}>Version</Text>
               <Text style={styles.settingValue}>1.0.0</Text>
@@ -174,7 +174,7 @@ export default function SettingsScreen() {
               style={styles.settingRow}
               onPress={() => router.push('/legal/privacy-policy')}
             >
-              <Text style={styles.settingName}>Politique de confidentialité</Text>
+              <Text style={styles.settingName}>Politique de confidentialitÃ©</Text>
               <Ionicons name="chevron-forward" size={20} color={Colors.textSecondary} />
             </TouchableOpacity>
             <TouchableOpacity
@@ -281,3 +281,4 @@ const styles = StyleSheet.create({
     paddingHorizontal: 4,
   },
 });
+

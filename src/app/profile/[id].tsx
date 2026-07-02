@@ -12,14 +12,14 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
 import { get, ref } from 'firebase/database';
-import { rtdb } from '../../config/firebase';
-import { useAuth } from '../../context/auth-context';
-import { useDiscover } from '../../context/discover-context';
-import { userService } from '../../services/user.service';
-import { matchService } from '../../services/match.service';
+import { rtdb } from '@/config/firebase';
+import { useAuth } from '@/context/auth-context';
+import { useDiscover } from '@/context/discover-context';
+import { userService } from '@/services/user.service';
+import { matchService } from '@/services/match.service';
 import { Ionicons } from '@expo/vector-icons';
-import { Profile } from '../../models/user';
-import { Colors, BorderRadius, Shadows } from '../../constants/theme';
+import { Profile } from '@/models/user';
+import { Colors, BorderRadius, Shadows } from '@/constants/theme';
 
 // RTDB may return interests as a numeric-keyed object depending on seed shape;
 // normalize to a plain string[] so .map/.slice never crash.

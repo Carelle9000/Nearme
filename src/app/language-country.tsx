@@ -1,12 +1,12 @@
-import { View, ScrollView, Text, StyleSheet, TouchableOpacity, FlatList, TextInput } from 'react-native';
+﻿import { View, ScrollView, Text, StyleSheet, TouchableOpacity, FlatList, TextInput } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useState, useMemo } from 'react';
-import { Colors, BorderRadius, Shadows, Spacing } from '../constants/theme';
-import { LANGUAGES, COUNTRIES } from '../constants/locales';
-import { useLocalization } from '../context/localization-context';
+import { Colors, BorderRadius, Shadows, Spacing } from '@/constants/theme';
+import { LANGUAGES, COUNTRIES } from '@/constants/locales';
+import { useLocalization } from '@/context/localization-context';
 
 export default function LanguageCountryScreen() {
   const router = useRouter();
@@ -56,7 +56,7 @@ export default function LanguageCountryScreen() {
         <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
           <View style={styles.header}>
             <Text style={styles.title}>{t('welcome')}</Text>
-            <Text style={styles.subtitle}>{t('selectLanguage')} • {t('selectCountry')}</Text>
+            <Text style={styles.subtitle}>{t('selectLanguage')} â€¢ {t('selectCountry')}</Text>
           </View>
 
           <View style={[styles.card, Shadows.soft]}>
@@ -324,3 +324,4 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
 });
+
