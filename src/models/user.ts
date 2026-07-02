@@ -1,3 +1,5 @@
+import { PremiumSubscription, ProfileAnalytics } from './premium';
+
 export interface AppUser {
   id: string;
   name: string;
@@ -20,6 +22,17 @@ export interface AppUser {
   isAgeVerified?: boolean;
   stripeIdentitySessionId?: string;
   lastSeen?: Date;
+  // Premium subscription fields
+  premium?: PremiumSubscription;
+  analytics?: ProfileAnalytics;
+  // Search preferences (can vary per premium tier)
+  preferences?: {
+    searchRadius: number;       // km (50 for free, unlimited for premium)
+    ageRangeMin?: number;
+    ageRangeMax?: number;
+    genderPreference?: string[];
+    interests?: string[];
+  };
 }
 
 export interface Profile {
@@ -44,6 +57,31 @@ export interface Profile {
   isAgeVerified?: boolean;
   stripeIdentitySessionId?: string;
   lastSeen?: string; // ISO string
+  // Premium subscription fields (Firebase: ISO strings)
+  premium?: {
+    isActive: boolean;
+    tier: 'free' | 'premium';
+    startDate?: string;
+    expiryDate?: string;
+    autoRenew?: boolean;
+    cancelledAt?: string;
+  };
+  analytics?: {
+    stats?: {
+      profileViews: number;
+      likesReceived: number;
+      lastUpdated: string;
+    };
+    undoCount?: number;
+    undoLimit?: number;
+  };
+  preferences?: {
+    searchRadius: number;
+    ageRangeMin?: number;
+    ageRangeMax?: number;
+    genderPreference?: string[];
+    interests?: string[];
+  };
 }
 
 export interface Conversation {

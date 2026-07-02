@@ -63,8 +63,11 @@ export const Shadows = {
 // Border radius
 export const BorderRadius = {
   base: 20, // 1.25rem
+  md: 16,
   lg: 24,
+  large: 24, // alias for lg
   xl: 32,
+  pill: 9999, // alias for full, for pill-shaped buttons/tags
   full: 9999,
 } as const;
 
@@ -74,16 +77,24 @@ export const Fonts = Platform.select({
     serif: 'Georgia',
     // Sans for body (Plus Jakarta Sans fallback)
     sans: 'system-ui',
+    mono: 'Menlo',
   },
   default: {
     serif: 'serif',
     sans: 'sans-serif',
+    mono: 'monospace',
   },
   web: {
     serif: '"Fraunces", Georgia, serif',
     sans: '"Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
+    mono: '"Fira Code", Menlo, Consolas, monospace',
   },
-});
+}) as { serif: string; sans: string; mono: string };
+
+// ThemeColor is a keyof the Colors palette; components that want to pick a
+// color from the theme by name declare their prop as `ThemeColor`. Kept even
+// though nearme uses a single dark palette (no light/dark switch yet).
+export type ThemeColor = keyof typeof Colors;
 
 export const Spacing = {
   half: 2,

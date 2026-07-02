@@ -65,6 +65,34 @@
             ".write": "auth != null || auth.token.type === 'backend'",
             ".validate": "newData.hasChildren(['type', 'title', 'message'])"
           }
+        },
+
+        "analytics": {
+          ".read": "auth.uid == $userId || auth.token.type === 'backend'",
+
+          "views": {
+            ".read": "auth.uid == $userId || auth.token.type === 'backend'",
+            "$viewerId": {
+              ".read": "auth.uid == $userId || auth.token.type === 'backend'",
+              ".write": "auth != null && auth.uid == $viewerId || auth.token.type === 'backend'",
+              ".validate": "newData.hasChildren(['userId', 'type', 'createdAt'])"
+            }
+          },
+
+          "likes": {
+            ".read": "auth.uid == $userId || auth.token.type === 'backend'",
+            "$likerId": {
+              ".read": "auth.uid == $userId || auth.token.type === 'backend'",
+              ".write": "auth != null && auth.uid == $likerId || auth.token.type === 'backend'",
+              ".validate": "newData.hasChildren(['userId', 'type', 'createdAt'])"
+            }
+          },
+
+          "stats": {
+            ".read": "auth.uid == $userId || auth.token.type === 'backend'",
+            ".write": "auth.token.type === 'backend'",
+            ".validate": "newData.hasChildren(['profileViews', 'likesReceived'])"
+          }
         }
       }
     },
@@ -109,9 +137,11 @@
     },
 
     "blocks": {
+      ".read": "auth != null",
+      ".indexOn": ["blockerId"],
       "$blockId": {
         ".read": "auth.uid == data.child('blockerId').val() || auth.token.type === 'backend'",
-        ".write": "auth.token.type === 'backend'",
+        ".write": "auth.uid == data.child('blockerId').val() || (auth != null && !data.exists() && newData.child('blockerId').val() === auth.uid) || auth.token.type === 'backend'",
         ".validate": "newData.hasChildren(['blockerId', 'blockedId', 'createdAt'])"
       }
     },

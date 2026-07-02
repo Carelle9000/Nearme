@@ -19,7 +19,7 @@ export function AuthGuard({ children, requireVerification = false }: AuthGuardPr
     }
 
     if (!isLoading && requireVerification && needsAgeVerification) {
-      router.replace('/app/auth/age-verification');
+      router.replace('/auth/age-verification');
     }
   }, [isLoggedIn, isLoading, requireVerification, needsAgeVerification, router]);
 

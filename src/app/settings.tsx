@@ -186,26 +186,6 @@ export default function SettingsScreen() {
             </TouchableOpacity>
           </View>
 
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Compte</Text>
-            <TouchableOpacity
-              style={[styles.dangerButton, isDeleting && styles.dangerButtonDisabled]}
-              onPress={handleDeleteAccount}
-              disabled={isDeleting}
-            >
-              {isDeleting ? (
-                <ActivityIndicator color={Colors.text} size="small" />
-              ) : (
-                <>
-                  <Ionicons name="trash-outline" size={20} color={Colors.text} />
-                  <Text style={styles.dangerButtonText}>Supprimer mon compte</Text>
-                </>
-              )}
-            </TouchableOpacity>
-            <Text style={styles.dangerWarning}>
-              Cette action est définitive et irréversible. Toutes vos données seront supprimées.
-            </Text>
-          </View>
         </ScrollView>
       </SafeAreaView>
     </LinearGradient>

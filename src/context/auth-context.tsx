@@ -10,7 +10,11 @@ interface AuthContextType {
   login: (email: string, password: string, rememberMe?: boolean) => Promise<void>;
   register: (email: string, password: string, name: string) => Promise<void>;
   logout: () => Promise<void>;
-  updateProfile: (updates: Partial<AppUser>) => Promise<void>;
+  // birthDate is stored as ISO string in RTDB but is a Date in AppUser once
+  // hydrated; accept either shape from callers and let the service normalize.
+  updateProfile: (
+    updates: Partial<Omit<AppUser, 'birthDate'>> & { birthDate?: Date | string }
+  ) => Promise<void>;
   sendPasswordReset: (email: string) => Promise<void>;
   resetPassword: (oobCode: string, newPassword: string) => Promise<void>;
   verifyResetCode: (oobCode: string) => Promise<string | null>;
@@ -93,7 +97,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
-  const updateProfile = useCallback(async (updates: Partial<AppUser>) => {
+  const updateProfile = useCallback(async (
+    updates: Partial<Omit<AppUser, 'birthDate'>> & { birthDate?: Date | string }
+  ) => {
     if (!user) return;
     await authService.updateUserProfile(user.id, updates as any);
     setUser(authService.currentUser);

@@ -2,6 +2,7 @@ import { View, StyleSheet, ActivityIndicator, Alert, TouchableOpacity, Text, Ima
 import { useDiscover } from '../../context/discover-context';
 import { ProfileCard } from '../../components/profile-card';
 import { FilterPanel } from '../../components/filter-panel';
+import { UndoButton } from '../../components/UndoButton';
 import { locationService } from '../../services/location.service';
 import { chatService } from '../../services/chat.service';
 import { useEffect, useCallback } from 'react';
@@ -12,6 +13,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '../../constants/theme';
 import { useLocalization } from '../../context/localization-context';
 import { useAuth } from '../../context/auth-context';
+import { usePremium } from '../../context/premium-context';
 
 export default function DiscoverScreen() {
   const {
@@ -24,9 +26,11 @@ export default function DiscoverScreen() {
     favoriteIds,
     lastMatch,
     clearLastMatch,
+    undo,
   } = useDiscover();
   const { t } = useLocalization();
   const { user } = useAuth();
+  const { canUndo: isPremiumCanUndo } = usePremium();
   const router = useRouter();
 
   // Declare currentProfile early so it can be used in callbacks
@@ -104,6 +108,31 @@ export default function DiscoverScreen() {
       Alert.alert(t('error'), 'Impossible de créer la conversation');
     }
   }, [currentProfile, user, router]);
+
+  const handleUndo = useCallback(async () => {
+    try {
+      await undo();
+      Alert.alert('Undo', 'Action annulée');
+    } catch (error) {
+      console.error('Undo error:', error);
+      Alert.alert('Erreur', 'Impossible d\'annuler l\'action');
+    }
+  }, [undo]);
+
+  const handleLockedUndo = useCallback(() => {
+    // Show premium upsell
+    Alert.alert(
+      'Feature Premium',
+      'Déverrouillez le UNDO et d\'autres fonctionnalités premium',
+      [
+        { text: 'Plus tard', style: 'cancel' },
+        {
+          text: 'Passer Premium',
+          onPress: () => router.push('/premium'),
+        },
+      ]
+    );
+  }, [router]);
 
   useEffect(() => {
     loadProfiles();
@@ -185,6 +214,15 @@ export default function DiscoverScreen() {
           onFavorite={() => currentProfile && favorite(currentProfile.uid)}
           onMessage={handleMessage}
         />
+
+        {/* Undo Button (Premium Feature) */}
+        <View style={styles.undoContainer}>
+          <UndoButton
+            isLocked={!isPremiumCanUndo}
+            onPress={handleUndo}
+            onLockedPress={handleLockedUndo}
+          />
+        </View>
       </SafeAreaView>
     </LinearGradient>
   );
@@ -229,6 +267,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
+  },
+  undoContainer: {
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    alignItems: 'center',
   },
   emptyContainer: {
     flex: 1,

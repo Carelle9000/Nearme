@@ -1,16 +1,19 @@
 import { View, ScrollView, Text, StyleSheet, TouchableOpacity, Image, Alert } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useAuth } from '../../context/auth-context';
+import { usePremium } from '../../context/premium-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Colors, BorderRadius, Shadows } from '../../constants/theme';
 import { ConfirmationModal } from '../../components/ConfirmationModal';
+import { AnalyticsCard } from '../../components/AnalyticsCard';
 import { useState } from 'react';
 import { useLocalization } from '../../context/localization-context';
 
 export default function ProfileScreen() {
   const { user, logout } = useAuth();
+  const { isPremium, stats, isLoadingAnalytics } = usePremium();
   const router = useRouter();
   const { t } = useLocalization();
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
@@ -107,6 +110,18 @@ export default function ProfileScreen() {
           </View>
         )}
 
+        {/* Analytics Card (Premium Feature) */}
+        <View style={styles.section}>
+          <AnalyticsCard
+            isPremium={isPremium}
+            profileViews={stats?.profileViews || 0}
+            likesReceived={stats?.likesReceived || 0}
+            isLoading={isLoadingAnalytics}
+            onViewAnalytics={() => router.push('/premium/liked')}
+            onUpgrade={() => router.push('/premium')}
+          />
+        </View>
+
         {/* Actions */}
         <View style={styles.section}>
           <TouchableOpacity style={styles.actionButton} onPress={() => router.push('/profile/edit')}>
@@ -130,6 +145,14 @@ export default function ProfileScreen() {
           >
             <Ionicons name="log-out-outline" size={20} color={Colors.text} />
             <Text style={[styles.actionButtonText, styles.logoutButtonText]}>Déconnexion</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[styles.actionButton, styles.deleteButton]}
+            onPress={() => router.push('/profile/delete-account')}
+          >
+            <Ionicons name="trash-outline" size={20} color="#fff" />
+            <Text style={[styles.actionButtonText, styles.deleteButtonText]}>Supprimer mon compte</Text>
           </TouchableOpacity>
 
         </View>

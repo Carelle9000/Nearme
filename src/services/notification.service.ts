@@ -1,11 +1,15 @@
 import * as Notifications from 'expo-notifications';
+import messaging from '@react-native-firebase/messaging';
 import { ref, update } from 'firebase/database';
 import { rtdb } from '../config/firebase';
 import { Platform } from 'react-native';
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
+    // shouldShowAlert is deprecated in expo-notifications; kept for back-compat.
     shouldShowAlert: true,
+    shouldShowBanner: true,
+    shouldShowList: true,
     shouldPlaySound: true,
     shouldSetBadge: true,
   }),
@@ -14,21 +18,25 @@ Notifications.setNotificationHandler({
 class NotificationService {
   // Check if we're on a platform that supports push notifications
   private isNotificationSupported(): boolean {
-    // Push notifications are supported on iOS and Android
+    // FCM is supported on iOS and Android
     // Web requires VAPID setup which is complex for dev
     return Platform.OS !== 'web';
   }
 
   async requestPermissions(): Promise<boolean> {
     try {
-      // Skip on web to avoid VAPID key requirement
+      // Skip on web
       if (!this.isNotificationSupported()) {
         console.info('Push notifications not supported on this platform');
         return false;
       }
 
-      const { status } = await Notifications.requestPermissionsAsync();
-      return status === 'granted';
+      const authStatus = await messaging().requestPermission();
+      const enabled =
+        authStatus === messaging.AuthorizationStatus.AUTHORIZED ||
+        authStatus === messaging.AuthorizationStatus.PROVISIONAL;
+
+      return enabled;
     } catch (error) {
       console.error('Error requesting notification permissions:', error);
       return false;
@@ -37,7 +45,7 @@ class NotificationService {
 
   async getFCMToken(): Promise<string | null> {
     try {
-      // Skip on web to avoid VAPID key requirement
+      // Skip on web
       if (!this.isNotificationSupported()) {
         console.info('Push notifications not available on web');
         return null;
@@ -49,15 +57,9 @@ class NotificationService {
         return null;
       }
 
-      const projectId = process.env.EXPO_PUBLIC_FIREBASE_PROJECT_ID;
-      if (!projectId) {
-        console.warn('Firebase project ID not configured');
-        return null;
-      }
-
-      // For Expo, we use Expo's push notification service
-      const token = (await Notifications.getExpoPushTokenAsync()).data;
-      return token;
+      // Get Firebase Cloud Messaging token
+      const token = await messaging().getToken();
+      return token || null;
     } catch (error) {
       console.error('Error getting FCM token:', error);
       return null;
@@ -85,7 +87,13 @@ class NotificationService {
         body,
         sound: 'default',
       },
-      trigger: delay > 0 ? { seconds: delay } : null,
+      trigger:
+        delay > 0
+          ? {
+              type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
+              seconds: delay,
+            }
+          : null,
     });
   }
 

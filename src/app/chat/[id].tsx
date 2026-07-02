@@ -1,4 +1,4 @@
-import { View, FlatList, TextInput, TouchableOpacity, StyleSheet, ActivityIndicator, Text } from 'react-native';
+import { View, FlatList, TextInput, TouchableOpacity, StyleSheet, ActivityIndicator, Text, Alert } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useChat } from '../../context/chat-context';
@@ -7,6 +7,7 @@ import { useEffect, useState } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import { Message } from '../../models/user';
 import { Colors, BorderRadius, Shadows } from '../../constants/theme';
+import { userService } from '../../services/user.service';
 
 export default function ConversationScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -15,6 +16,10 @@ export default function ConversationScreen() {
   const { selectConversation, currentConversation, messages, isLoading, sendMessage } = useChat();
   const [messageText, setMessageText] = useState('');
   const [isSending, setIsSending] = useState(false);
+  const [isBlocked, setIsBlocked] = useState(false);
+  const [isBlockActing, setIsBlockActing] = useState(false);
+
+  const otherUserId = id && currentConversation?.participants.find((pid) => pid !== user?.id);
 
   useEffect(() => {
     if (id) {
@@ -22,16 +27,98 @@ export default function ConversationScreen() {
     }
   }, [id, selectConversation]);
 
+  useEffect(() => {
+    const checkBlockStatus = async () => {
+      if (user?.id && otherUserId) {
+        try {
+          const blocked = await userService.isBlocked(user.id, otherUserId);
+          setIsBlocked(blocked);
+        } catch (error) {
+          console.error('Error checking block status:', error);
+        }
+      }
+    };
+    checkBlockStatus();
+  }, [user?.id, otherUserId]);
+
   const handleSendMessage = async () => {
-    if (!messageText.trim() || !id) return;
+    // Bug Z1: read the latest value inside the handler and guard here.
+    // Do NOT gate this via `disabled={!messageText.trim()}` on the button —
+    // the disabled prop is captured on the previous render, so a fast
+    // "type last letter + tap send" sequence swallows the first tap.
+    const text = messageText.trim();
+    if (!text || !id || isSending) return;
 
     setIsSending(true);
     try {
-      await sendMessage(id, messageText.trim());
+      await sendMessage(id, text);
       setMessageText('');
     } finally {
       setIsSending(false);
     }
+  };
+
+  const handleBlock = () => {
+    if (!user?.id || !otherUserId || isBlockActing) return;
+
+    Alert.alert(
+      'Bloquer ce profil',
+      'Ce profil ne pourra plus vous voir ou vous contacter.',
+      [
+        {
+          text: 'Annuler',
+          style: 'cancel',
+        },
+        {
+          text: 'Bloquer',
+          style: 'destructive',
+          onPress: async () => {
+            setIsBlockActing(true);
+            try {
+              await userService.saveBlock(user.id, otherUserId);
+              setIsBlocked(true);
+              Alert.alert('Profil bloqué', 'Ce profil a été bloqué.');
+            } catch (error) {
+              console.error('Error blocking:', error);
+              Alert.alert('Erreur', 'Impossible de bloquer ce profil');
+            } finally {
+              setIsBlockActing(false);
+            }
+          },
+        },
+      ]
+    );
+  };
+
+  const handleUnblock = () => {
+    if (!user?.id || !otherUserId || isBlockActing) return;
+
+    Alert.alert(
+      'Débloquer ce profil',
+      'Ce profil pourra à nouveau vous voir et vous contacter.',
+      [
+        {
+          text: 'Annuler',
+          style: 'cancel',
+        },
+        {
+          text: 'Débloquer',
+          onPress: async () => {
+            setIsBlockActing(true);
+            try {
+              await userService.unblock(user.id, otherUserId);
+              setIsBlocked(false);
+              Alert.alert('Profil débloqué', 'Ce profil a été débloqué.');
+            } catch (error) {
+              console.error('Error unblocking:', error);
+              Alert.alert('Erreur', 'Impossible de débloquer ce profil');
+            } finally {
+              setIsBlockActing(false);
+            }
+          },
+        },
+      ]
+    );
   };
 
   const renderMessage = ({ item }: { item: Message }) => {
@@ -72,7 +159,17 @@ export default function ConversationScreen() {
             currentConversation.participants.find((id) => id !== user?.id) || ''
           ] || 'Chat'}
         </Text>
-        <View style={{ width: 28 }} />
+        <TouchableOpacity
+          onPress={isBlocked ? handleUnblock : handleBlock}
+          disabled={isBlockActing}
+          style={{ opacity: isBlockActing ? 0.6 : 1 }}
+        >
+          <Ionicons
+            name="ban"
+            size={24}
+            color={isBlocked ? '#E74C3C' : Colors.primary}
+          />
+        </TouchableOpacity>
       </View>
 
       {/* Messages List */}
@@ -96,9 +193,12 @@ export default function ConversationScreen() {
           maxLength={500}
         />
         <TouchableOpacity
-          style={[styles.sendButton, isSending && styles.sendButtonDisabled]}
+          style={[
+            styles.sendButton,
+            (isSending || !messageText.trim()) && styles.sendButtonDisabled,
+          ]}
           onPress={handleSendMessage}
-          disabled={isSending || !messageText.trim()}
+          disabled={isSending}
         >
           {isSending ? (
             <ActivityIndicator size="small" color="#fff" />

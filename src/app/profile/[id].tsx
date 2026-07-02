@@ -44,6 +44,7 @@ export default function PublicProfileScreen() {
   const [hasLikedMe, setHasLikedMe] = useState(false);
   const [isMatched, setIsMatched] = useState(false);
   const [isActing, setIsActing] = useState(false);
+  const [isBlocked, setIsBlocked] = useState(false);
 
   const iLiked = !!id && likedIds.has(id);
   const matchId = useMemo(
@@ -58,15 +59,17 @@ export default function PublicProfileScreen() {
     (async () => {
       setIsLoading(true);
       try {
-        const [prof, receivedSnap, matched] = await Promise.all([
+        const [prof, receivedSnap, matched, blocked] = await Promise.all([
           userService.getProfile(id),
           get(ref(rtdb, `profiles/${user.id}/received_likes/${id}`)),
           matchService.checkMatch(user.id, id),
+          userService.isBlocked(user.id, id),
         ]);
         if (cancelled) return;
         setProfile(prof);
         setHasLikedMe(receivedSnap.exists());
         setIsMatched(matched);
+        setIsBlocked(blocked);
       } catch (err) {
         console.error('[PublicProfile] load failed:', err);
       } finally {
@@ -130,6 +133,71 @@ export default function PublicProfileScreen() {
 
   const handleMessage = () => {
     if (matchId) router.push(`/chat/${matchId}`);
+  };
+
+  const handleBlock = async () => {
+    if (!id || !user?.id || isActing) return;
+
+    Alert.alert(
+      'Bloquer ce profil',
+      'Ce profil ne pourra plus vous voir ou vous contacter.',
+      [
+        {
+          text: 'Annuler',
+          style: 'cancel',
+        },
+        {
+          text: 'Bloquer',
+          style: 'destructive',
+          onPress: async () => {
+            setIsActing(true);
+            try {
+              await userService.saveBlock(user.id, id);
+              setIsBlocked(true);
+              Alert.alert('Profil bloqué', 'Ce profil a été bloqué.', [
+                { text: 'OK', onPress: () => router.back() },
+              ]);
+            } catch (err) {
+              console.error('[PublicProfile] block failed:', err);
+              Alert.alert('Erreur', 'Impossible de bloquer ce profil');
+              setIsActing(false);
+            }
+          },
+        },
+      ]
+    );
+  };
+
+  const handleUnblock = async () => {
+    if (!id || !user?.id || isActing) return;
+
+    Alert.alert(
+      'Débloquer ce profil',
+      'Ce profil pourra à nouveau vous voir et vous contacter.',
+      [
+        {
+          text: 'Annuler',
+          style: 'cancel',
+        },
+        {
+          text: 'Débloquer',
+          onPress: async () => {
+            setIsActing(true);
+            try {
+              await userService.unblock(user.id, id);
+              setIsBlocked(false);
+              Alert.alert('Profil débloqué', 'Ce profil a été débloqué.', [
+                { text: 'OK' },
+              ]);
+            } catch (err) {
+              console.error('[PublicProfile] unblock failed:', err);
+              Alert.alert('Erreur', 'Impossible de débloquer ce profil');
+              setIsActing(false);
+            }
+          },
+        },
+      ]
+    );
   };
 
   if (isLoading) {
@@ -289,7 +357,30 @@ export default function PublicProfileScreen() {
             </View>
           )}
 
-          <View style={styles.actionsContainer}>{renderActions()}</View>
+          <View style={styles.actionsContainer}>
+            {isBlocked ? (
+              <TouchableOpacity
+                style={[styles.secondaryButton, styles.blockButton]}
+                onPress={handleUnblock}
+                disabled={isActing}
+              >
+                <Ionicons name="ban" size={18} color={Colors.textSecondary} />
+                <Text style={styles.blockButtonText}>Débloquer ce profil</Text>
+              </TouchableOpacity>
+            ) : (
+              <>
+                {renderActions()}
+                <TouchableOpacity
+                  style={[styles.secondaryButton, styles.blockButton]}
+                  onPress={handleBlock}
+                  disabled={isActing}
+                >
+                  <Ionicons name="ban" size={18} color={Colors.textSecondary} />
+                  <Text style={styles.blockButtonText}>Bloquer ce profil</Text>
+                </TouchableOpacity>
+              </>
+            )}
+          </View>
         </View>
       </ScrollView>
     </LinearGradient>
@@ -381,4 +472,6 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   secondaryButtonText: { color: Colors.textSecondary, fontSize: 15, fontWeight: '600' },
+  blockButton: { marginTop: 12 },
+  blockButtonText: { color: Colors.textSecondary, fontSize: 14, fontWeight: '500' },
 });

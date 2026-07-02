@@ -1,4 +1,4 @@
-import { httpsCallable, HttpsCallableError } from 'firebase/functions';
+import { httpsCallable } from 'firebase/functions';
 import { functions } from '../config/firebase';
 
 interface VerificationSession {
@@ -11,6 +11,16 @@ interface VerificationStatus {
   verified: boolean;
   status: 'requires_input' | 'processing' | 'verified' | 'unverified';
   lastError?: string;
+}
+
+// firebase/functions doesn't export a callable-specific Error class in v9+;
+// errors surface as FirebaseError-shaped objects with { code, message, details }.
+// We accept any Error and re-throw with its message.
+function rethrowFunctionsError(error: unknown): never {
+  if (error instanceof Error) {
+    throw new Error(error.message);
+  }
+  throw error;
 }
 
 const createVerificationSessionFn = httpsCallable<
@@ -28,10 +38,7 @@ export async function createVerificationSession(): Promise<VerificationSession> 
     const result = await createVerificationSessionFn({});
     return result.data;
   } catch (error) {
-    if (error instanceof HttpsCallableError) {
-      throw new Error(error.message);
-    }
-    throw error;
+    rethrowFunctionsError(error);
   }
 }
 
@@ -40,9 +47,6 @@ export async function checkVerificationStatus(): Promise<VerificationStatus> {
     const result = await checkVerificationStatusFn({});
     return result.data;
   } catch (error) {
-    if (error instanceof HttpsCallableError) {
-      throw new Error(error.message);
-    }
-    throw error;
+    rethrowFunctionsError(error);
   }
 }

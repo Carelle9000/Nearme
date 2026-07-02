@@ -1,6 +1,7 @@
 import { DarkTheme, DefaultTheme, ThemeProvider, Slot } from 'expo-router';
 import { useColorScheme } from 'react-native';
 import { AuthProvider } from '../context/auth-context';
+import { PremiumProvider } from '../context/premium-context';
 import { DiscoverProvider } from '../context/discover-context';
 import { DiscoverFiltersProvider } from '../context/discover-filters-context';
 import { ChatProvider } from '../context/chat-context';
@@ -14,17 +15,19 @@ export default function RootLayout() {
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
       <LocalizationProvider>
         <AuthProvider>
-          <NotificationProvider>
-            <ProfileProvider>
-              <DiscoverFiltersProvider>
-                <DiscoverProvider>
-                  <ChatProvider>
-                    <Slot />
-                  </ChatProvider>
-                </DiscoverProvider>
-              </DiscoverFiltersProvider>
-            </ProfileProvider>
-          </NotificationProvider>
+          <PremiumProvider>
+            <NotificationProvider>
+              <ProfileProvider>
+                <DiscoverFiltersProvider>
+                  <DiscoverProvider>
+                    <ChatProvider>
+                      <Slot />
+                    </ChatProvider>
+                  </DiscoverProvider>
+                </DiscoverFiltersProvider>
+              </ProfileProvider>
+            </NotificationProvider>
+          </PremiumProvider>
         </AuthProvider>
       </LocalizationProvider>
     </ThemeProvider>

@@ -9,9 +9,9 @@ import {
   push,
   Unsubscribe,
 } from 'firebase/database';
-import { app } from '../config/firebase';
+import { firebaseApp } from '../config/firebase';
 
-export const db = getDatabase(app);
+export const db = getDatabase(firebaseApp);
 
 // ========== HELPER FUNCTIONS ==========
 

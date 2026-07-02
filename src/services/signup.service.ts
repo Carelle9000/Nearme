@@ -16,7 +16,6 @@ export interface UserProfile {
   birthYear: number;
   gender: string;
   city: string;
-  bio: string;
   createdAt: number;
   updatedAt: number;
   profileCompleted: boolean;

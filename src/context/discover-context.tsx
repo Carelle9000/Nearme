@@ -1,10 +1,18 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
-import { get, ref } from 'firebase/database';
+import { get, set, ref } from 'firebase/database';
 import { rtdb } from '../config/firebase';
 import { Profile } from '../models/user';
 import { userService } from '../services/user.service';
+import { analyticsService } from '../services/analytics.service';
 import { useAuth } from './auth-context';
+import { usePremium } from './premium-context';
 import { DiscoverFilters, useDiscoverFilters } from './discover-filters-context';
+
+interface UndoAction {
+  targetId: string;
+  actionType: 'like' | 'nope';
+  timestamp: number;
+}
 
 interface DiscoverContextType {
   profiles: Profile[];
@@ -23,6 +31,8 @@ interface DiscoverContextType {
   like: (targetId: string) => Promise<{ isMatch: boolean }>;
   nope: (targetId: string) => Promise<void>;
   favorite: (targetId: string) => Promise<void>;
+  undo: () => Promise<void>;
+  canUndo: boolean;
   nextProfile: () => void;
   previousProfile: () => void;
   goToProfile: (index: number) => void;
@@ -33,6 +43,7 @@ const DiscoverContext = createContext<DiscoverContextType | undefined>(undefined
 export function DiscoverProvider({ children }: { children: React.ReactNode }) {
   const { user } = useAuth();
   const { filters } = useDiscoverFilters();
+  const { canUndo: isPremiumCanUndo } = usePremium();
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [filteredProfiles, setFilteredProfiles] = useState<Profile[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -43,6 +54,7 @@ export function DiscoverProvider({ children }: { children: React.ReactNode }) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [currentFilters, setCurrentFilters] = useState<DiscoverFilters | null>(null);
   const [lastMatch, setLastMatch] = useState<{ targetId: string; matchId: string } | null>(null);
+  const [undoStack, setUndoStack] = useState<UndoAction[]>([]);
 
   const clearLastMatch = useCallback(() => setLastMatch(null), []);
 
@@ -53,6 +65,14 @@ export function DiscoverProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => { likedIdsRef.current = likedIds; }, [likedIds]);
   useEffect(() => { nopeIdsRef.current = nopeIds; }, [nopeIds]);
   useEffect(() => { filtersRef.current = filters; }, [filters]);
+
+  // Bug Z2: swipe lock. like/nope both advance currentIndex, so a rapid double
+  // tap would apply two swipes on the same profile and silently skip the next
+  // one. A single boolean flag rejects concurrent swipes without triggering a
+  // re-render (unlike useState). favorite is idempotent-ish but we still
+  // dedupe per-targetId to avoid redundant writes.
+  const swipeInFlightRef = useRef(false);
+  const favoriteInFlightRef = useRef<Set<string>>(new Set());
 
   const calculateAge = (birthDate: string | undefined): number | null => {
     if (!birthDate) return null;
@@ -202,6 +222,19 @@ export function DiscoverProvider({ children }: { children: React.ReactNode }) {
     }
   }, [profiles]);
 
+  // Track profile views for analytics (non-blocking)
+  useEffect(() => {
+    if (!user?.id || filteredProfiles.length === 0) return;
+
+    const currentProfile = filteredProfiles[currentIndex];
+    if (currentProfile?.uid) {
+      // Non-blocking analytics call
+      analyticsService.trackProfileView(user.id, currentProfile.uid).catch(() => {
+        // Silently ignore analytics failures
+      });
+    }
+  }, [user?.id, currentIndex, filteredProfiles]);
+
   const nextProfile = useCallback(() => {
     setCurrentIndex((prev) => Math.min(prev + 1, filteredProfiles.length - 1));
   }, [filteredProfiles.length]);
@@ -217,10 +250,22 @@ export function DiscoverProvider({ children }: { children: React.ReactNode }) {
   // eslint-disable-next-line react-hooks/preserve-manual-memoization
   const like = useCallback(async (targetId: string): Promise<{ isMatch: boolean }> => {
     if (!user?.id) return { isMatch: false };
+    // Bug Z2: reject concurrent swipes so a double-tap can't advance past a profile.
+    if (swipeInFlightRef.current) return { isMatch: false };
+    swipeInFlightRef.current = true;
 
     try {
       const result = await userService.saveLike(user.id, targetId);
       setLikedIds((prev) => new Set([...prev, targetId]));
+
+      // Track like for analytics (non-blocking)
+      analyticsService.trackLike(user.id, targetId).catch(() => {
+        // Silently ignore analytics failures
+      });
+
+      // Track action for undo (premium feature)
+      setUndoStack((prev) => [...prev, { targetId, actionType: 'like', timestamp: Date.now() }]);
+
       if (result.isMatch && result.matchId) {
         setLastMatch({ targetId, matchId: result.matchId });
       }
@@ -233,16 +278,25 @@ export function DiscoverProvider({ children }: { children: React.ReactNode }) {
       console.error('Error liking profile:', err);
       setError(msg);
       return { isMatch: false };
+    } finally {
+      swipeInFlightRef.current = false;
     }
   }, [user?.id, nextProfile]);
 
   // eslint-disable-next-line react-hooks/preserve-manual-memoization
   const nope = useCallback(async (targetId: string) => {
     if (!user?.id) return;
+    // Bug Z2: reject concurrent swipes (see like).
+    if (swipeInFlightRef.current) return;
+    swipeInFlightRef.current = true;
 
     try {
       await userService.saveNope(user.id, targetId);
       setNopeIds((prev) => new Set([...prev, targetId]));
+
+      // Track action for undo (premium feature)
+      setUndoStack((prev) => [...prev, { targetId, actionType: 'nope', timestamp: Date.now() }]);
+
       nextProfile();
     } catch (err: any) {
       const msg = err?.code === 'PERMISSION_DENIED'
@@ -250,12 +304,18 @@ export function DiscoverProvider({ children }: { children: React.ReactNode }) {
         : 'Impossible de rejeter le profil';
       console.error('Error rejecting profile:', err);
       setError(msg);
+    } finally {
+      swipeInFlightRef.current = false;
     }
   }, [user?.id, nextProfile]);
 
   // eslint-disable-next-line react-hooks/preserve-manual-memoization
   const favorite = useCallback(async (targetId: string) => {
     if (!user?.id) return;
+    // Bug Z2: dedupe per-targetId — favoriting doesn't navigate but we still
+    // don't want two writes for the same profile.
+    if (favoriteInFlightRef.current.has(targetId)) return;
+    favoriteInFlightRef.current.add(targetId);
 
     try {
       await userService.saveFavorite(user.id, targetId);
@@ -266,8 +326,53 @@ export function DiscoverProvider({ children }: { children: React.ReactNode }) {
         : 'Impossible de mettre en favori le profil';
       console.error('Error favoriting profile:', err);
       setError(msg);
+    } finally {
+      favoriteInFlightRef.current.delete(targetId);
     }
   }, [user?.id]);
+
+  // Undo last action (like or nope) - Premium feature only
+  const undo = useCallback(async () => {
+    if (!user?.id || !isPremiumCanUndo || undoStack.length === 0) return;
+
+    const lastAction = undoStack[undoStack.length - 1];
+    if (!lastAction) return;
+
+    try {
+      // Remove the action from the stack
+      setUndoStack((prev) => prev.slice(0, -1));
+
+      if (lastAction.actionType === 'like') {
+        // Undo a like by removing it from sent_likes
+        const likesRef = ref(rtdb, `profiles/${user.id}/sent_likes/${lastAction.targetId}`);
+        await set(likesRef, null);
+        setLikedIds((prev) => {
+          const newSet = new Set(prev);
+          newSet.delete(lastAction.targetId);
+          return newSet;
+        });
+      } else if (lastAction.actionType === 'nope') {
+        // Undo a nope by removing it from nopes
+        const nopesRef = ref(rtdb, `profiles/${user.id}/nopes/${lastAction.targetId}`);
+        await set(nopesRef, null);
+        setNopeIds((prev) => {
+          const newSet = new Set(prev);
+          newSet.delete(lastAction.targetId);
+          return newSet;
+        });
+      }
+
+      // Go back to the previous profile (add it back to the queue)
+      setCurrentIndex((prev) => Math.max(0, prev - 1));
+      console.log(`[Discover] Undo successful for ${lastAction.actionType} on ${lastAction.targetId}`);
+    } catch (err: any) {
+      const msg = 'Impossible d\'annuler l\'action';
+      console.error('Error undoing action:', err);
+      setError(msg);
+      // Re-add the action to the stack if undo failed
+      setUndoStack((prev) => [...prev, lastAction]);
+    }
+  }, [user?.id, isPremiumCanUndo, undoStack]);
 
   return (
     <DiscoverContext.Provider
@@ -287,6 +392,8 @@ export function DiscoverProvider({ children }: { children: React.ReactNode }) {
         like,
         nope,
         favorite,
+        undo,
+        canUndo: undoStack.length > 0,
         nextProfile,
         previousProfile,
         goToProfile,

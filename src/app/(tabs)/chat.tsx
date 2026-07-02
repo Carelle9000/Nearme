@@ -9,6 +9,8 @@ import {
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useChat } from '../../context/chat-context';
+import { useAuth } from '../../context/auth-context';
+import { usePremium } from '../../context/premium-context';
 import { useRouter } from 'expo-router';
 import { useEffect } from 'react';
 import { Ionicons } from '@expo/vector-icons';
@@ -19,6 +21,8 @@ import { useLocalization } from '../../context/localization-context';
 
 export default function ChatScreen() {
   const { conversations, isLoading, loadConversations } = useChat();
+  const { user } = useAuth();
+  const { isPremium } = usePremium();
   const router = useRouter();
   const { t } = useLocalization();
 
@@ -45,7 +49,7 @@ export default function ChatScreen() {
   };
 
   const renderConversation = ({ item }: { item: Conversation }) => {
-    const otherUserId = item.participants.find((id) => id !== item.participants[0]) || '?';
+    const otherUserId = item.participants.find((id) => id !== user?.id) || '?';
     const otherUserName = item.participantNames?.[otherUserId] || 'Unknown';
 
     return (
@@ -73,9 +77,16 @@ export default function ChatScreen() {
         </View>
 
         <View style={styles.contentContainer}>
-          <Text style={styles.name}>{otherUserName}</Text>
+          <View style={styles.nameRow}>
+            <Text style={styles.name}>{otherUserName}</Text>
+            {isPremium && (
+              <View style={styles.premiumBadge}>
+                <Ionicons name="star" size={12} color="#FFD700" />
+              </View>
+            )}
+          </View>
           <Text style={styles.lastMessage} numberOfLines={1}>
-            {item.lastMessage || 'Start a conversation'}
+            {item.lastMessage || 'Démarrer une conversation'}
           </Text>
         </View>
 
@@ -223,11 +234,21 @@ const styles = StyleSheet.create({
   contentContainer: {
     flex: 1,
   },
+  nameRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginBottom: 4,
+  },
   name: {
     fontSize: 16,
     fontWeight: '700',
     color: Colors.text,
-    marginBottom: 4,
+  },
+  premiumBadge: {
+    backgroundColor: 'rgba(255, 215, 0, 0.2)',
+    borderRadius: 4,
+    padding: 2,
   },
   lastMessage: {
     fontSize: 14,

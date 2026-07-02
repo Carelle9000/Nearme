@@ -342,10 +342,15 @@ export default function SignupStep3() {
       </View>
 
       {/* Submit Button */}
+      {/* Bug Z3: the button used to be disabled while !isFormValid, which meant
+          a fast "type last field + tap submit" got the previous render's
+          disabled=true and swallowed the first tap. We now always accept the
+          tap and validate inside handleCreateProfile — the visual "disabled"
+          look is kept via the gradient style so nothing changes for the eye. */}
       <TouchableOpacity
         onPress={handleCreateProfile}
-        disabled={!isFormValid || isLoading}
-        activeOpacity={isFormValid ? 0.7 : 1}
+        disabled={isLoading}
+        activeOpacity={0.7}
       >
         <LinearGradient
           colors={[Colors.primary, '#C82E42']}

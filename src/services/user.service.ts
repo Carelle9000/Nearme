@@ -272,6 +272,62 @@ class UserService {
       throw error;
     }
   }
+
+  async saveBlock(userId: string, targetId: string): Promise<void> {
+    const now = Date.now();
+    const blockId = `${userId}_${targetId}`;
+    try {
+      await set(ref(rtdb, `blocks/${blockId}`), {
+        blockerId: userId,
+        blockedId: targetId,
+        createdAt: now,
+      });
+    } catch (error: any) {
+      if (error?.code === 'PERMISSION_DENIED') {
+        console.error('[RTDB-DENY] saveBlock', { userId, targetId }, error);
+      } else {
+        console.error('Error saving block:', error);
+      }
+      throw error;
+    }
+  }
+
+  async unblock(userId: string, targetId: string): Promise<void> {
+    const blockId = `${userId}_${targetId}`;
+    try {
+      const blockRef = ref(rtdb, `blocks/${blockId}`);
+      const snapshot = await get(blockRef);
+
+      if (snapshot.exists()) {
+        const block = snapshot.val();
+        if (block.blockerId === userId && block.blockedId === targetId) {
+          await set(blockRef, null);
+        }
+      }
+    } catch (error: any) {
+      if (error?.code === 'PERMISSION_DENIED') {
+        console.error('[RTDB-DENY] unblock', { userId, targetId }, error);
+      } else {
+        console.error('Error unblocking:', error);
+      }
+      throw error;
+    }
+  }
+
+  async isBlocked(userId: string, targetId: string): Promise<boolean> {
+    try {
+      const blockId = `${userId}_${targetId}`;
+      const snapshot = await get(ref(rtdb, `blocks/${blockId}`));
+      if (snapshot.exists()) {
+        const block = snapshot.val();
+        return block.blockerId === userId && block.blockedId === targetId;
+      }
+      return false;
+    } catch (error) {
+      console.error('Error checking block status:', error);
+      return false;
+    }
+  }
 }
 
 export const userService = new UserService();

@@ -6,11 +6,12 @@ import {
   FlatList,
   Image,
   ActivityIndicator,
+  Alert,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useRouter } from 'expo-router';
 import { useAuth } from '../../context/auth-context';
 import { Colors, BorderRadius, Shadows } from '../../constants/theme';
@@ -36,8 +37,17 @@ export default function ActivityScreen() {
   const [blocked, setBlocked] = useState<Profile[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
+  // Bug Z4: track the currently-active tab through a ref so any in-flight
+  // loader can bail out before overwriting state with a stale result when
+  // the user has already switched to another tab.
+  const activeTabRef = useRef<Tab>(activeTab);
+  useEffect(() => { activeTabRef.current = activeTab; }, [activeTab]);
+
   const loadLikes = useCallback(async () => {
     if (!user?.id) return;
+    // Bug Z4: capture the tab we started for; drop the write if the user
+    // switched away before this promise resolved.
+    const startedFor: Tab = 'likes';
     try {
       const db = getDatabase(firebaseApp);
       const likesRef = ref(db, `profiles/${user.id}/received_likes`);
@@ -59,6 +69,7 @@ export default function ActivityScreen() {
           }
         }
       }
+      if (activeTabRef.current !== startedFor) return;
       setLikes(likesData);
     } catch (error) {
       console.error('Error loading likes:', error);
@@ -67,6 +78,7 @@ export default function ActivityScreen() {
 
   const loadFavorites = useCallback(async () => {
     if (!user?.id) return;
+    const startedFor: Tab = 'favorites';
     try {
       const db = getDatabase(firebaseApp);
       const favoritesRef = ref(db, `profiles/${user.id}/favorites`);
@@ -84,6 +96,7 @@ export default function ActivityScreen() {
           }
         }
       }
+      if (activeTabRef.current !== startedFor) return;
       setFavorites(favProfiles);
     } catch (error) {
       console.error('Error loading favorites:', error);
@@ -92,6 +105,7 @@ export default function ActivityScreen() {
 
   const loadBlocked = useCallback(async () => {
     if (!user?.id) return;
+    const startedFor: Tab = 'blocked';
     try {
       const db = getDatabase(firebaseApp);
       const blocksRef = ref(db, 'blocks');
@@ -112,6 +126,7 @@ export default function ActivityScreen() {
           }
         }
       }
+      if (activeTabRef.current !== startedFor) return;
       setBlocked(blockedProfiles);
     } catch (error) {
       console.error('Error loading blocked:', error);
@@ -120,6 +135,7 @@ export default function ActivityScreen() {
 
   const loadActivityData = useCallback(async () => {
     if (!user?.id) return;
+    const startedFor: Tab = activeTab;
     setIsLoading(true);
 
     try {
@@ -133,7 +149,12 @@ export default function ActivityScreen() {
     } catch (error) {
       console.error('Error loading activity:', error);
     } finally {
-      setIsLoading(false);
+      // Bug Z4: only clear the loader if we're still on the tab we started for.
+      // Otherwise a switched-away loader would flash the new tab back into
+      // loading=false while its own loader is still in flight.
+      if (activeTabRef.current === startedFor) {
+        setIsLoading(false);
+      }
     }
   }, [activeTab, loadLikes, loadFavorites, loadBlocked]);
 
@@ -164,43 +185,87 @@ export default function ActivityScreen() {
     </View>
   );
 
+  const handleUnblock = async (profile: Profile) => {
+    if (!user?.id) return;
+
+    Alert.alert(
+      'Débloquer ce profil',
+      `Débloquer ${profile.displayName || profile.name} ?`,
+      [
+        {
+          text: 'Annuler',
+          style: 'cancel',
+        },
+        {
+          text: 'Débloquer',
+          onPress: async () => {
+            try {
+              await userService.unblock(user.id, profile.uid);
+              setBlocked(blocked.filter((p) => p.uid !== profile.uid));
+            } catch (error) {
+              console.error('Error unblocking:', error);
+              Alert.alert('Erreur', 'Impossible de débloquer ce profil');
+            }
+          },
+        },
+      ]
+    );
+  };
+
   const renderProfileCard = (profile: Profile) => {
     const age = profile.birthDate
       ? new Date().getFullYear() - new Date(profile.birthDate).getFullYear()
       : '?';
 
+    const isBlockedTab = activeTab === 'blocked';
+
     return (
-      <TouchableOpacity
+      <View
         style={[styles.profileCard, Shadows.soft]}
         key={profile.uid}
-        onPress={() =>
-          router.push({
-            pathname: '/profile/[id]',
-            params: { id: profile.uid },
-          })
-        }
       >
-        <Image
-          source={{ uri: profile.photoUrl || 'https://via.placeholder.com/200' }}
-          style={styles.profileImage}
-        />
-        <LinearGradient
-          colors={['transparent', 'rgba(0,0,0,0.8)']}
-          style={styles.profileOverlay}
+        <TouchableOpacity
+          activeOpacity={0.7}
+          onPress={() =>
+            router.push({
+              pathname: '/profile/[id]',
+              params: { id: profile.uid },
+            })
+          }
+          style={styles.profileTouchable}
         >
-          <View style={styles.profileInfo}>
-            <Text style={styles.profileName}>
-              {profile.displayName || profile.name}, {age}
-            </Text>
-            {profile.location?.city && (
-              <View style={styles.locationRow}>
-                <Ionicons name="location" size={14} color={Colors.accent} />
-                <Text style={styles.profileLocation}>{profile.location.city}</Text>
-              </View>
-            )}
-          </View>
-        </LinearGradient>
-      </TouchableOpacity>
+          <Image
+            source={{ uri: profile.photoUrl || 'https://via.placeholder.com/200' }}
+            style={styles.profileImage}
+          />
+          <LinearGradient
+            colors={['transparent', 'rgba(0,0,0,0.8)']}
+            style={styles.profileOverlay}
+          >
+            <View style={styles.profileInfo}>
+              <Text style={styles.profileName}>
+                {profile.displayName || profile.name}, {age}
+              </Text>
+              {profile.location?.city && (
+                <View style={styles.locationRow}>
+                  <Ionicons name="location" size={14} color={Colors.accent} />
+                  <Text style={styles.profileLocation}>{profile.location.city}</Text>
+                </View>
+              )}
+            </View>
+          </LinearGradient>
+        </TouchableOpacity>
+
+        {isBlockedTab && (
+          <TouchableOpacity
+            style={styles.unblockButton}
+            onPress={() => handleUnblock(profile)}
+          >
+            <Ionicons name="ban" size={16} color={Colors.text} />
+            <Text style={styles.unblockButtonText}>Débloquer</Text>
+          </TouchableOpacity>
+        )}
+      </View>
     );
   };
 
@@ -393,6 +458,9 @@ const styles = StyleSheet.create({
     borderRadius: BorderRadius.base,
     overflow: 'hidden',
   },
+  profileTouchable: {
+    flex: 1,
+  },
   profileImage: {
     width: '100%',
     height: '100%',
@@ -450,5 +518,22 @@ const styles = StyleSheet.create({
     color: Colors.textSecondary,
     textAlign: 'center',
     lineHeight: 20,
+  },
+  unblockButton: {
+    position: 'absolute',
+    top: 8,
+    right: 8,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: Colors.primary,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: BorderRadius.base,
+    gap: 4,
+  },
+  unblockButtonText: {
+    color: Colors.text,
+    fontSize: 12,
+    fontWeight: '600',
   },
 });
