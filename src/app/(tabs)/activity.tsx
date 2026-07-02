@@ -74,7 +74,7 @@ export default function ActivityScreen() {
     } catch (error) {
       console.error('Error loading likes:', error);
     }
-  }, [user?.id]);
+  }, [user]);
 
   const loadFavorites = useCallback(async () => {
     if (!user?.id) return;
@@ -101,7 +101,7 @@ export default function ActivityScreen() {
     } catch (error) {
       console.error('Error loading favorites:', error);
     }
-  }, [user?.id]);
+  }, [user]);
 
   const loadBlocked = useCallback(async () => {
     if (!user?.id) return;
@@ -131,7 +131,7 @@ export default function ActivityScreen() {
     } catch (error) {
       console.error('Error loading blocked:', error);
     }
-  }, [user?.id]);
+  }, [user]);
 
   const loadActivityData = useCallback(async () => {
     if (!user?.id) return;

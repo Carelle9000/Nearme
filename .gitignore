@@ -32,7 +32,7 @@ yarn-error.*
 
 # local env files
 .env*.local
-
+.env*.example
 # typescript
 *.tsbuildinfo
 
@@ -41,3 +41,10 @@ example
 # generated native folders
 /ios
 /android
+
+#claude
+.claude
+CLAUDE.md
+
+#doc
+serviceAccountKey.json

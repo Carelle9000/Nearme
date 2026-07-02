@@ -220,7 +220,7 @@ export function DiscoverProvider({ children }: { children: React.ReactNode }) {
         setFilteredProfiles(profiles);
       }
     }
-  }, [profiles]);
+  }, [profiles, currentFilters]);
 
   // Track profile views for analytics (non-blocking)
   useEffect(() => {
@@ -247,7 +247,6 @@ export function DiscoverProvider({ children }: { children: React.ReactNode }) {
     setCurrentIndex(Math.max(0, Math.min(index, filteredProfiles.length - 1)));
   }, [filteredProfiles.length]);
 
-  // eslint-disable-next-line react-hooks/preserve-manual-memoization
   const like = useCallback(async (targetId: string): Promise<{ isMatch: boolean }> => {
     if (!user?.id) return { isMatch: false };
     // Bug Z2: reject concurrent swipes so a double-tap can't advance past a profile.
@@ -281,9 +280,8 @@ export function DiscoverProvider({ children }: { children: React.ReactNode }) {
     } finally {
       swipeInFlightRef.current = false;
     }
-  }, [user?.id, nextProfile]);
+  }, [user, nextProfile]);
 
-  // eslint-disable-next-line react-hooks/preserve-manual-memoization
   const nope = useCallback(async (targetId: string) => {
     if (!user?.id) return;
     // Bug Z2: reject concurrent swipes (see like).
@@ -307,9 +305,8 @@ export function DiscoverProvider({ children }: { children: React.ReactNode }) {
     } finally {
       swipeInFlightRef.current = false;
     }
-  }, [user?.id, nextProfile]);
+  }, [user, nextProfile]);
 
-  // eslint-disable-next-line react-hooks/preserve-manual-memoization
   const favorite = useCallback(async (targetId: string) => {
     if (!user?.id) return;
     // Bug Z2: dedupe per-targetId — favoriting doesn't navigate but we still
@@ -329,7 +326,7 @@ export function DiscoverProvider({ children }: { children: React.ReactNode }) {
     } finally {
       favoriteInFlightRef.current.delete(targetId);
     }
-  }, [user?.id]);
+  }, [user]);
 
   // Undo last action (like or nope) - Premium feature only
   const undo = useCallback(async () => {
@@ -372,7 +369,7 @@ export function DiscoverProvider({ children }: { children: React.ReactNode }) {
       // Re-add the action to the stack if undo failed
       setUndoStack((prev) => [...prev, lastAction]);
     }
-  }, [user?.id, isPremiumCanUndo, undoStack]);
+  }, [user, isPremiumCanUndo, undoStack]);
 
   return (
     <DiscoverContext.Provider

@@ -49,7 +49,7 @@ export default function PublicProfileScreen() {
   const iLiked = !!id && likedIds.has(id);
   const matchId = useMemo(
     () => (user?.id && id ? [user.id, id].sort().join('_') : ''),
-    [user?.id, id]
+    [user, id]
   );
 
   useEffect(() => {

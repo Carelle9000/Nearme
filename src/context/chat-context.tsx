@@ -59,7 +59,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
     } finally {
       setIsLoading(false);
     }
-  }, [user?.id]);
+  }, [user]);
 
   useEffect(() => {
     if (user?.id) {
@@ -112,7 +112,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
       setError(err.message || 'Impossible d\'envoyer le message');
       console.error('Error sending message:', err);
     }
-  }, [user?.id]);
+  }, [user]);
 
   const createOrGetConversation = useCallback(async (otherUserId: string): Promise<Conversation> => {
     if (!user?.id) throw new Error('Utilisateur non authentifié');
@@ -141,7 +141,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
       setError(err.message || 'Impossible de créer la conversation');
       throw err;
     }
-  }, [user?.id, user?.name]);
+  }, [user]);
 
   const markAsRead = useCallback(async (conversationId: string, messageId: string) => {
     try {
