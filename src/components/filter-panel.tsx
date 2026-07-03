@@ -11,12 +11,14 @@ import Slider from '@react-native-community/slider';
 import { Ionicons } from '@expo/vector-icons';
 import { useDiscoverFilters } from '../context/discover-filters-context';
 import { useDiscover } from '../context/discover-context';
+import { useLocalization } from '../context/localization-context';
 import { locationService } from '../services/location.service';
 import { Colors } from '../constants/theme';
 
 export function FilterPanel() {
   const { filters, updateFilters, resetFilters } = useDiscoverFilters();
   const { applyFilters, loadNearbyProfiles } = useDiscover();
+  const { t } = useLocalization();
   const [showModal, setShowModal] = useState(false);
   // Bug #9: remember the distance at open time to detect a real change on apply.
   const distanceAtOpenRef = useRef<number>(filters.maxDistance);
@@ -63,30 +65,30 @@ export function FilterPanel() {
     <>
       <TouchableOpacity style={styles.filterButton} onPress={handleOpenModal}>
         <Ionicons name="funnel" size={20} color="#fff" />
-        <Text style={styles.filterButtonText}>Filtres</Text>
+        <Text style={styles.filterButtonText}>{t('filters')}</Text>
       </TouchableOpacity>
 
       <Modal visible={showModal} animationType="slide" onRequestClose={() => setShowModal(false)}>
         <View style={styles.modalContainer}>
           <View style={styles.modalHeader}>
             <TouchableOpacity onPress={() => setShowModal(false)}>
-              <Text style={styles.modalCloseText}>Fermer</Text>
+              <Text style={styles.modalCloseText}>{t('close')}</Text>
             </TouchableOpacity>
-            <Text style={styles.modalTitle}>Filtres</Text>
+            <Text style={styles.modalTitle}>{t('filters')}</Text>
             <TouchableOpacity onPress={handleResetFilters}>
-              <Text style={styles.modalResetText}>Réinitialiser</Text>
+              <Text style={styles.modalResetText}>{t('reset')}</Text>
             </TouchableOpacity>
           </View>
 
           <ScrollView contentContainerStyle={styles.modalContent}>
             {/* Age Filter */}
             <View style={styles.filterSection}>
-              <Text style={styles.filterSectionTitle}>Plage d&apos;âge</Text>
+              <Text style={styles.filterSectionTitle}>{t('ageRange')}</Text>
               <Text style={styles.filterValue}>
-                {filters.minAge} - {filters.maxAge} ans
+                {filters.minAge} - {filters.maxAge} {t('years')}
               </Text>
               <View style={styles.sliderContainer}>
-                <Text style={styles.sliderLabel}>Âge minimum: {filters.minAge}</Text>
+                <Text style={styles.sliderLabel}>{t('minAge')}: {filters.minAge}</Text>
                 <Slider
                   style={styles.slider}
                   minimumValue={18}
@@ -101,7 +103,7 @@ export function FilterPanel() {
                 />
               </View>
               <View style={styles.sliderContainer}>
-                <Text style={styles.sliderLabel}>Âge maximum: {filters.maxAge}</Text>
+                <Text style={styles.sliderLabel}>{t('maxAge')}: {filters.maxAge}</Text>
                 <Slider
                   style={styles.slider}
                   minimumValue={18}
@@ -119,8 +121,8 @@ export function FilterPanel() {
 
             {/* Distance Filter */}
             <View style={styles.filterSection}>
-              <Text style={styles.filterSectionTitle}>Distance maximale</Text>
-              <Text style={styles.filterValue}>{filters.maxDistance} km</Text>
+              <Text style={styles.filterSectionTitle}>{t('maxDistance')}</Text>
+              <Text style={styles.filterValue}>{filters.maxDistance} {t('km')}</Text>
               <View style={styles.sliderContainer}>
                 <Slider
                   style={styles.slider}
@@ -137,13 +139,13 @@ export function FilterPanel() {
 
             {/* Gender Filter */}
             <View style={styles.filterSection}>
-              <Text style={styles.filterSectionTitle}>Genre</Text>
+              <Text style={styles.filterSectionTitle}>{t('gender')}</Text>
               <View style={styles.genderOptions}>
                 {[
-                  { key: 'male' as const, label: 'Homme' },
-                  { key: 'female' as const, label: 'Femme' },
-                  { key: 'other' as const, label: 'Autre' },
-                  { key: 'all' as const, label: 'Tous' },
+                  { key: 'male' as const, label: t('male') },
+                  { key: 'female' as const, label: t('female') },
+                  { key: 'other' as const, label: t('other') },
+                  { key: 'all' as const, label: t('all') },
                 ].map(({ key, label }) => (
                   <TouchableOpacity
                     key={key}
@@ -171,7 +173,7 @@ export function FilterPanel() {
             style={styles.applyButton}
             onPress={handleApplyFilters}
           >
-            <Text style={styles.applyButtonText}>Appliquer les filtres</Text>
+            <Text style={styles.applyButtonText}>{t('applyFilters')}</Text>
           </TouchableOpacity>
         </View>
       </Modal>

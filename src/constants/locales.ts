@@ -457,6 +457,23 @@ export const TRANSLATIONS = {
     friday: 'Vendredi',
     saturday: 'Samedi',
 
+    // Filters
+    filters: 'Filtres',
+    close: 'Fermer',
+    reset: 'Réinitialiser',
+    ageRange: 'Plage d\'âge',
+    years: 'ans',
+    minAge: 'Âge minimum',
+    maxAge: 'Âge maximum',
+    maxDistance: 'Distance maximale',
+    km: 'km',
+    gender: 'Genre',
+    male: 'Homme',
+    female: 'Femme',
+    other: 'Autre',
+    all: 'Tous',
+    applyFilters: 'Appliquer les filtres',
+
     // Common actions/buttons
     retry: 'Réessayer',
     undo: 'Annuler',
@@ -876,6 +893,23 @@ export const TRANSLATIONS = {
     friday: 'Friday',
     saturday: 'Saturday',
 
+    // Filters
+    filters: 'Filters',
+    close: 'Close',
+    reset: 'Reset',
+    ageRange: 'Age range',
+    years: 'years',
+    minAge: 'Min age',
+    maxAge: 'Max age',
+    maxDistance: 'Max distance',
+    km: 'km',
+    gender: 'Gender',
+    male: 'Male',
+    female: 'Female',
+    other: 'Other',
+    all: 'All',
+    applyFilters: 'Apply filters',
+
     // Common actions/buttons
     retry: 'Retry',
     undo: 'Undo',
@@ -1058,6 +1092,23 @@ export const TRANSLATIONS = {
     thursday: 'Donnerstag',
     friday: 'Freitag',
     saturday: 'Samstag',
+
+    // Filters
+    filters: 'Filter',
+    close: 'Schließen',
+    reset: 'Zurücksetzen',
+    ageRange: 'Altersbereich',
+    years: 'Jahre',
+    minAge: 'Mindestalter',
+    maxAge: 'Maximalalter',
+    maxDistance: 'Maximale Entfernung',
+    km: 'km',
+    gender: 'Geschlecht',
+    male: 'Mann',
+    female: 'Frau',
+    other: 'Sonstiges',
+    all: 'Alle',
+    applyFilters: 'Filter anwenden',
 
     // Common actions/buttons
     retry: 'Wiederholen',
@@ -1243,6 +1294,23 @@ export const TRANSLATIONS = {
     friday: '星期五',
     saturday: '星期六',
 
+    // Filters
+    filters: '过滤器',
+    close: '关闭',
+    reset: '重置',
+    ageRange: '年龄范围',
+    years: '岁',
+    minAge: '最小年龄',
+    maxAge: '最大年龄',
+    maxDistance: '最大距离',
+    km: '公里',
+    gender: '性别',
+    male: '男',
+    female: '女',
+    other: '其他',
+    all: '全部',
+    applyFilters: '应用过滤器',
+
     // Common actions/buttons
     retry: '重试',
     undo: '撤销',
@@ -1426,6 +1494,23 @@ export const TRANSLATIONS = {
     thursday: '목요일',
     friday: '금요일',
     saturday: '토요일',
+
+    // Filters
+    filters: '필터',
+    close: '닫기',
+    reset: '재설정',
+    ageRange: '나이 범위',
+    years: '세',
+    minAge: '최소 나이',
+    maxAge: '최대 나이',
+    maxDistance: '최대 거리',
+    km: '킬로미터',
+    gender: '성별',
+    male: '남성',
+    female: '여성',
+    other: '기타',
+    all: '모두',
+    applyFilters: '필터 적용',
 
     // Common actions/buttons
     retry: '다시 시도',
@@ -1611,6 +1696,23 @@ export const TRANSLATIONS = {
     friday: '金曜日',
     saturday: '土曜日',
 
+    // Filters
+    filters: 'フィルター',
+    close: '閉じる',
+    reset: 'リセット',
+    ageRange: '年齢範囲',
+    years: '歳',
+    minAge: '最小年齢',
+    maxAge: '最大年齢',
+    maxDistance: '最大距離',
+    km: 'キロメートル',
+    gender: '性別',
+    male: '男',
+    female: '女',
+    other: 'その他',
+    all: 'すべて',
+    applyFilters: 'フィルターを適用',
+
     // Common actions/buttons
     retry: '再試行',
     undo: '元に戻す',
@@ -1794,6 +1896,23 @@ export const TRANSLATIONS = {
     thursday: 'Quinta-feira',
     friday: 'Sexta-feira',
     saturday: 'Sábado',
+
+    // Filters
+    filters: 'Filtros',
+    close: 'Fechar',
+    reset: 'Redefinir',
+    ageRange: 'Faixa Etária',
+    years: 'anos',
+    minAge: 'Idade Mínima',
+    maxAge: 'Idade Máxima',
+    maxDistance: 'Distância Máxima',
+    km: 'km',
+    gender: 'Gênero',
+    male: 'Masculino',
+    female: 'Feminino',
+    other: 'Outro',
+    all: 'Todos',
+    applyFilters: 'Aplicar Filtros',
 
     // Common actions/buttons
     retry: 'Tentar novamente',
