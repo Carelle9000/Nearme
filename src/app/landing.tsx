@@ -1,16 +1,27 @@
-﻿import { View, ScrollView, Text, StyleSheet, TouchableOpacity, Image } from 'react-native';
+﻿import { View, ScrollView, Text, StyleSheet, TouchableOpacity, Image, Modal } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Colors, BorderRadius, Shadows } from '@/constants/theme';
 import { useLocalization } from '@/context/localization-context';
+import { LANGUAGES } from '@/constants/locales';
+import { useState } from 'react';
 
 export default function LandingScreen() {
   const router = useRouter();
-  const { hasConfigured, t } = useLocalization();
+  const { hasConfigured, isLoading, t, language, setLanguage } = useLocalization();
+  const [showLanguageModal, setShowLanguageModal] = useState(false);
+
+  const currentLanguage = LANGUAGES.find(lang => lang.code === language);
+
+  const handleLanguageSelect = async (code: string) => {
+    await setLanguage(code);
+    setShowLanguageModal(false);
+  };
 
   const handleNavigateRegister = () => {
+    if (isLoading) return;
     if (hasConfigured) {
       router.push('/auth/register');
     } else {
@@ -19,6 +30,7 @@ export default function LandingScreen() {
   };
 
   const handleNavigateLogin = () => {
+    if (isLoading) return;
     if (hasConfigured) {
       router.push('/auth/login');
     } else {
@@ -38,13 +50,64 @@ export default function LandingScreen() {
                 style={styles.logo}
               />
             </View>
-            <TouchableOpacity
-              style={styles.loginButton}
-              onPress={handleNavigateLogin}
-            >
-              <Text style={styles.loginButtonText}>{t('loginButton')}</Text>
-            </TouchableOpacity>
+            <View style={styles.headerButtons}>
+              <TouchableOpacity
+                style={[styles.languageButton, isLoading && styles.buttonDisabled]}
+                onPress={() => setShowLanguageModal(true)}
+                disabled={isLoading}
+              >
+                <Text style={styles.languageButtonText}>{currentLanguage?.flag}</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.loginButton, isLoading && styles.buttonDisabled]}
+                onPress={handleNavigateLogin}
+                disabled={isLoading}
+              >
+                <Text style={styles.loginButtonText}>{t('loginButton')}</Text>
+              </TouchableOpacity>
+            </View>
           </View>
+
+          {/* Language Selection Modal */}
+          <Modal
+            visible={showLanguageModal}
+            transparent
+            animationType="fade"
+            onRequestClose={() => setShowLanguageModal(false)}
+          >
+            <View style={styles.modalOverlay}>
+              <View style={styles.modalContent}>
+                <View style={styles.modalHeader}>
+                  <Text style={styles.modalTitle}>{t('selectLanguage')}</Text>
+                  <TouchableOpacity onPress={() => setShowLanguageModal(false)}>
+                    <Ionicons name="close" size={24} color={Colors.text} />
+                  </TouchableOpacity>
+                </View>
+                <View style={styles.languageGrid}>
+                  {LANGUAGES.map((lang) => (
+                    <TouchableOpacity
+                      key={lang.code}
+                      style={[
+                        styles.languageOption,
+                        language === lang.code && styles.languageOptionActive,
+                      ]}
+                      onPress={() => handleLanguageSelect(lang.code)}
+                    >
+                      <Text style={styles.languageFlag}>{lang.flag}</Text>
+                      <Text
+                        style={[
+                          styles.languageLabel,
+                          language === lang.code && styles.languageLabelActive,
+                        ]}
+                      >
+                        {lang.nativeLabel}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              </View>
+            </View>
+          </Modal>
 
           {/* Badge */}
           <View style={styles.badge}>
@@ -76,14 +139,16 @@ export default function LandingScreen() {
               <TouchableOpacity
                 style={styles.primaryButton}
                 onPress={handleNavigateRegister}
+                disabled={isLoading}
               >
                 <Text style={styles.primaryButtonText}>{t('createProfile')}</Text>
               </TouchableOpacity>
             </LinearGradient>
 
             <TouchableOpacity
-              style={styles.secondaryButton}
+              style={[styles.secondaryButton, isLoading && styles.buttonDisabled]}
               onPress={() => router.push('/how-it-works')}
+              disabled={isLoading}
             >
               <Text style={styles.secondaryButtonText}>{t('howItWorks')}</Text>
             </TouchableOpacity>
@@ -110,7 +175,7 @@ export default function LandingScreen() {
                 </View>
               </View>
 
-              <Text style={styles.profileLocation}>1.2 km Â· Verified profile</Text>
+              <Text style={styles.profileLocation}>1.2 km · Verified profile</Text>
               <Text style={styles.profileBio}>
                 "Coffee in the morning, weekends out. Looking for someone attentive, fun, who loves cooking."
               </Text>
@@ -145,7 +210,7 @@ export default function LandingScreen() {
               </View>
               <View style={styles.matchText}>
                 <Text style={styles.matchLabel}>{t('newMatch')}</Text>
-                <Text style={styles.matchTitle}>Â« Do you know this cafÃ© from the 11th? Â»</Text>
+                <Text style={styles.matchTitle}>« Do you know this café from the 11th? »</Text>
               </View>
             </View>
           </LinearGradient>
@@ -181,6 +246,7 @@ export default function LandingScreen() {
               <TouchableOpacity
                 style={styles.footerButton}
                 onPress={handleNavigateRegister}
+                disabled={isLoading}
               >
                 <Text style={styles.footerButtonText}>{t('getStarted')}</Text>
               </TouchableOpacity>
@@ -232,6 +298,24 @@ const styles = StyleSheet.create({
     borderRadius: BorderRadius.base,
     resizeMode: 'contain',
   },
+  headerButtons: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  languageButton: {
+    width: 44,
+    height: 44,
+    borderRadius: BorderRadius.base,
+    borderWidth: 1,
+    borderColor: Colors.primary,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(232, 61, 81, 0.1)',
+  },
+  languageButtonText: {
+    fontSize: 20,
+  },
   loginButton: {
     paddingHorizontal: 20,
     paddingVertical: 10,
@@ -243,6 +327,64 @@ const styles = StyleSheet.create({
     color: Colors.primary,
     fontWeight: '600',
     fontSize: 14,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'flex-end',
+  },
+  modalContent: {
+    backgroundColor: Colors.cardSurface,
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    paddingHorizontal: 20,
+    paddingTop: 20,
+    paddingBottom: 32,
+    maxHeight: '70%',
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: Colors.text,
+  },
+  languageGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+  },
+  languageOption: {
+    width: '48%',
+    paddingVertical: 16,
+    paddingHorizontal: 12,
+    borderRadius: BorderRadius.base,
+    backgroundColor: Colors.background,
+    borderWidth: 2,
+    borderColor: 'transparent',
+    alignItems: 'center',
+    gap: 8,
+  },
+  languageOptionActive: {
+    backgroundColor: 'rgba(232, 61, 81, 0.1)',
+    borderColor: Colors.primary,
+  },
+  languageFlag: {
+    fontSize: 32,
+  },
+  languageLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: Colors.text,
+    textAlign: 'center',
+  },
+  languageLabelActive: {
+    color: Colors.primary,
+    fontWeight: '700',
   },
   badge: {
     flexDirection: 'row',
@@ -483,6 +625,85 @@ const styles = StyleSheet.create({
   footerButtonText: {
     color: Colors.text,
     fontSize: 16,
+    fontWeight: '700',
+  },
+  buttonDisabled: {
+    opacity: 0.5,
+  },
+  headerButtons: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  languageButton: {
+    width: 44,
+    height: 44,
+    borderRadius: BorderRadius.base,
+    borderWidth: 1,
+    borderColor: Colors.primary,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(232, 61, 81, 0.1)',
+  },
+  languageButtonText: {
+    fontSize: 20,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'flex-end',
+  },
+  modalContent: {
+    backgroundColor: Colors.cardSurface,
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    paddingHorizontal: 20,
+    paddingTop: 20,
+    paddingBottom: 32,
+    maxHeight: '70%',
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: Colors.text,
+  },
+  languageGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+  },
+  languageOption: {
+    width: '48%',
+    paddingVertical: 16,
+    paddingHorizontal: 12,
+    borderRadius: BorderRadius.base,
+    backgroundColor: Colors.background,
+    borderWidth: 2,
+    borderColor: 'transparent',
+    alignItems: 'center',
+    gap: 8,
+  },
+  languageOptionActive: {
+    backgroundColor: 'rgba(232, 61, 81, 0.1)',
+    borderColor: Colors.primary,
+  },
+  languageFlag: {
+    fontSize: 32,
+  },
+  languageLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: Colors.text,
+    textAlign: 'center',
+  },
+  languageLabelActive: {
+    color: Colors.primary,
     fontWeight: '700',
   },
 });
