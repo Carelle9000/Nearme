@@ -21,9 +21,9 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 import { useLocalization } from '@/context/localization-context';
 
 const INTERESTS_OPTIONS = [
-  'Voyages', 'Musique', 'Sport', 'Art', 'CinÃ©ma', 'Cuisine',
-  'Lecture', 'Technologie', 'Nature', 'Photographie', 'Mode', 'Gaming',
-  'Yoga', 'Danse', 'Histoire', 'Science', 'ThÃ©Ã¢tre', 'Fitness',
+  'Travel', 'Music', 'Sport', 'Art', 'Movies', 'Cooking',
+  'Reading', 'Technology', 'Nature', 'Photography', 'Fashion', 'Gaming',
+  'Yoga', 'Dance', 'History', 'Science', 'Theater', 'Fitness',
 ];
 
 export default function EditProfileScreen() {
@@ -67,10 +67,10 @@ export default function EditProfileScreen() {
     try {
       const success = await pickAndUploadPhoto();
       if (success) {
-        Alert.alert(t('success'), 'Photo de profil mise Ã  jour');
+        Alert.alert(t('success'), t('profilePhotoUpdated'));
       }
     } catch (err: any) {
-      Alert.alert(t('error'), err.message || 'Impossible de charger la photo');
+      Alert.alert(t('error'), err.message || t('errorUnableToLoadPhoto'));
     }
   };
 
@@ -95,13 +95,13 @@ export default function EditProfileScreen() {
     if (!user) return;
 
     if (!displayName.trim()) {
-      Alert.alert(t('error'), 'Le nom d\'affichage ne peut pas Ãªtre vide');
+      Alert.alert(t('error'), t('displayNameCannotBeEmpty'));
       return;
     }
 
     const age = getAge(birthDate);
     if (age < 18) {
-      Alert.alert(t('error'), 'Vous devez avoir au moins 18 ans');
+      Alert.alert(t('error'), t('ageLabel'));
       return;
     }
 
@@ -114,14 +114,14 @@ export default function EditProfileScreen() {
         gender,
         birthDate: birthDate.toISOString(),
       });
-      Alert.alert(t('success'), 'Votre profil a Ã©tÃ© mis Ã  jour');
+      Alert.alert(t('success'), t('profilePhotoUpdated'));
       if (router.canGoBack()) {
         router.back();
       } else {
         router.replace('/(tabs)/profile');
       }
     } catch (error: any) {
-      Alert.alert(t('error'), error.message || 'Impossible de mettre Ã  jour le profil');
+      Alert.alert(t('error'), error.message || t('errorUnableToUpdateProfile'));
       console.error('Error updating profile:', error);
     } finally {
       setIsSaving(false);
@@ -144,7 +144,7 @@ export default function EditProfileScreen() {
           >
             <Ionicons name="chevron-back" size={28} color={Colors.primary} />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>Modifier mon profil</Text>
+          <Text style={styles.headerTitle}>Edit my profile</Text>
           <TouchableOpacity onPress={handleSave} disabled={isSaving}>
             {isSaving ? (
               <ActivityIndicator color={Colors.primary} size="small" />
@@ -170,7 +170,7 @@ export default function EditProfileScreen() {
             </View>
           )}
 
-          {/* Photo de profil */}
+          {/* Profile photo */}
           <View style={styles.photoSection}>
             <View style={styles.avatarContainer}>
               {user?.photoUrl ? (
@@ -191,18 +191,18 @@ export default function EditProfileScreen() {
               ) : (
                 <>
                   <Ionicons name="camera" size={18} color={Colors.text} style={styles.buttonIcon} />
-                  <Text style={styles.changePhotoButtonText}>Changer la photo</Text>
+                  <Text style={styles.changePhotoButtonText}>Change photo</Text>
                 </>
               )}
             </TouchableOpacity>
           </View>
 
-          {/* Nom d'affichage */}
+          {/* Display name */}
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Nom d'affichage</Text>
+            <Text style={styles.sectionTitle}>Display name</Text>
             <TextInput
               style={styles.input}
-              placeholder="Entrez votre nom"
+              placeholder="Enter your name"
               placeholderTextColor={Colors.textSecondary}
               value={displayName}
               onChangeText={setDisplayName}
@@ -217,7 +217,7 @@ export default function EditProfileScreen() {
             <Text style={styles.sectionTitle}>Bio</Text>
             <TextInput
               style={[styles.input, styles.bioInput]}
-              placeholder="Parlez-nous de vous..."
+              placeholder="Tell us about yourself..."
               placeholderTextColor={Colors.textSecondary}
               value={bio}
               onChangeText={setBio}
@@ -230,9 +230,9 @@ export default function EditProfileScreen() {
             <Text style={styles.charCount}>{bio.length}/500</Text>
           </View>
 
-          {/* Genre */}
+          {/* Gender */}
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Genre</Text>
+            <Text style={styles.sectionTitle}>Gender</Text>
             <View style={styles.genderButtonsContainer}>
               <TouchableOpacity
                 style={[
@@ -253,7 +253,7 @@ export default function EditProfileScreen() {
                     gender === 'female' && styles.genderButtonTextActive,
                   ]}
                 >
-                  Femme
+                  Woman
                 </Text>
               </TouchableOpacity>
 
@@ -276,7 +276,7 @@ export default function EditProfileScreen() {
                     gender === 'male' && styles.genderButtonTextActive,
                   ]}
                 >
-                  Homme
+                  Man
                 </Text>
               </TouchableOpacity>
 
@@ -299,17 +299,17 @@ export default function EditProfileScreen() {
                     gender === 'other' && styles.genderButtonTextActive,
                   ]}
                 >
-                  Autre
+                  Other
                 </Text>
               </TouchableOpacity>
             </View>
           </View>
 
-          {/* Date de naissance */}
+          {/* Birth date */}
           <View style={styles.section}>
             <View style={styles.birthDateHeader}>
-              <Text style={styles.sectionTitle}>Date de naissance</Text>
-              <Text style={styles.ageText}>{getAge(birthDate)} ans</Text>
+              <Text style={styles.sectionTitle}>Date of birth</Text>
+              <Text style={styles.ageText}>{getAge(birthDate)} years old</Text>
             </View>
             <TouchableOpacity
               style={styles.dateButton}
@@ -318,7 +318,7 @@ export default function EditProfileScreen() {
             >
               <Ionicons name="calendar" size={20} color={Colors.primary} />
               <Text style={styles.dateButtonText}>
-                {birthDate.toLocaleDateString('fr-FR', {
+                {birthDate.toLocaleDateString('en-US', {
                   year: 'numeric',
                   month: 'long',
                   day: 'numeric',
@@ -336,10 +336,10 @@ export default function EditProfileScreen() {
             )}
           </View>
 
-          {/* IntÃ©rÃªts */}
+          {/* Interests */}
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>
-              IntÃ©rÃªts ({selectedInterests.length})
+              Interests ({selectedInterests.length})
             </Text>
             <View style={styles.interestsGrid}>
               {INTERESTS_OPTIONS.map((interest) => (

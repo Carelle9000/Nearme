@@ -3,6 +3,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useChat } from '@/context/chat-context';
 import { useAuth } from '@/context/auth-context';
+import { useLocalization } from '@/context/localization-context';
 import { useEffect, useState } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import { Message } from '@/models/user';
@@ -13,6 +14,7 @@ export default function ConversationScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const { user } = useAuth();
+  const { t } = useLocalization();
   const { selectConversation, currentConversation, messages, isLoading, sendMessage } = useChat();
   const [messageText, setMessageText] = useState('');
   const [isSending, setIsSending] = useState(false);
@@ -62,25 +64,25 @@ export default function ConversationScreen() {
     if (!user?.id || !otherUserId || isBlockActing) return;
 
     Alert.alert(
-      'Bloquer ce profil',
-      'Ce profil ne pourra plus vous voir ou vous contacter.',
+      t('blockThisProfile'),
+      t('blockThisProfileMessage'),
       [
         {
-          text: 'Annuler',
+          text: t('cancel'),
           style: 'cancel',
         },
         {
-          text: 'Bloquer',
+          text: t('block'),
           style: 'destructive',
           onPress: async () => {
             setIsBlockActing(true);
             try {
               await userService.saveBlock(user.id, otherUserId);
               setIsBlocked(true);
-              Alert.alert('Profil bloqué', 'Ce profil a été bloqué.');
+              Alert.alert(t('errorProfileBlocked'), t('blockThisProfileMessage'));
             } catch (error) {
               console.error('Error blocking:', error);
-              Alert.alert('Erreur', 'Impossible de bloquer ce profil');
+              Alert.alert(t('error'), t('errorUnableToBlockProfile'));
             } finally {
               setIsBlockActing(false);
             }
@@ -94,24 +96,24 @@ export default function ConversationScreen() {
     if (!user?.id || !otherUserId || isBlockActing) return;
 
     Alert.alert(
-      'Débloquer ce profil',
-      'Ce profil pourra à nouveau vous voir et vous contacter.',
+      t('unblockThisProfile'),
+      t('unblockThisProfileMessage'),
       [
         {
-          text: 'Annuler',
+          text: t('cancel'),
           style: 'cancel',
         },
         {
-          text: 'Débloquer',
+          text: t('unblock'),
           onPress: async () => {
             setIsBlockActing(true);
             try {
               await userService.unblock(user.id, otherUserId);
               setIsBlocked(false);
-              Alert.alert('Profil débloqué', 'Ce profil a été débloqué.');
+              Alert.alert(t('errorProfileUnblocked'), t('unblockThisProfileMessage'));
             } catch (error) {
               console.error('Error unblocking:', error);
-              Alert.alert('Erreur', 'Impossible de débloquer ce profil');
+              Alert.alert(t('error'), t('errorUnableToUnblockProfile'));
             } finally {
               setIsBlockActing(false);
             }
@@ -185,7 +187,7 @@ export default function ConversationScreen() {
       <View style={styles.inputContainer}>
         <TextInput
           style={styles.input}
-          placeholder="Tapez un message..."
+          placeholder="Type a message..."
           value={messageText}
           onChangeText={setMessageText}
           editable={!isSending}

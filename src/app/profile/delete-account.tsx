@@ -12,6 +12,7 @@ import { useState } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useAuth } from '@/context/auth-context';
+import { useLocalization } from '@/context/localization-context';
 import { Colors, BorderRadius, Shadows } from '@/constants/theme';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ConfirmationModal } from '@/components/ConfirmationModal';
@@ -19,6 +20,7 @@ import { ConfirmationModal } from '@/components/ConfirmationModal';
 export default function DeleteAccountScreen() {
   const router = useRouter();
   const { logout } = useAuth();
+  const { t } = useLocalization();
 
   const [step, setStep] = useState<1 | 2 | 3>(1);
   const [password, setPassword] = useState('');
@@ -28,20 +30,20 @@ export default function DeleteAccountScreen() {
 
   const handleDeleteAccount = async () => {
     if (!password.trim()) {
-      setError('Le mot de passe est requis');
+      setError(t('passwordRequired'));
       return;
     }
 
     setIsDeleting(true);
     try {
-      // TODO: ImplÃ©menter deleteAccount dans AuthService
+      // TODO: Implement deleteAccount in AuthService
       // await authService.deleteAccount(password);
 
       // Temporary: just logout
       await logout();
       router.replace('/auth/login');
     } catch (error: any) {
-      setError(error.message || 'Une erreur est survenue lors de la suppression du compte');
+      setError(error.message || t('errorUnknown'));
       setIsDeleting(false);
     }
   };
@@ -62,7 +64,7 @@ export default function DeleteAccountScreen() {
           >
             <Ionicons name="chevron-back" size={28} color={Colors.primary} />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>Supprimer mon compte</Text>
+          <Text style={styles.headerTitle}>{t('deleteMyAccount')}</Text>
           <View style={{ width: 28 }} />
         </View>
 
@@ -86,29 +88,29 @@ export default function DeleteAccountScreen() {
             <View style={styles.stepContainer}>
               <View style={styles.warningBox}>
                 <Ionicons name="warning" size={48} color="#E74C3C" />
-                <Text style={styles.warningTitle}>Attention</Text>
+                <Text style={styles.warningTitle}>{t('deleteAccountTitle')}</Text>
                 <Text style={styles.warningText}>
-                  La suppression de votre compte est permanente et irrÃ©versible.
+                  {t('deleteAccountMessage')}
                 </Text>
               </View>
 
               <View style={styles.section}>
-                <Text style={styles.sectionTitle}>Ce qui sera supprimÃ© :</Text>
+                <Text style={styles.sectionTitle}>{t('deleteAccountTitle')}:</Text>
                 <View style={styles.listItem}>
                   <Ionicons name="close-circle" size={20} color="#E74C3C" />
-                  <Text style={styles.listText}>Toutes vos photos de profil</Text>
+                  <Text style={styles.listText}>{t('profilePhotoUpdated')}</Text>
                 </View>
                 <View style={styles.listItem}>
                   <Ionicons name="close-circle" size={20} color="#E74C3C" />
-                  <Text style={styles.listText}>Votre profil et vos informations</Text>
+                  <Text style={styles.listText}>Your profile and your information</Text>
                 </View>
                 <View style={styles.listItem}>
                   <Ionicons name="close-circle" size={20} color="#E74C3C" />
-                  <Text style={styles.listText}>Tous vos messages et conversations</Text>
+                  <Text style={styles.listText}>All your messages and conversations</Text>
                 </View>
                 <View style={styles.listItem}>
                   <Ionicons name="close-circle" size={20} color="#E74C3C" />
-                  <Text style={styles.listText}>Votre compte et vos donnÃ©es</Text>
+                  <Text style={styles.listText}>Your account and your data</Text>
                 </View>
               </View>
 
@@ -117,7 +119,7 @@ export default function DeleteAccountScreen() {
                 onPress={() => setStep(2)}
                 disabled={isDeleting}
               >
-                <Text style={styles.continueButtonText}>Continuer</Text>
+                <Text style={styles.continueButtonText}>Continue</Text>
               </TouchableOpacity>
 
               <TouchableOpacity
@@ -125,7 +127,7 @@ export default function DeleteAccountScreen() {
                 onPress={() => router.back()}
                 disabled={isDeleting}
               >
-                <Text style={styles.cancelButtonText}>Annuler</Text>
+                <Text style={styles.cancelButtonText}>Cancel</Text>
               </TouchableOpacity>
             </View>
           )}
@@ -133,9 +135,9 @@ export default function DeleteAccountScreen() {
           {step === 2 && (
             <View style={styles.stepContainer}>
               <View style={styles.confirmationBox}>
-                <Text style={styles.confirmationTitle}>Confirmez la suppression</Text>
+                <Text style={styles.confirmationTitle}>Confirm deletion</Text>
                 <Text style={styles.confirmationText}>
-                  Cette action ne peut pas Ãªtre annulÃ©e. ÃŠtes-vous absolument certain de vouloir supprimer votre compte ?
+                  This action cannot be undone. Are you absolutely sure you want to delete your account?
                 </Text>
               </View>
 
@@ -144,7 +146,7 @@ export default function DeleteAccountScreen() {
                 onPress={() => setStep(3)}
                 disabled={isDeleting}
               >
-                <Text style={styles.dangerButtonText}>Je suis sÃ»r, continuer</Text>
+                <Text style={styles.dangerButtonText}>I am sure, continue</Text>
               </TouchableOpacity>
 
               <TouchableOpacity
@@ -152,21 +154,21 @@ export default function DeleteAccountScreen() {
                 onPress={() => setStep(1)}
                 disabled={isDeleting}
               >
-                <Text style={styles.cancelButtonText}>Revenir en arriÃ¨re</Text>
+                <Text style={styles.cancelButtonText}>Go back</Text>
               </TouchableOpacity>
             </View>
           )}
 
           {step === 3 && (
             <View style={styles.stepContainer}>
-              <Text style={styles.stepTitle}>Entrez votre mot de passe</Text>
+              <Text style={styles.stepTitle}>Enter your password</Text>
               <Text style={styles.stepDescription}>
-                Pour des raisons de sÃ©curitÃ©, veuillez confirmer votre mot de passe pour supprimer votre compte.
+                For security reasons, please confirm your password to delete your account.
               </Text>
 
               <TextInput
                 style={styles.passwordInput}
-                placeholder="Votre mot de passe"
+                placeholder="Your password"
                 placeholderTextColor={Colors.textSecondary}
                 secureTextEntry
                 value={password}
@@ -183,7 +185,7 @@ export default function DeleteAccountScreen() {
                 {isDeleting ? (
                   <ActivityIndicator color="#fff" size="small" />
                 ) : (
-                  <Text style={styles.dangerButtonText}>Supprimer mon compte</Text>
+                  <Text style={styles.dangerButtonText}>Delete my account</Text>
                 )}
               </TouchableOpacity>
 
@@ -195,7 +197,7 @@ export default function DeleteAccountScreen() {
                 }}
                 disabled={isDeleting}
               >
-                <Text style={styles.cancelButtonText}>Annuler</Text>
+                <Text style={styles.cancelButtonText}>Cancel</Text>
               </TouchableOpacity>
             </View>
           )}
@@ -203,10 +205,10 @@ export default function DeleteAccountScreen() {
 
         <ConfirmationModal
           visible={showPasswordModal}
-          title="DerniÃ¨re confirmation"
-          message="ÃŠtes-vous absolument certain de vouloir supprimer votre compte ? Cette action est irrÃ©versible."
-          cancelText="Non, annuler"
-          confirmText="Oui, supprimer"
+          title="Final confirmation"
+          message="Are you absolutely sure you want to delete your account? This action is irreversible."
+          cancelText="No, cancel"
+          confirmText="Yes, delete"
           isDangerous={true}
           isLoading={isDeleting}
           onCancel={() => setShowPasswordModal(false)}

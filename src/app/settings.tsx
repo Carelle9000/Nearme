@@ -30,27 +30,27 @@ export default function SettingsScreen() {
 
   const handleDeleteAccount = async () => {
     Alert.alert(
-      'Supprimer le compte',
-      'Cette action est irrÃ©versible. Tous vos donnÃ©es seront dÃ©finitivement supprimÃ©es.',
+      t('deleteAccountTitle'),
+      t('deleteAccountMessage'),
       [
         {
-          text: 'Annuler',
+          text: t('cancel'),
           style: 'cancel',
         },
         {
-          text: 'Supprimer',
+          text: t('delete'),
           style: 'destructive',
           onPress: () => {
             Alert.alert(
-              'Confirmation finale',
-              'ÃŠtes-vous absolument certain ? Cette action ne peut pas Ãªtre annulÃ©e.',
+              t('finalConfirmation'),
+              t('finalConfirmationMessage'),
               [
                 {
-                  text: 'Annuler',
+                  text: t('cancel'),
                   style: 'cancel',
                 },
                 {
-                  text: 'Je comprends, supprimer mon compte',
+                  text: t('iUnderstandDelete'),
                   style: 'destructive',
                   onPress: async () => {
                     await performDeleteAccount();
@@ -85,8 +85,8 @@ export default function SettingsScreen() {
       }
 
       Alert.alert(
-        'Compte supprimÃ©',
-        'Votre compte a Ã©tÃ© dÃ©finitivement supprimÃ©.',
+        'Account deleted',
+        'Your account has been permanently deleted.',
         [
           {
             text: 'OK',
@@ -101,12 +101,12 @@ export default function SettingsScreen() {
       );
     } catch (error: any) {
       console.error('Error deleting account:', error);
-      let errorMessage = 'Une erreur est survenue lors de la suppression du compte';
+      let errorMessage = 'An error occurred while deleting the account';
 
       if (error.code === 'auth/requires-recent-login') {
-        errorMessage = 'Veuillez vous dÃ©connecter et vous reconnecter avant de supprimer votre compte.';
+        errorMessage = 'Please log out and log back in before deleting your account.';
       } else if (error.code === 'auth/user-not-found') {
-        errorMessage = 'Utilisateur non trouvÃ©.';
+        errorMessage = 'User not found.';
       } else if (error.message) {
         errorMessage = error.message;
       }
@@ -123,7 +123,7 @@ export default function SettingsScreen() {
           <TouchableOpacity onPress={() => router.back()}>
             <Ionicons name="chevron-back" size={28} color={Colors.primary} />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>ParamÃ¨tres</Text>
+          <Text style={styles.headerTitle}>Settings</Text>
           <View style={{ width: 28 }} />
         </View>
 
@@ -132,9 +132,9 @@ export default function SettingsScreen() {
             <Text style={styles.sectionTitle}>Notifications</Text>
             <View style={styles.settingRow}>
               <View style={styles.settingLabel}>
-                <Text style={styles.settingName}>Notifications push</Text>
+                <Text style={styles.settingName}>Push notifications</Text>
                 <Text style={styles.settingDescription}>
-                  Recevez les alertes de messages et de matches
+                  Receive alerts for messages and matches
                 </Text>
               </View>
               <Switch
@@ -147,12 +147,12 @@ export default function SettingsScreen() {
           </View>
 
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Localisation</Text>
+            <Text style={styles.sectionTitle}>Location</Text>
             <View style={styles.settingRow}>
               <View style={styles.settingLabel}>
-                <Text style={styles.settingName}>Partager ma localisation</Text>
+                <Text style={styles.settingName}>Share my location</Text>
                 <Text style={styles.settingDescription}>
-                  Montrez votre localisation Ã  vos matches
+                  Show your location to your matches
                 </Text>
               </View>
               <Switch
@@ -165,7 +165,7 @@ export default function SettingsScreen() {
           </View>
 
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Ã€ propos</Text>
+            <Text style={styles.sectionTitle}>About</Text>
             <TouchableOpacity style={styles.settingRow} disabled>
               <Text style={styles.settingName}>Version</Text>
               <Text style={styles.settingValue}>1.0.0</Text>
@@ -174,14 +174,14 @@ export default function SettingsScreen() {
               style={styles.settingRow}
               onPress={() => router.push('/legal/privacy-policy')}
             >
-              <Text style={styles.settingName}>Politique de confidentialitÃ©</Text>
+              <Text style={styles.settingName}>Privacy policy</Text>
               <Ionicons name="chevron-forward" size={20} color={Colors.textSecondary} />
             </TouchableOpacity>
             <TouchableOpacity
               style={styles.settingRow}
               onPress={() => router.push('/legal/terms-of-service')}
             >
-              <Text style={styles.settingName}>Conditions d'utilisation</Text>
+              <Text style={styles.settingName}>Terms of service</Text>
               <Ionicons name="chevron-forward" size={20} color={Colors.textSecondary} />
             </TouchableOpacity>
           </View>
