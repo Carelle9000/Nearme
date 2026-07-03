@@ -92,26 +92,26 @@ export default function PublicProfileScreen() {
       if (result.isMatch) {
         setIsMatched(true);
         Alert.alert(
-          "C'est un match !",
-          'Vous vous êtes mutuellement likés.',
+          "It's a match!",
+          'You liked each other.',
           [
-            { text: 'Plus tard', style: 'cancel', onPress: () => router.back() },
+            { text: 'Later', style: 'cancel', onPress: () => router.back() },
             {
-              text: 'Envoyer un message',
+              text: 'Send a message',
               onPress: () => router.replace(`/chat/${matchId}`),
             },
           ]
         );
       } else {
         Alert.alert(
-          'Like envoyé',
-          'On te préviendra si le match se confirme.',
+          'Like sent',
+          'We will let you know if the match is confirmed.',
           [{ text: 'OK', onPress: () => router.back() }]
         );
       }
     } catch (err) {
       console.error('[PublicProfile] like failed:', err);
-      Alert.alert('Erreur', 'Impossible d\'envoyer le like');
+      Alert.alert('Error', 'Unable to send the like');
     } finally {
       setIsActing(false);
     }
@@ -125,7 +125,7 @@ export default function PublicProfileScreen() {
       router.back();
     } catch (err) {
       console.error('[PublicProfile] nope failed:', err);
-      Alert.alert('Erreur', 'Impossible de passer ce profil');
+      Alert.alert('Error', 'Unable to pass this profile');
     } finally {
       setIsActing(false);
     }
@@ -139,27 +139,28 @@ export default function PublicProfileScreen() {
     if (!id || !user?.id || isActing) return;
 
     Alert.alert(
-      'Bloquer ce profil',
-      'Ce profil ne pourra plus vous voir ou vous contacter.',
+      'Block this profile',
+      'This profile will no longer be able to see or contact you.',
       [
         {
-          text: 'Annuler',
+          text: 'Cancel',
           style: 'cancel',
         },
         {
-          text: 'Bloquer',
+          text: 'Block',
           style: 'destructive',
           onPress: async () => {
             setIsActing(true);
             try {
               await userService.saveBlock(user.id, id);
               setIsBlocked(true);
-              Alert.alert('Profil bloqué', 'Ce profil a été bloqué.', [
+              Alert.alert('Profile blocked', 'This profile has been blocked.', [
                 { text: 'OK', onPress: () => router.back() },
               ]);
             } catch (err) {
               console.error('[PublicProfile] block failed:', err);
-              Alert.alert('Erreur', 'Impossible de bloquer ce profil');
+              Alert.alert('Error', 'Unable to block this profile');
+            } finally {
               setIsActing(false);
             }
           },
@@ -172,26 +173,27 @@ export default function PublicProfileScreen() {
     if (!id || !user?.id || isActing) return;
 
     Alert.alert(
-      'Débloquer ce profil',
-      'Ce profil pourra à nouveau vous voir et vous contacter.',
+      'Unblock this profile',
+      'This profile will be able to see and contact you again.',
       [
         {
-          text: 'Annuler',
+          text: 'Cancel',
           style: 'cancel',
         },
         {
-          text: 'Débloquer',
+          text: 'Unblock',
           onPress: async () => {
             setIsActing(true);
             try {
               await userService.unblock(user.id, id);
               setIsBlocked(false);
-              Alert.alert('Profil débloqué', 'Ce profil a été débloqué.', [
+              Alert.alert('Profile unblocked', 'This profile has been unblocked.', [
                 { text: 'OK' },
               ]);
             } catch (err) {
               console.error('[PublicProfile] unblock failed:', err);
-              Alert.alert('Erreur', 'Impossible de débloquer ce profil');
+              Alert.alert('Error', 'Unable to unblock this profile');
+            } finally {
               setIsActing(false);
             }
           },
@@ -211,9 +213,9 @@ export default function PublicProfileScreen() {
   if (!profile) {
     return (
       <LinearGradient colors={[Colors.background, Colors.cardSurface]} style={styles.emptyContainer}>
-        <Text style={styles.emptyText}>Profil introuvable</Text>
+        <Text style={styles.emptyText}>Profile not found</Text>
         <TouchableOpacity onPress={() => router.back()}>
-          <Text style={styles.emptyLink}>Retour</Text>
+          <Text style={styles.emptyLink}>Back</Text>
         </TouchableOpacity>
       </LinearGradient>
     );
@@ -233,7 +235,7 @@ export default function PublicProfileScreen() {
           disabled={isActing}
         >
           <Ionicons name="chatbubbles" size={20} color="#fff" />
-          <Text style={styles.primaryButtonText}>Envoyer un message</Text>
+          <Text style={styles.primaryButtonText}>Send a message</Text>
         </TouchableOpacity>
       );
     }
@@ -241,7 +243,7 @@ export default function PublicProfileScreen() {
     if (hasLikedMe && !iLiked) {
       return (
         <>
-          <Text style={styles.actionsHint}>Ce profil vous a likée.</Text>
+          <Text style={styles.actionsHint}>This profile liked you.</Text>
           <View style={styles.actionsRow}>
             <TouchableOpacity
               style={[styles.secondaryButton, styles.actionHalf]}
@@ -249,7 +251,7 @@ export default function PublicProfileScreen() {
               disabled={isActing}
             >
               <Ionicons name="close" size={22} color={Colors.textSecondary} />
-              <Text style={styles.secondaryButtonText}>Passer</Text>
+              <Text style={styles.secondaryButtonText}>Pass</Text>
             </TouchableOpacity>
             <TouchableOpacity
               style={[styles.primaryButton, styles.actionHalf]}
@@ -261,7 +263,7 @@ export default function PublicProfileScreen() {
               ) : (
                 <>
                   <Ionicons name="heart" size={22} color="#fff" />
-                  <Text style={styles.primaryButtonText}>Liker en retour</Text>
+                  <Text style={styles.primaryButtonText}>Like back</Text>
                 </>
               )}
             </TouchableOpacity>
@@ -274,7 +276,7 @@ export default function PublicProfileScreen() {
       return (
         <View style={[styles.primaryButton, styles.primaryButtonDisabled]}>
           <Ionicons name="hourglass-outline" size={20} color="#fff" />
-          <Text style={styles.primaryButtonText}>En attente d&apos;un match…</Text>
+          <Text style={styles.primaryButtonText}>Waiting for a match…</Text>
         </View>
       );
     }
@@ -299,7 +301,7 @@ export default function PublicProfileScreen() {
           ) : (
             <>
               <Ionicons name="heart" size={22} color="#fff" />
-              <Text style={styles.primaryButtonText}>Liker</Text>
+              <Text style={styles.primaryButtonText}>Like</Text>
             </>
           )}
         </TouchableOpacity>
@@ -339,14 +341,14 @@ export default function PublicProfileScreen() {
 
           {profile.bio && (
             <View style={styles.section}>
-              <Text style={styles.sectionTitle}>À propos</Text>
+              <Text style={styles.sectionTitle}>About</Text>
               <Text style={styles.bioText}>{profile.bio}</Text>
             </View>
           )}
 
           {interests.length > 0 && (
             <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Intérêts</Text>
+              <Text style={styles.sectionTitle}>Interests</Text>
               <View style={styles.interestsList}>
                 {interests.map((interest, index) => (
                   <View key={`${interest}-${index}`} style={styles.interestTag}>
@@ -365,7 +367,7 @@ export default function PublicProfileScreen() {
                 disabled={isActing}
               >
                 <Ionicons name="ban" size={18} color={Colors.textSecondary} />
-                <Text style={styles.blockButtonText}>Débloquer ce profil</Text>
+                <Text style={styles.blockButtonText}>Unblock this profile</Text>
               </TouchableOpacity>
             ) : (
               <>
@@ -376,7 +378,7 @@ export default function PublicProfileScreen() {
                   disabled={isActing}
                 >
                   <Ionicons name="ban" size={18} color={Colors.textSecondary} />
-                  <Text style={styles.blockButtonText}>Bloquer ce profil</Text>
+                  <Text style={styles.blockButtonText}>Block this profile</Text>
                 </TouchableOpacity>
               </>
             )}

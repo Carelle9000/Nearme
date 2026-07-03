@@ -33,7 +33,7 @@ export default function ProfileScreen() {
       router.replace('/auth/login');
     } catch (error: any) {
       console.error('Logout error:', error);
-      const errorMessage = error?.message || 'Une erreur est survenue lors de la dÃ©connexion';
+      const errorMessage = error?.message || 'An error occurred while signing out';
       setIsLoggingOut(false);
       setShowLogoutConfirm(false);
       Alert.alert(t('error'), errorMessage);
@@ -53,10 +53,10 @@ export default function ProfileScreen() {
       <SafeAreaView style={styles.safeArea}>
         <ConfirmationModal
           visible={showLogoutConfirm}
-          title="DÃ©connexion"
-          message="ÃŠtes-vous sÃ»r de vouloir vous dÃ©connecter ?"
-          cancelText="Annuler"
-          confirmText="DÃ©connecter"
+          title={t('logout')}
+          message={t('areYouSureLogout')}
+          cancelText={t('cancel')}
+          confirmText={t('logout')}
           isDangerous={false}
           isLoading={isLoggingOut}
           onCancel={() => setShowLogoutConfirm(false)}
@@ -91,7 +91,7 @@ export default function ProfileScreen() {
         {/* Bio Section */}
         {user.bio && (
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Bio</Text>
+            <Text style={styles.sectionTitle}>{t('bio')}</Text>
             <Text style={styles.bioText}>{user.bio}</Text>
           </View>
         )}
@@ -99,7 +99,7 @@ export default function ProfileScreen() {
         {/* Interests Section */}
         {user.interests && user.interests.length > 0 && (
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>IntÃ©rÃªts</Text>
+            <Text style={styles.sectionTitle}>{t('interests')}</Text>
             <View style={styles.interestsList}>
               {user.interests.map((interest, index) => (
                 <View key={index} style={styles.interestBadge}>
@@ -126,17 +126,17 @@ export default function ProfileScreen() {
         <View style={styles.section}>
           <TouchableOpacity style={styles.actionButton} onPress={() => router.push('/profile/edit')}>
             <Ionicons name="create-outline" size={20} color={Colors.primary} />
-            <Text style={styles.actionButtonText}>Modifier mon profil</Text>
+            <Text style={styles.actionButtonText}>{t('editMyProfile')}</Text>
           </TouchableOpacity>
 
           <TouchableOpacity style={styles.actionButton} onPress={() => router.push('/profile/photos')}>
             <Ionicons name="image-outline" size={20} color={Colors.primary} />
-            <Text style={styles.actionButtonText}>GÃ©rer mes photos</Text>
+            <Text style={styles.actionButtonText}>{t('manageMyPhotos')}</Text>
           </TouchableOpacity>
 
           <TouchableOpacity style={styles.actionButton} onPress={() => router.push('/settings')}>
             <Ionicons name="settings-outline" size={20} color={Colors.primary} />
-            <Text style={styles.actionButtonText}>ParamÃ¨tres</Text>
+            <Text style={styles.actionButtonText}>{t('settings')}</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -144,7 +144,7 @@ export default function ProfileScreen() {
             onPress={handleLogout}
           >
             <Ionicons name="log-out-outline" size={20} color={Colors.text} />
-            <Text style={[styles.actionButtonText, styles.logoutButtonText]}>DÃ©connexion</Text>
+            <Text style={[styles.actionButtonText, styles.logoutButtonText]}>{t('logout')}</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -152,7 +152,7 @@ export default function ProfileScreen() {
             onPress={() => router.push('/profile/delete-account')}
           >
             <Ionicons name="trash-outline" size={20} color="#fff" />
-            <Text style={[styles.actionButtonText, styles.deleteButtonText]}>Supprimer mon compte</Text>
+            <Text style={[styles.actionButtonText, styles.deleteButtonText]}>{t('deleteMyAccount')}</Text>
           </TouchableOpacity>
 
         </View>

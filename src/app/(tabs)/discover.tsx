@@ -40,12 +40,12 @@ export default function DiscoverScreen() {
   useEffect(() => {
     if (!lastMatch) return;
     Alert.alert(
-      "C'est un match !",
-      'Vous vous Ãªtes mutuellement likÃ©s. Envoyez un message maintenant.',
+      t('itsAMatch'),
+      t('youLikedEachOther'),
       [
-        { text: 'Plus tard', style: 'cancel', onPress: clearLastMatch },
+        { text: t('later'), style: 'cancel', onPress: clearLastMatch },
         {
-          text: 'Envoyer un message',
+          text: t('sendMessage'),
           onPress: () => {
             clearLastMatch();
             router.push(`/chat/${lastMatch.matchId}`);
@@ -53,13 +53,13 @@ export default function DiscoverScreen() {
         },
       ]
     );
-  }, [lastMatch, clearLastMatch, router]);
+  }, [lastMatch, clearLastMatch, router, t]);
 
   const loadProfiles = useCallback(async () => {
     try {
       // Prefer the profile's stored location (intent-based, kept fresh by
       // locationSyncService). Fall back to the device's live position only if
-      // no valid coords are on file â€” otherwise a user swiping abroad would
+      // no valid coords are on file — otherwise a user swiping abroad would
       // suddenly see profiles around their travel spot instead of home.
       const stored = user?.location;
       const hasStored =
@@ -81,7 +81,7 @@ export default function DiscoverScreen() {
         console.log(`[Discover] Using device live location (${live.latitude}, ${live.longitude})`);
         await loadNearbyProfiles(live.latitude, live.longitude);
       } else {
-        Alert.alert(t('error'), 'Veuillez activer les services de localisation');
+        Alert.alert(t('error'), t('pleaseEnableLocation'));
       }
     } catch (error) {
       console.error('Error loading profiles:', error);
@@ -105,34 +105,34 @@ export default function DiscoverScreen() {
       router.push(`/chat/${conversation.id}`);
     } catch (error) {
       console.error('Error creating conversation:', error);
-      Alert.alert(t('error'), 'Impossible de crÃ©er la conversation');
+      Alert.alert(t('error'), t('unableToCreateConversation'));
     }
   }, [currentProfile, user, router]);
 
   const handleUndo = useCallback(async () => {
     try {
       await undo();
-      Alert.alert('Undo', 'Action annulÃ©e');
+      Alert.alert(t('undo'), t('actionUndone'));
     } catch (error) {
       console.error('Undo error:', error);
-      Alert.alert('Erreur', 'Impossible d\'annuler l\'action');
+      Alert.alert(t('error'), t('errorUnableToUndoAction'));
     }
-  }, [undo]);
+  }, [undo, t]);
 
   const handleLockedUndo = useCallback(() => {
     // Show premium upsell
     Alert.alert(
-      'Feature Premium',
-      'DÃ©verrouillez le UNDO et d\'autres fonctionnalitÃ©s premium',
+      t('premiumFeatureTitle'),
+      t('unlockPremium'),
       [
-        { text: 'Plus tard', style: 'cancel' },
+        { text: t('later'), style: 'cancel' },
         {
-          text: 'Passer Premium',
+          text: t('premiumGo'),
           onPress: () => router.push('/premium'),
         },
       ]
     );
-  }, [router]);
+  }, [router, t]);
 
   useEffect(() => {
     loadProfiles();

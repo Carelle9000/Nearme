@@ -54,7 +54,7 @@ export default function WhoLikedYouScreen() {
             <TouchableOpacity onPress={() => router.back()}>
               <Ionicons name="chevron-back" size={28} color={Colors.text} />
             </TouchableOpacity>
-            <Text style={styles.headerTitle}>Qui m'a aimÃ©</Text>
+            <Text style={styles.headerTitle}>Who liked me</Text>
             <View style={{ width: 28 }} />
           </View>
 
@@ -62,8 +62,8 @@ export default function WhoLikedYouScreen() {
           <View style={styles.lockedContent}>
             <FeatureLock
               isLocked={true}
-              featureName="Qui m'a aimÃ©"
-              description="DÃ©verrouillez premium pour dÃ©couvrir qui vous a likÃ©"
+              featureName="Who liked me"
+              description="Unlock premium to discover who liked you"
               size="large"
               onUnlockPress={() => router.push('/premium')}
             />
@@ -81,7 +81,7 @@ export default function WhoLikedYouScreen() {
           <TouchableOpacity onPress={() => router.back()}>
             <Ionicons name="chevron-back" size={28} color={Colors.text} />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>Qui m'a aimÃ©</Text>
+          <Text style={styles.headerTitle}>Who liked me</Text>
           <TouchableOpacity onPress={handleRefresh} disabled={isRefreshing}>
             {isRefreshing ? (
               <ActivityIndicator color={Colors.primary} size="small" />
@@ -95,12 +95,12 @@ export default function WhoLikedYouScreen() {
         <View style={[styles.card, styles.statsCard]}>
           <View style={styles.statItem}>
             <Text style={styles.statValue}>{whoLikedYou.length}</Text>
-            <Text style={styles.statLabel}>Vous ont aimÃ©</Text>
+            <Text style={styles.statLabel}>Liked you</Text>
           </View>
           <View style={styles.statDivider} />
           <View style={styles.statItem}>
             <Ionicons name="heart" size={24} color={Colors.primary} />
-            <Text style={styles.statLabel}>Cette semaine</Text>
+            <Text style={styles.statLabel}>This week</Text>
           </View>
         </View>
 

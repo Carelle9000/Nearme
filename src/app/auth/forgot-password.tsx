@@ -183,7 +183,7 @@ export default function ForgotPasswordScreen() {
               />
               <TextInput
                 style={styles.input}
-                placeholder="Nouveau mot de passe"
+                placeholder="New password"
                 placeholderTextColor={Colors.textSecondary}
                 value={newPassword}
                 onChangeText={setNewPassword}
@@ -202,7 +202,7 @@ export default function ForgotPasswordScreen() {
               </TouchableOpacity>
             </View>
 
-            <Text style={styles.label}>CONFIRMER LE MOT DE PASSE</Text>
+            <Text style={styles.label}>CONFIRM PASSWORD</Text>
             <View style={styles.inputContainer}>
               <Ionicons
                 name="lock-closed"
@@ -212,7 +212,7 @@ export default function ForgotPasswordScreen() {
               />
               <TextInput
                 style={styles.input}
-                placeholder="Confirmer le mot de passe"
+                placeholder="Confirm password"
                 placeholderTextColor={Colors.textSecondary}
                 value={confirmPassword}
                 onChangeText={setConfirmPassword}
@@ -222,8 +222,8 @@ export default function ForgotPasswordScreen() {
             </View>
 
             <Text style={styles.passwordHint}>
-              Le mot de passe doit contenir 12+ caractÃ¨res avec minuscules, majuscules, chiffres
-              et symboles.
+              The password must contain 12+ characters with lowercase, uppercase, numbers
+              and symbols.
             </Text>
 
             <LinearGradient
@@ -240,7 +240,7 @@ export default function ForgotPasswordScreen() {
                 {isLoading ? (
                   <ActivityIndicator color={Colors.text} />
                 ) : (
-                  <Text style={styles.buttonText}>RÃ©initialiser le mot de passe</Text>
+                  <Text style={styles.buttonText}>Reset password</Text>
                 )}
               </TouchableOpacity>
             </LinearGradient>

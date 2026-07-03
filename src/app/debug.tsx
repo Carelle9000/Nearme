@@ -33,53 +33,53 @@ export default function DebugScreen() {
 
   const addLog = (message: string) => {
     console.log(`[DEBUG] ${message}`);
-    setResults((prev) => [...prev, `âœ“ ${message}`]);
+    setResults((prev) => [...prev, `✓ ${message}`]);
   };
 
   const addError = (message: string) => {
     console.error(`[ERROR] ${message}`);
-    setResults((prev) => [...prev, `âœ— ${message}`]);
+    setResults((prev) => [...prev, `✗ ${message}`]);
   };
 
   const clearLogs = () => setResults([]);
 
-  // Test 1: VÃ©rifier la connexion Firebase
+  // Test 1: Check Firebase connection
   const testFirebaseConnection = async () => {
     setLoading(true);
     clearLogs();
     try {
       addLog('Testing Firebase connection...');
 
-      // VÃ©rifier que Firebase est initialisÃ©
+      // Check that Firebase is initialized
       if (!auth || !rtdb) {
         throw new Error('Firebase not initialized');
       }
-      addLog('Firebase auth initialized âœ“');
-      addLog('Firebase Firestore initialized âœ“');
+      addLog('Firebase auth initialized ✓');
+      addLog('Firebase Firestore initialized ✓');
 
-      // Tester la lecture Firestore
+      // Test Firestore read access
       try {
         const testRef = ref(rtdb, 'conversations/test');
         await get(testRef);
-        addLog('Firestore read access âœ“');
+        addLog('Firestore read access ✓');
       } catch (e: any) {
         if (e.code === 'permission-denied') {
           addError('Firestore permission denied - check security rules');
         } else {
-          addLog('Firestore accessible âœ“');
+          addLog('Firestore accessible ✓');
         }
       }
 
-      Alert.alert('âœ… Firebase ConnectÃ©', 'Votre Firebase est correctement connectÃ© !');
+      Alert.alert('✅ Firebase Connected', 'Your Firebase is properly connected!');
     } catch (error: any) {
       addError(`Firebase Error: ${error.message}`);
-      Alert.alert('âŒ Erreur Firebase', error.message);
+      Alert.alert('❌ Firebase Error', error.message);
     } finally {
       setLoading(false);
     }
   };
 
-  // Test 2: VÃ©rifier l'utilisateur courant
+  // Test 2: Check current user
   const testCurrentUser = async () => {
     setLoading(true);
     clearLogs();
@@ -101,7 +101,7 @@ export default function DebugScreen() {
     }
   };
 
-  // Test 3: Tester la lecture de profil
+  // Test 3: Test profile read
   const testGetProfile = async () => {
     setLoading(true);
     clearLogs();
@@ -128,7 +128,7 @@ export default function DebugScreen() {
     }
   };
 
-  // Test 4: Tester la mise Ã  jour de profil
+  // Test 4: Test profile update
   const testUpdateProfile = async () => {
     setLoading(true);
     clearLogs();
@@ -143,7 +143,7 @@ export default function DebugScreen() {
       await userService.updateProfile(user.id, {
         bio: `Updated at ${new Date().toLocaleTimeString()}`,
       });
-      addLog('Profile updated successfully âœ“');
+      addLog('Profile updated successfully ✓');
     } catch (error: any) {
       addError(`Update Error: ${error.message}`);
     } finally {
@@ -151,7 +151,7 @@ export default function DebugScreen() {
     }
   };
 
-  // Test 5: Tester les likes
+  // Test 5: Test likes
   const testLikes = async () => {
     setLoading(true);
     clearLogs();
@@ -162,13 +162,13 @@ export default function DebugScreen() {
         return;
       }
 
-      // Sauvegarder un like de test
+      // Save a test like
       addLog('Saving test like...');
       const testUserId = 'test-user-123';
       await userService.saveLike(user.id, testUserId);
-      addLog('Like saved âœ“');
+      addLog('Like saved ✓');
 
-      // RÃ©cupÃ©rer les likes
+      // Fetch the likes
       addLog('Fetching sent likes...');
       const likes = await userService.getSentLikes(user.id);
       addLog(`You have ${likes.length} likes`);
@@ -180,7 +180,7 @@ export default function DebugScreen() {
     }
   };
 
-  // Test 6: Tester les conversations
+  // Test 6: Test conversations
   const testConversations = async () => {
     setLoading(true);
     clearLogs();
@@ -214,7 +214,7 @@ export default function DebugScreen() {
     }
   };
 
-  // Test 7: Tester l'enregistrement
+  // Test 7: Test registration
   const testRegistration = async () => {
     setLoading(true);
     clearLogs();
@@ -237,7 +237,7 @@ export default function DebugScreen() {
   return (
     <ScrollView style={{ flex: 1, backgroundColor: '#fff', padding: 16 }}>
       <Text style={{ fontSize: 24, fontWeight: 'bold', marginBottom: 20 }}>
-        ðŸ§ª Firebase Debug Console
+        🧪 Firebase Debug Console
       </Text>
 
       {/* User Info */}
@@ -250,7 +250,7 @@ export default function DebugScreen() {
             <Text>ID: {user.id}</Text>
           </>
         ) : (
-          <Text style={{ color: 'red' }}>âŒ Not logged in</Text>
+          <Text style={{ color: 'red' }}>❌ Not logged in</Text>
         )}
       </View>
 
@@ -259,13 +259,13 @@ export default function DebugScreen() {
         Tests:
       </Text>
 
-      <TestButton title="âœ… Test Firebase Connection" onPress={testFirebaseConnection} color="#34C759" />
-      <TestButton title="ðŸ‘¤ Check Current User" onPress={testCurrentUser} color="#007AFF" />
-      <TestButton title="ðŸ“‹ Get My Profile" onPress={testGetProfile} color="#007AFF" />
-      <TestButton title="âœï¸ Update Profile" onPress={testUpdateProfile} color="#FF9500" />
-      <TestButton title="â¤ï¸ Test Likes" onPress={testLikes} color="#FF3B30" />
-      <TestButton title="ðŸ’¬ Test Conversations" onPress={testConversations} color="#5856D6" />
-      <TestButton title="ðŸ“ Test Registration" onPress={testRegistration} color="#FF9500" />
+      <TestButton title="✅ Test Firebase Connection" onPress={testFirebaseConnection} color="#34C759" />
+      <TestButton title="👤 Check Current User" onPress={testCurrentUser} color="#007AFF" />
+      <TestButton title="📋 Get My Profile" onPress={testGetProfile} color="#007AFF" />
+      <TestButton title="✏️ Update Profile" onPress={testUpdateProfile} color="#FF9500" />
+      <TestButton title="❤️ Test Likes" onPress={testLikes} color="#FF3B30" />
+      <TestButton title="💬 Test Conversations" onPress={testConversations} color="#5856D6" />
+      <TestButton title="📝 Test Registration" onPress={testRegistration} color="#FF9500" />
 
       {/* Loading Indicator */}
       {loading && <ActivityIndicator size="large" color="#007AFF" style={{ marginVertical: 20 }} />}
@@ -290,7 +290,7 @@ export default function DebugScreen() {
       {/* Browser Console Reminder */}
       <View style={{ backgroundColor: '#FFF3CD', padding: 12, borderRadius: 8, marginTop: 16 }}>
         <Text style={{ fontSize: 12, color: '#856404', fontWeight: 'bold' }}>
-          ðŸ’¡ Tip: Open browser console (F12) to see detailed logs
+          💡 Tip: Open browser console (F12) to see detailed logs
         </Text>
       </View>
     </ScrollView>

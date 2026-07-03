@@ -21,7 +21,7 @@ import { ConfirmationModal } from '@/components/ConfirmationModal';
 import { auth } from '@/config/firebase';
 import { useLocalization } from '@/context/localization-context';
 
-const GENDERS = ['Homme', 'Femme', 'Non-binaire', 'Autre'];
+const GENDERS = ['Man', 'Woman', 'Non-binary', 'Other'];
 const INTERESTS = ['Travel', 'Music', 'Sport', 'Art', 'Food', 'Gaming', 'Books', 'Movies', 'Fitness'];
 
 export default function SignupStep3() {
@@ -242,12 +242,12 @@ export default function SignupStep3() {
 
         {/* City */}
         <View style={styles.fieldGroup}>
-          <Text style={styles.label}>VILLE</Text>
+          <Text style={styles.label}>CITY</Text>
           <View style={styles.inputContainer}>
             <Ionicons name="location" size={20} color={Colors.primary} style={styles.inputIcon} />
             <TextInput
               style={styles.input}
-              placeholder="Paris, Lyon, Marseille..."
+              placeholder="Paris, London, New York..."
               placeholderTextColor={Colors.textSecondary}
               value={data.city}
               onChangeText={(city) => updateData({ city })}
@@ -278,7 +278,7 @@ export default function SignupStep3() {
                 disabled={isLoading}
               >
                 <Ionicons name="add" size={32} color={Colors.primary} />
-                <Text style={styles.photoAddText}>Ajouter</Text>
+                <Text style={styles.photoAddText}>Add</Text>
               </TouchableOpacity>
             )}
           </View>
@@ -286,7 +286,7 @@ export default function SignupStep3() {
 
         {/* Interests */}
         <View style={styles.fieldGroup}>
-          <Text style={styles.label}>MES INTÃ‰RÃŠTS</Text>
+          <Text style={styles.label}>MY INTERESTS</Text>
           <View style={styles.interestsGrid}>
             {INTERESTS.map((interest) => {
               const isSelected = data.interests?.includes(interest);
@@ -329,7 +329,7 @@ export default function SignupStep3() {
           <View style={styles.inputContainer}>
             <TextInput
               style={[styles.input, styles.bioInput]}
-              placeholder="Parlez un peu de vous..."
+              placeholder="Tell us a bit about yourself..."
               placeholderTextColor={Colors.textSecondary}
               value={data.bio}
               onChangeText={(bio) => updateData({ bio: bio.slice(0, 500) })}
@@ -345,7 +345,7 @@ export default function SignupStep3() {
       {/* Bug Z3: the button used to be disabled while !isFormValid, which meant
           a fast "type last field + tap submit" got the previous render's
           disabled=true and swallowed the first tap. We now always accept the
-          tap and validate inside handleCreateProfile â€” the visual "disabled"
+          tap and validate inside handleCreateProfile — the visual "disabled"
           look is kept via the gradient style so nothing changes for the eye. */}
       <TouchableOpacity
         onPress={handleCreateProfile}
@@ -366,7 +366,7 @@ export default function SignupStep3() {
             {isLoading ? (
               <ActivityIndicator color={Colors.text} />
             ) : (
-              <Text style={styles.buttonText}>CrÃ©er mon profil</Text>
+              <Text style={styles.buttonText}>Create my profile</Text>
             )}
           </View>
         </LinearGradient>

@@ -21,7 +21,7 @@ export default function PrivacyPolicyScreen() {
           <TouchableOpacity onPress={() => router.back()}>
             <Ionicons name="chevron-back" size={28} color={Colors.primary} />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>Politique de confidentialitÃ©</Text>
+          <Text style={styles.headerTitle}>Politique de confidentialité</Text>
           <View style={{ width: 28 }} />
         </View>
 
@@ -29,54 +29,54 @@ export default function PrivacyPolicyScreen() {
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>1. Introduction</Text>
             <Text style={styles.text}>
-              nearme est engagÃ© Ã  protÃ©ger votre vie privÃ©e. Cette politique de confidentialitÃ© explique comment nous collectons, utilisons et protÃ©geons vos donnÃ©es personnelles.
+              nearme est engagé à protéger votre vie privée. Cette politique de confidentialité explique comment nous collectons, utilisons et protégeons vos données personnelles.
             </Text>
           </View>
 
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>2. DonnÃ©es collectÃ©es</Text>
+            <Text style={styles.sectionTitle}>2. Données collectées</Text>
             <Text style={styles.text}>
               Nous collectons les informations suivantes :
             </Text>
             <View style={styles.list}>
-              <Text style={styles.listItem}>â€¢ Informations de compte (email, mot de passe)</Text>
-              <Text style={styles.listItem}>â€¢ Profil utilisateur (nom, Ã¢ge, photo, bio, intÃ©rÃªts)</Text>
-              <Text style={styles.listItem}>â€¢ Localisation (ville, coordonnÃ©es GPS)</Text>
-              <Text style={styles.listItem}>â€¢ Historique de messages</Text>
-              <Text style={styles.listItem}>â€¢ PrÃ©fÃ©rences et paramÃ¨tres</Text>
+              <Text style={styles.listItem}>• Informations de compte (email, mot de passe)</Text>
+              <Text style={styles.listItem}>• Profil utilisateur (nom, âge, photo, bio, intérêts)</Text>
+              <Text style={styles.listItem}>• Localisation (ville, coordonnées GPS)</Text>
+              <Text style={styles.listItem}>• Historique de messages</Text>
+              <Text style={styles.listItem}>• Préférences et paramètres</Text>
             </View>
           </View>
 
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>3. Utilisation des donnÃ©es</Text>
+            <Text style={styles.sectionTitle}>3. Utilisation des données</Text>
             <Text style={styles.text}>
-              Nous utilisons vos donnÃ©es pour :
+              Nous utilisons vos données pour :
             </Text>
             <View style={styles.list}>
-              <Text style={styles.listItem}>â€¢ Fournir et amÃ©liorer nos services</Text>
-              <Text style={styles.listItem}>â€¢ Vous recommander des profils compatibles</Text>
-              <Text style={styles.listItem}>â€¢ Assurer la sÃ©curitÃ© de votre compte</Text>
-              <Text style={styles.listItem}>â€¢ Communiquer avec vous</Text>
-              <Text style={styles.listItem}>â€¢ Respecter les obligations lÃ©gales</Text>
+              <Text style={styles.listItem}>• Fournir et améliorer nos services</Text>
+              <Text style={styles.listItem}>• Vous recommander des profils compatibles</Text>
+              <Text style={styles.listItem}>• Assurer la sécurité de votre compte</Text>
+              <Text style={styles.listItem}>• Communiquer avec vous</Text>
+              <Text style={styles.listItem}>• Respecter les obligations légales</Text>
             </View>
           </View>
 
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>4. Partage des donnÃ©es</Text>
+            <Text style={styles.sectionTitle}>4. Partage des données</Text>
             <Text style={styles.text}>
-              Nous ne partageons pas vos donnÃ©es personnelles avec des tiers, sauf :
+              Nous ne partageons pas vos données personnelles avec des tiers, sauf :
             </Text>
             <View style={styles.list}>
-              <Text style={styles.listItem}>â€¢ Pour respecter la loi ou une ordonnance judiciaire</Text>
-              <Text style={styles.listItem}>â€¢ Pour protÃ©ger la sÃ©curitÃ© et les droits de nearme</Text>
-              <Text style={styles.listItem}>â€¢ Avec votre consentement explicite</Text>
+              <Text style={styles.listItem}>• Pour respecter la loi ou une ordonnance judiciaire</Text>
+              <Text style={styles.listItem}>• Pour protéger la sécurité et les droits de nearme</Text>
+              <Text style={styles.listItem}>• Avec votre consentement explicite</Text>
             </View>
           </View>
 
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>5. SÃ©curitÃ© des donnÃ©es</Text>
+            <Text style={styles.sectionTitle}>5. Sécurité des données</Text>
             <Text style={styles.text}>
-              Nous implÃ©mentons des mesures de sÃ©curitÃ© techniques et organisationnelles pour protÃ©ger vos donnÃ©es contre l'accÃ¨s non autorisÃ©, la modification ou la divulgation.
+              Nous implémentons des mesures de sécurité techniques et organisationnelles pour protéger vos données contre l'accès non autorisé, la modification ou la divulgation.
             </Text>
           </View>
 
@@ -86,23 +86,23 @@ export default function PrivacyPolicyScreen() {
               Vous avez le droit de :
             </Text>
             <View style={styles.list}>
-              <Text style={styles.listItem}>â€¢ AccÃ©der Ã  vos donnÃ©es personnelles</Text>
-              <Text style={styles.listItem}>â€¢ Corriger les donnÃ©es inexactes</Text>
-              <Text style={styles.listItem}>â€¢ Demander la suppression de vos donnÃ©es</Text>
-              <Text style={styles.listItem}>â€¢ Vous opposer au traitement de vos donnÃ©es</Text>
+              <Text style={styles.listItem}>• Accéder à vos données personnelles</Text>
+              <Text style={styles.listItem}>• Corriger les données inexactes</Text>
+              <Text style={styles.listItem}>• Demander la suppression de vos données</Text>
+              <Text style={styles.listItem}>• Vous opposer au traitement de vos données</Text>
             </View>
           </View>
 
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>7. Contact</Text>
             <Text style={styles.text}>
-              Pour toute question concernant cette politique de confidentialitÃ©, veuillez nous contacter Ã  : privacy@nearme.app
+              Pour toute question concernant cette politique de confidentialité, veuillez nous contacter à : privacy@nearme.app
             </Text>
           </View>
 
           <View style={styles.lastUpdate}>
             <Text style={styles.lastUpdateText}>
-              DerniÃ¨re mise Ã  jour : janvier 2026
+              Dernière mise à jour : janvier 2026
             </Text>
           </View>
         </ScrollView>

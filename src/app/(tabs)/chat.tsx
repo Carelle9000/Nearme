@@ -37,14 +37,14 @@ export default function ChatScreen() {
     yesterday.setDate(yesterday.getDate() - 1);
 
     if (messageDate.toDateString() === today.toDateString()) {
-      return messageDate.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+      return messageDate.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
     }
 
     if (messageDate.toDateString() === yesterday.toDateString()) {
-      return 'Hier';
+      return t('yesterday');
     }
 
-    const dayNames = ['dimanche', 'lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi'];
+    const dayNames = [t('sunday'), t('monday'), t('tuesday'), t('wednesday'), t('thursday'), t('friday'), t('saturday')];
     return dayNames[messageDate.getDay()];
   };
 
@@ -86,7 +86,7 @@ export default function ChatScreen() {
             )}
           </View>
           <Text style={styles.lastMessage} numberOfLines={1}>
-            {item.lastMessage || 'DÃ©marrer une conversation'}
+            {item.lastMessage || t('startConversation')}
           </Text>
         </View>
 
@@ -111,7 +111,7 @@ export default function ChatScreen() {
         {/* Header */}
         <View style={styles.header}>
           <View style={styles.titleContainer}>
-            <Text style={styles.title}>Messages</Text>
+            <Text style={styles.title}>{t('messagesTab')}</Text>
             {conversations.length > 0 && (
               <View style={styles.badge}>
                 <Text style={styles.badgeText}>{conversations.length}</Text>
@@ -123,12 +123,12 @@ export default function ChatScreen() {
         {conversations.length === 0 ? (
           <View style={styles.emptyState}>
             <Ionicons name="chatbubbles-outline" size={64} color={Colors.textSecondary} />
-            <Text style={styles.emptyText}>No conversations yet</Text>
-            <Text style={styles.emptySubtext}>Start by liking someone!</Text>
+            <Text style={styles.emptyText}>{t('noConversations')}</Text>
+            <Text style={styles.emptySubtext}>{t('noConversationsSubtext')}</Text>
           </View>
         ) : (
           <>
-            <Text style={styles.sectionTitle}>CONVERSATIONS</Text>
+            <Text style={styles.sectionTitle}>{t('conversations')}</Text>
             <FlatList
               data={conversations}
               renderItem={renderConversation}

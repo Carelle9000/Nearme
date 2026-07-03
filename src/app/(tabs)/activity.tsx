@@ -180,7 +180,7 @@ export default function ActivityScreen() {
           color={Colors.primary}
         />
       </View>
-      <Text style={styles.emptyText}>{`Pas encore de ${title}`}</Text>
+      <Text style={styles.emptyText}>{`No ${title} yet`}</Text>
       <Text style={styles.emptySubtext}>{getEmptyMessage()}</Text>
     </View>
   );
@@ -189,22 +189,22 @@ export default function ActivityScreen() {
     if (!user?.id) return;
 
     Alert.alert(
-      'DÃ©bloquer ce profil',
-      `DÃ©bloquer ${profile.displayName || profile.name} ?`,
+      'Unblock this profile',
+      `Unblock ${profile.displayName || profile.name}?`,
       [
         {
-          text: 'Annuler',
+          text: 'Cancel',
           style: 'cancel',
         },
         {
-          text: 'DÃ©bloquer',
+          text: 'Unblock',
           onPress: async () => {
             try {
               await userService.unblock(user.id, profile.uid);
               setBlocked(blocked.filter((p) => p.uid !== profile.uid));
             } catch (error) {
               console.error('Error unblocking:', error);
-              Alert.alert('Erreur', 'Impossible de dÃ©bloquer ce profil');
+              Alert.alert('Error', 'Unable to unblock this profile');
             }
           },
         },
@@ -262,7 +262,7 @@ export default function ActivityScreen() {
             onPress={() => handleUnblock(profile)}
           >
             <Ionicons name="ban" size={16} color={Colors.text} />
-            <Text style={styles.unblockButtonText}>DÃ©bloquer</Text>
+            <Text style={styles.unblockButtonText}>Unblock</Text>
           </TouchableOpacity>
         )}
       </View>
@@ -285,11 +285,11 @@ export default function ActivityScreen() {
   const getEmptyTitle = () => {
     switch (activeTab) {
       case 'likes':
-        return 'like';
+        return 'likes';
       case 'favorites':
-        return 'favoris';
+        return 'favorites';
       case 'blocked':
-        return 'blocages';
+        return 'blocked profiles';
       default:
         return '';
     }
@@ -298,11 +298,11 @@ export default function ActivityScreen() {
   const getEmptyMessage = () => {
     switch (activeTab) {
       case 'likes':
-        return 'Les profils qui vous ont aimÃ© apparaÃ®tront ici';
+        return 'Profiles that liked you will appear here';
       case 'favorites':
-        return 'Les profils que vous avez aimÃ©s apparaÃ®tront ici';
+        return 'Profiles you liked will appear here';
       case 'blocked':
-        return 'Les profils que vous avez bloquÃ©s apparaÃ®tront ici';
+        return 'Profiles you blocked will appear here';
       default:
         return '';
     }
@@ -326,7 +326,7 @@ export default function ActivityScreen() {
       <SafeAreaView style={styles.safeArea}>
         {/* Header */}
         <View style={styles.header}>
-          <Text style={styles.title}>ActivitÃ©</Text>
+          <Text style={styles.title}>Activity</Text>
         </View>
 
         {/* Tabs */}
@@ -359,7 +359,7 @@ export default function ActivityScreen() {
             <Text
               style={[styles.tabText, activeTab === 'favorites' && styles.activeTabText]}
             >
-              Favoris
+              Favorites
             </Text>
           </TouchableOpacity>
 
@@ -375,7 +375,7 @@ export default function ActivityScreen() {
             <Text
               style={[styles.tabText, activeTab === 'blocked' && styles.activeTabText]}
             >
-              BloquÃ©s
+              Blocked
             </Text>
           </TouchableOpacity>
         </View>

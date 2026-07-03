@@ -32,7 +32,7 @@ export default function LoginScreen() {
           setRememberMe(true);
         }
       } catch (error) {
-        console.error('Erreur lors du chargement de l&apos;email sauvegardÃ©:', error);
+        console.error('Error loading remembered email:', error);
       }
     };
     loadRememberedEmail();

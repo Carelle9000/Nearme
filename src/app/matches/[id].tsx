@@ -31,7 +31,7 @@ export default function MatchProfileScreen() {
   if (!profile) {
     return (
       <View style={styles.container}>
-        <Text>Chargement...</Text>
+        <Text>Loading...</Text>
       </View>
     );
   }
@@ -74,14 +74,14 @@ export default function MatchProfileScreen() {
 
           {profile.bio && (
             <View style={styles.section}>
-              <Text style={styles.sectionTitle}>À propos</Text>
+              <Text style={styles.sectionTitle}>About</Text>
               <Text style={styles.bioText}>{profile.bio}</Text>
             </View>
           )}
 
           {profile.interests && profile.interests.length > 0 && (
             <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Intérêts</Text>
+              <Text style={styles.sectionTitle}>Interests</Text>
               <View style={styles.interestsList}>
                 {profile.interests.map((interest, index) => (
                   <View key={index} style={styles.interestTag}>
@@ -102,7 +102,7 @@ export default function MatchProfileScreen() {
             }
           >
             <Ionicons name="chatbubbles" size={20} color="#fff" />
-            <Text style={styles.messageButtonText}>Envoyer un message</Text>
+            <Text style={styles.messageButtonText}>Send a message</Text>
           </TouchableOpacity>
         </View>
       </ScrollView>

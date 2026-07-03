@@ -156,14 +156,14 @@ export default function SignupStep2() {
                 <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}>
                   <Ionicons name="cloud-upload" size={20} color={Colors.text} style={{ marginRight: 8 }} />
                   <Text style={styles.buttonText}>
-                    {documentSelected ? 'Document vÃ©rifiÃ© âœ“' : 'TÃ©lÃ©charger un document'}
+                    {documentSelected ? 'Document verified ✓' : 'Upload a document'}
                   </Text>
                 </View>
               )}
             </TouchableOpacity>
           </LinearGradient>
           {verificationStatus ? (
-            <Text style={[styles.statusMessage, { color: verificationStatus.includes('rÃ©ussie') ? Colors.success : Colors.warning }]}>
+            <Text style={[styles.statusMessage, { color: verificationStatus === t('verificationSuccess') ? Colors.success : Colors.warning }]}>
               {verificationStatus}
             </Text>
           ) : null}
@@ -183,7 +183,7 @@ export default function SignupStep2() {
             onPress={nextStep}
           >
             <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}>
-              <Text style={styles.buttonText}>Continuer vers le profil</Text>
+              <Text style={styles.buttonText}>Continue to profile</Text>
               <Ionicons name="chevron-forward" size={20} color={Colors.text} style={{ marginLeft: 8 }} />
             </View>
           </TouchableOpacity>

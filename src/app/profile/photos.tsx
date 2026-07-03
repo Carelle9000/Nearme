@@ -54,11 +54,11 @@ export default function ManagePhotosScreen() {
       const success = await takeAndUploadPhoto();
       console.log('takeAndUploadPhoto result:', success);
       if (success) {
-        Alert.alert(t('success'), 'Votre photo a Ã©tÃ© uploadÃ©e');
+        Alert.alert(t('success'), 'Your photo has been uploaded');
       }
     } catch (error: any) {
       console.error('Camera error:', error);
-      Alert.alert(t('error'), error.message || 'Impossible de prendre une photo');
+      Alert.alert(t('error'), error.message || 'Unable to take a photo');
     }
   };
 
@@ -69,22 +69,22 @@ export default function ManagePhotosScreen() {
       const success = await pickAndUploadPhoto();
       console.log('pickAndUploadPhoto result:', success);
       if (success) {
-        Alert.alert(t('success'), 'Votre photo a Ã©tÃ© uploadÃ©e');
+        Alert.alert(t('success'), 'Your photo has been uploaded');
       }
     } catch (error: any) {
       console.error('Gallery error:', error);
-      Alert.alert(t('error'), error.message || 'Impossible de charger la photo');
+      Alert.alert(t('error'), error.message || 'Unable to load the photo');
     }
   };
 
   const handleDeletePhoto = (photoUrl: string) => {
-    Alert.alert('Supprimer la photo', 'ÃŠtes-vous sÃ»r de vouloir supprimer cette photo ?', [
+    Alert.alert('Delete photo', 'Are you sure you want to delete this photo?', [
       {
-        text: 'Supprimer',
+        text: 'Delete',
         style: 'destructive',
         onPress: () => deletePhoto(photoUrl),
       },
-      { text: 'Annuler', style: 'cancel' },
+      { text: 'Cancel', style: 'cancel' },
     ]);
   };
 
@@ -111,7 +111,7 @@ export default function ManagePhotosScreen() {
       {index === 0 && (
         <View style={styles.primaryBadge}>
           <Ionicons name="star" size={14} color="#fff" />
-          <Text style={styles.primaryBadgeText}>Principal</Text>
+          <Text style={styles.primaryBadgeText}>Main</Text>
         </View>
       )}
     </TouchableOpacity>
@@ -124,7 +124,7 @@ export default function ManagePhotosScreen() {
           <TouchableOpacity onPress={() => router.replace('/(tabs)/profile')}>
             <Ionicons name="chevron-back" size={28} color={Colors.primary} />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>GÃ©rer mes photos</Text>
+          <Text style={styles.headerTitle}>Manage my photos</Text>
           <View style={{ width: 28 }} />
         </View>
 
@@ -143,18 +143,18 @@ export default function ManagePhotosScreen() {
 
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>
-              Mes photos ({profilePhotos.length}/6)
+              My photos ({profilePhotos.length}/6)
             </Text>
             <Text style={styles.sectionDescription}>
-              La premiÃ¨re photo sera votre photo de profil
+              The first photo will be your profile photo
             </Text>
           </View>
 
           {profilePhotos.length === 0 ? (
             <View style={styles.emptyState}>
               <Ionicons name="image-outline" size={64} color={Colors.accent} />
-              <Text style={styles.emptyText}>Aucune photo pour l'instant</Text>
-              <Text style={styles.emptySubtext}>Ajoutez votre premiÃ¨re photo pour commencer</Text>
+              <Text style={styles.emptyText}>No photos yet</Text>
+              <Text style={styles.emptySubtext}>Add your first photo to get started</Text>
             </View>
           ) : (
             <FlatList
@@ -179,29 +179,29 @@ export default function ManagePhotosScreen() {
               ) : (
                 <>
                   <Ionicons name="cloud-upload" size={24} color={Colors.text} />
-                  <Text style={styles.uploadButtonText}>Ajouter une photo</Text>
+                  <Text style={styles.uploadButtonText}>Add a photo</Text>
                 </>
               )}
             </TouchableOpacity>
           )}
 
           <View style={styles.tipsSection}>
-            <Text style={styles.tipsTitle}>Conseils pour de bonnes photos</Text>
+            <Text style={styles.tipsTitle}>Tips for great photos</Text>
             <View style={styles.tipItem}>
               <Ionicons name="checkmark-circle" size={20} color={Colors.primary} />
-              <Text style={styles.tipText}>Utilisez des photos claires et rÃ©centes de vous seul</Text>
+              <Text style={styles.tipText}>Use clear, recent photos of yourself alone</Text>
             </View>
             <View style={styles.tipItem}>
               <Ionicons name="checkmark-circle" size={20} color={Colors.primary} />
-              <Text style={styles.tipText}>Montrez bien votre visage</Text>
+              <Text style={styles.tipText}>Show your face clearly</Text>
             </View>
             <View style={styles.tipItem}>
               <Ionicons name="checkmark-circle" size={20} color={Colors.primary} />
-              <Text style={styles.tipText}>Ã‰vitez les filtres ou les retouches excessives</Text>
+              <Text style={styles.tipText}>Avoid filters or excessive retouching</Text>
             </View>
             <View style={styles.tipItem}>
               <Ionicons name="checkmark-circle" size={20} color={Colors.primary} />
-              <Text style={styles.tipText}>Ajoutez de la variÃ©tÃ© Ã  vos photos</Text>
+              <Text style={styles.tipText}>Add variety to your photos</Text>
             </View>
           </View>
         </ScrollView>
@@ -210,8 +210,8 @@ export default function ManagePhotosScreen() {
         <Modal visible={showSourceMenu} transparent animationType="fade" onRequestClose={() => setShowSourceMenu(false)}>
           <View style={styles.modalOverlay}>
             <View style={styles.modalContent}>
-              <Text style={styles.modalTitle}>Ajouter une photo</Text>
-              <Text style={styles.modalSubtitle}>Choisir une source</Text>
+              <Text style={styles.modalTitle}>Add a photo</Text>
+              <Text style={styles.modalSubtitle}>Choose a source</Text>
 
               <TouchableOpacity
                 style={styles.modalOption}
@@ -219,7 +219,7 @@ export default function ManagePhotosScreen() {
                 disabled={isUploadingPhoto}
               >
                 <Ionicons name="camera" size={24} color={Colors.primary} />
-                <Text style={styles.modalOptionText}>Appareil photo</Text>
+                <Text style={styles.modalOptionText}>Camera</Text>
               </TouchableOpacity>
 
               <TouchableOpacity
@@ -228,14 +228,14 @@ export default function ManagePhotosScreen() {
                 disabled={isUploadingPhoto}
               >
                 <Ionicons name="images" size={24} color={Colors.primary} />
-                <Text style={styles.modalOptionText}>Galerie</Text>
+                <Text style={styles.modalOptionText}>Gallery</Text>
               </TouchableOpacity>
 
               <TouchableOpacity
                 style={[styles.modalOption, styles.modalCancelOption]}
                 onPress={() => setShowSourceMenu(false)}
               >
-                <Text style={styles.modalCancelText}>Annuler</Text>
+                <Text style={styles.modalCancelText}>Cancel</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -249,7 +249,7 @@ export default function ManagePhotosScreen() {
                 <TouchableOpacity onPress={() => setShowPreview(false)}>
                   <Ionicons name="close" size={28} color={Colors.text} />
                 </TouchableOpacity>
-                <Text style={styles.previewTitle}>AperÃ§u</Text>
+                <Text style={styles.previewTitle}>Preview</Text>
                 <View style={{ width: 28 }} />
               </View>
 
@@ -270,14 +270,14 @@ export default function ManagePhotosScreen() {
                   }}
                 >
                   <Ionicons name="trash" size={20} color={Colors.text} />
-                  <Text style={styles.previewButtonText}>Supprimer</Text>
+                  <Text style={styles.previewButtonText}>Delete</Text>
                 </TouchableOpacity>
 
                 <TouchableOpacity
                   style={styles.previewCloseButton}
                   onPress={() => setShowPreview(false)}
                 >
-                  <Text style={styles.previewCloseText}>Fermer</Text>
+                  <Text style={styles.previewCloseText}>Close</Text>
                 </TouchableOpacity>
               </View>
             </SafeAreaView>

@@ -56,7 +56,7 @@ export default function LanguageCountryScreen() {
         <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
           <View style={styles.header}>
             <Text style={styles.title}>{t('welcome')}</Text>
-            <Text style={styles.subtitle}>{t('selectLanguage')} â€¢ {t('selectCountry')}</Text>
+            <Text style={styles.subtitle}>{t('selectLanguage')} • {t('selectCountry')}</Text>
           </View>
 
           <View style={[styles.card, Shadows.soft]}>
