@@ -1,4 +1,5 @@
-import React from 'react';
+/* eslint-disable react-hooks/refs -- Animated values from React Native require ref access during render */
+import React, { useRef, useMemo, useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -6,12 +7,20 @@ import {
   StyleSheet,
   Dimensions,
   TouchableOpacity,
-  SafeAreaView,
+  PanResponder,
+  Animated as RNAnimated,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { Profile } from '../models/user';
 import { Colors, BorderRadius, Shadows } from '../constants/theme';
+import {
+  createEntranceAnimation,
+  createPressAnimation,
+  createPulseAnimation,
+  createRotationAnimation,
+  createStaggerAnimation,
+} from '@/utils/animations';
 
 interface ProfileCardProps {
   profile: Profile | null;
@@ -20,6 +29,97 @@ interface ProfileCardProps {
   onFavorite?: () => void;
   onMessage?: () => void;
 }
+
+interface FavoriteButtonProps {
+  isFavorite: boolean;
+  onFavorite: () => void;
+}
+
+const SWIPE_THRESHOLD = 40;
+
+function FavoriteButton({ isFavorite, onFavorite }: FavoriteButtonProps) {
+  const panRef = useRef(new RNAnimated.ValueXY());
+  const pan = panRef.current;
+  const rotationAnim = useRef(createRotationAnimation()).current;
+  const pulseAnim = useRef(createPulseAnimation()).current;
+  const [isAnimating, setIsAnimating] = useState(false);
+
+  const handleFavorite = () => {
+    if (!isAnimating) {
+      setIsAnimating(true);
+      rotationAnim.rotate();
+      pulseAnim.pulse();
+      onFavorite();
+      setTimeout(() => setIsAnimating(false), 600);
+    }
+  };
+
+  const panResponder = useMemo(() => {
+    return PanResponder.create({
+      onStartShouldSetPanResponder: () => true,
+      onMoveShouldSetPanResponder: () => true,
+      onPanResponderMove: RNAnimated.event(
+        [
+          null,
+          { dx: pan.x, dy: pan.y },
+        ],
+        { useNativeDriver: false }
+      ),
+      onPanResponderRelease: (e, { dx, dy }) => {
+        const absX = Math.abs(dx);
+        const absY = Math.abs(dy);
+
+        if (absX > SWIPE_THRESHOLD && absX > absY) {
+          handleFavorite();
+        }
+
+        RNAnimated.spring(pan, {
+          toValue: { x: 0, y: 0 },
+          useNativeDriver: false,
+        }).start();
+      },
+    });
+  }, [handleFavorite, pan]);
+
+  return (
+    <RNAnimated.View
+      style={[
+        styles.favoriteButton,
+        {
+          transform: [
+            { translateX: pan.x },
+            {
+              scale: RNAnimated.multiply(
+                pan.x.interpolate({
+                  inputRange: [-SWIPE_THRESHOLD * 2, 0, SWIPE_THRESHOLD * 2],
+                  outputRange: [1.05, 1, 1.05],
+                }),
+                pulseAnim.scale
+              ),
+            },
+            { rotate: rotationAnim.rotation.interpolate({
+              inputRange: [0, 360],
+              outputRange: ['0deg', '360deg'],
+            })},
+          ],
+        },
+      ]}
+      {...panResponder.panHandlers}
+    >
+      <TouchableOpacity
+        style={styles.favoriteButtonTouchable}
+        onPress={handleFavorite}
+      >
+        <Ionicons
+          name={isFavorite ? 'star' : 'star-outline'}
+          size={24}
+          color={Colors.primary}
+        />
+      </TouchableOpacity>
+    </RNAnimated.View>
+  );
+}
+/* eslint-enable react-hooks/refs */
 
 const { width, height } = Dimensions.get('window');
 
@@ -30,6 +130,21 @@ export function ProfileCard({
   onFavorite,
   onMessage,
 }: ProfileCardProps) {
+  const entranceAnimRef = useRef(createEntranceAnimation());
+  const messageButtonAnimRef = useRef(createPressAnimation());
+  const likeButtonAnimRef = useRef(createPressAnimation());
+  const staggerAnimRef = useRef(createStaggerAnimation(4, 100));
+
+  const entranceAnim = entranceAnimRef.current;
+  const messageButtonAnim = messageButtonAnimRef.current;
+  const likeButtonAnim = likeButtonAnimRef.current;
+  const staggerAnim = staggerAnimRef.current;
+
+  useEffect(() => {
+    entranceAnim.animate();
+    staggerAnim.animateAll();
+  }, [profile?.uid]);
+
   if (!profile) {
     return (
       <View style={styles.container}>
@@ -47,7 +162,18 @@ export function ProfileCard({
 
   return (
     <View style={styles.container}>
-      <View style={styles.card}>
+      <RNAnimated.View
+        style={[
+          styles.card,
+          {
+            transform: [
+              { scale: entranceAnim.scale },
+              { translateY: entranceAnim.translateY },
+            ],
+            opacity: entranceAnim.opacity,
+          },
+        ]}
+      >
         {/* Profile Photo */}
         <Image
           source={{
@@ -67,54 +193,109 @@ export function ProfileCard({
 
         {/* Info Section */}
         <View style={styles.infoSection}>
-          <View style={styles.nameRow}>
+          <RNAnimated.View
+            style={[
+              styles.nameRow,
+              {
+                opacity: staggerAnim.animations[0].opacity,
+                transform: [{ translateX: staggerAnim.animations[0].translateX }],
+              },
+            ]}
+          >
             <Text style={styles.name}>
               {profile.displayName || profile.name}, {age}
             </Text>
             {isFavorite && <Ionicons name="star" size={20} color={Colors.primary} />}
-          </View>
+          </RNAnimated.View>
 
           {profile.location?.city && (
-            <View style={styles.locationRow}>
+            <RNAnimated.View
+              style={[
+                styles.locationRow,
+                {
+                  opacity: staggerAnim.animations[1].opacity,
+                  transform: [{ translateX: staggerAnim.animations[1].translateX }],
+                },
+              ]}
+            >
               <Ionicons name="location-sharp" size={14} color={Colors.accent} />
               <Text style={styles.location}>{profile.location.city}</Text>
-            </View>
+            </RNAnimated.View>
           )}
 
-          {profile.bio && <Text style={styles.bio}>{profile.bio}</Text>}
+          {profile.bio && (
+            <RNAnimated.View
+              style={{
+                opacity: staggerAnim.animations[2].opacity,
+                transform: [{ translateX: staggerAnim.animations[2].translateX }],
+              }}
+            >
+              <Text style={styles.bio}>{profile.bio}</Text>
+            </RNAnimated.View>
+          )}
 
           {profile.interests && profile.interests.length > 0 && (
-            <View style={styles.interestsRow}>
+            <RNAnimated.View
+              style={[
+                styles.interestsRow,
+                {
+                  opacity: staggerAnim.animations[3].opacity,
+                  transform: [{ translateX: staggerAnim.animations[3].translateX }],
+                },
+              ]}
+            >
               {profile.interests.slice(0, 3).map((interest, index) => (
                 <View key={index} style={styles.interestTag}>
                   <Text style={styles.interestText}>{interest}</Text>
                 </View>
               ))}
-            </View>
+            </RNAnimated.View>
           )}
         </View>
-      </View>
+      </RNAnimated.View>
 
       {/* Action Buttons */}
       <View style={styles.actionsContainer}>
-        <TouchableOpacity style={styles.messageButton} onPress={onMessage}>
-          <Ionicons name="chatbubble-outline" size={24} color={Colors.text} />
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.favoriteButton} onPress={onFavorite}>
-          <Ionicons name={isFavorite ? 'star' : 'star-outline'} size={24} color={Colors.primary} />
-        </TouchableOpacity>
-
-        <LinearGradient
-          colors={[Colors.primary, '#C82E42']}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={styles.likeButtonGradient}
+        <RNAnimated.View
+          style={{
+            transform: [{ scale: messageButtonAnim.scale }],
+          }}
         >
-          <TouchableOpacity style={styles.likeButton} onPress={onLike}>
-            <Ionicons name="heart" size={28} color={Colors.text} />
+          <TouchableOpacity
+            style={styles.messageButton}
+            onPress={onMessage}
+            onPressIn={messageButtonAnim.onPressIn}
+            onPressOut={messageButtonAnim.onPressOut}
+          >
+            <Ionicons name="chatbubble-outline" size={24} color={Colors.text} />
           </TouchableOpacity>
-        </LinearGradient>
+        </RNAnimated.View>
+
+        {onFavorite && (
+          <FavoriteButton isFavorite={isFavorite} onFavorite={onFavorite} />
+        )}
+
+        <RNAnimated.View
+          style={{
+            transform: [{ scale: likeButtonAnim.scale }],
+          }}
+        >
+          <LinearGradient
+            colors={[Colors.primary, '#C82E42']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.likeButtonGradient}
+          >
+            <TouchableOpacity
+              style={styles.likeButton}
+              onPress={onLike}
+              onPressIn={likeButtonAnim.onPressIn}
+              onPressOut={likeButtonAnim.onPressOut}
+            >
+              <Ionicons name="heart" size={28} color={Colors.text} />
+            </TouchableOpacity>
+          </LinearGradient>
+        </RNAnimated.View>
       </View>
     </View>
   );
@@ -227,6 +408,12 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: Colors.primary,
     ...Shadows.soft,
+  },
+  favoriteButtonTouchable: {
+    width: '100%',
+    height: '100%',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   likeButtonGradient: {
     width: 60,
