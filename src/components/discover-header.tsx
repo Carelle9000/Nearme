@@ -37,7 +37,7 @@ export function DiscoverHeader({ onNotificationsPress }: DiscoverHeaderProps) {
     >
       <View style={styles.logoContainer}>
         <Image
-          source={require('../../../assets/images/logon.jpeg')}
+          source={require('../../assets/images/logon.jpeg')}
           style={styles.logo}
         />
         <Text style={styles.logoText}>nearme</Text>
