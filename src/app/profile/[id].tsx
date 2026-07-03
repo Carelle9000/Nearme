@@ -136,30 +136,31 @@ export default function PublicProfileScreen() {
   };
 
   const handleBlock = async () => {
+    console.log('[handleBlock] called', { id, userId: user?.id, isActing });
     if (!id || !user?.id || isActing) return;
 
     Alert.alert(
-      'Block this profile',
-      'This profile will no longer be able to see or contact you.',
+      'Bloquer ce profil',
+      'Ce profil ne pourra plus vous voir ni vous contacter.',
       [
         {
-          text: 'Cancel',
+          text: 'Annuler',
           style: 'cancel',
         },
         {
-          text: 'Block',
+          text: 'Bloquer',
           style: 'destructive',
           onPress: async () => {
             setIsActing(true);
             try {
               await userService.saveBlock(user.id, id);
               setIsBlocked(true);
-              Alert.alert('Profile blocked', 'This profile has been blocked.', [
+              Alert.alert('Profil bloqué', 'Ce profil a été bloqué.', [
                 { text: 'OK', onPress: () => router.back() },
               ]);
             } catch (err) {
               console.error('[PublicProfile] block failed:', err);
-              Alert.alert('Error', 'Unable to block this profile');
+              Alert.alert('Erreur', 'Impossible de bloquer ce profil');
             } finally {
               setIsActing(false);
             }
@@ -173,26 +174,26 @@ export default function PublicProfileScreen() {
     if (!id || !user?.id || isActing) return;
 
     Alert.alert(
-      'Unblock this profile',
-      'This profile will be able to see and contact you again.',
+      'Débloquer ce profil',
+      'Ce profil pourra à nouveau vous voir et vous contacter.',
       [
         {
-          text: 'Cancel',
+          text: 'Annuler',
           style: 'cancel',
         },
         {
-          text: 'Unblock',
+          text: 'Débloquer',
           onPress: async () => {
             setIsActing(true);
             try {
               await userService.unblock(user.id, id);
               setIsBlocked(false);
-              Alert.alert('Profile unblocked', 'This profile has been unblocked.', [
+              Alert.alert('Profil débloqué', 'Ce profil a été débloqué.', [
                 { text: 'OK' },
               ]);
             } catch (err) {
               console.error('[PublicProfile] unblock failed:', err);
-              Alert.alert('Error', 'Unable to unblock this profile');
+              Alert.alert('Erreur', 'Impossible de débloquer ce profil');
             } finally {
               setIsActing(false);
             }
@@ -367,7 +368,7 @@ export default function PublicProfileScreen() {
                 disabled={isActing}
               >
                 <Ionicons name="ban" size={18} color={Colors.textSecondary} />
-                <Text style={styles.blockButtonText}>Unblock this profile</Text>
+                <Text style={styles.blockButtonText}>Débloquer ce profil</Text>
               </TouchableOpacity>
             ) : (
               <>
@@ -378,7 +379,7 @@ export default function PublicProfileScreen() {
                   disabled={isActing}
                 >
                   <Ionicons name="ban" size={18} color={Colors.textSecondary} />
-                  <Text style={styles.blockButtonText}>Block this profile</Text>
+                  <Text style={styles.blockButtonText}>Bloquer ce profil</Text>
                 </TouchableOpacity>
               </>
             )}
