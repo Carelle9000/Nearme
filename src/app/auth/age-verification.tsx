@@ -12,23 +12,23 @@ export default function AgeVerificationScreen() {
 
   const handleVerifyNow = () => {
     // TODO: Integrate Stripe Identity
-    alert('La vÃ©rification de l\'Ã¢ge sera disponible bientÃ´t');
+    alert('Age verification will be available soon');
   };
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>VÃ©rification de l'Ã¢ge</Text>
+      <Text style={styles.title}>{t('ageVerificationTitle')}</Text>
       <Text style={styles.message}>
-        Nous devons vÃ©rifier votre Ã¢ge pour respecter la lÃ©gislation locale.
+        {t('ageVerificationMessage')}
       </Text>
 
       <View style={styles.buttonContainer}>
         <TouchableOpacity style={styles.primaryButton} onPress={handleVerifyNow}>
-          <Text style={styles.buttonText}>VÃ©rifier maintenant</Text>
+          <Text style={styles.buttonText}>{t('verifyNowButton')}</Text>
         </TouchableOpacity>
 
         <TouchableOpacity style={styles.secondaryButton} onPress={handleVerifyLater}>
-          <Text style={styles.secondaryButtonText}>VÃ©rifier plus tard</Text>
+          <Text style={styles.secondaryButtonText}>{t('verifyLaterButton')}</Text>
         </TouchableOpacity>
       </View>
     </View>

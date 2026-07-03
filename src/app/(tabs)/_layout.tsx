@@ -1,8 +1,11 @@
 ﻿import { Tabs } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '@/constants/theme';
+import { useLocalization } from '@/context/localization-context';
 
 export default function TabsLayout() {
+  const { t } = useLocalization();
+
   return (
     <Tabs
       screenOptions={{
@@ -22,32 +25,32 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="discover"
         options={{
-          title: 'DÃ©couvrir',
-          headerTitle: 'NearMe',
+          title: t('discoverTab'),
+          headerTitle: t('nearmeTitle'),
           tabBarIcon: ({ color, size }) => <Ionicons name="heart" size={size} color={color} />,
         }}
       />
       <Tabs.Screen
         name="chat"
         options={{
-          title: 'Messages',
-          headerTitle: 'Messages',
+          title: t('messagesTab'),
+          headerTitle: t('messagesTab'),
           tabBarIcon: ({ color, size }) => <Ionicons name="chatbubbles" size={size} color={color} />,
         }}
       />
       <Tabs.Screen
         name="activity"
         options={{
-          title: 'ActivitÃ©',
-          headerTitle: 'ActivitÃ©',
+          title: t('activityTab'),
+          headerTitle: t('activityTab'),
           tabBarIcon: ({ color, size }) => <Ionicons name="flash" size={size} color={color} />,
         }}
       />
       <Tabs.Screen
         name="profile"
         options={{
-          title: 'Profil',
-          headerTitle: 'Mon profil',
+          title: t('profileTab'),
+          headerTitle: t('myProfile'),
           tabBarIcon: ({ color, size }) => <Ionicons name="person" size={size} color={color} />,
         }}
       />

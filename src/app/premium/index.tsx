@@ -16,6 +16,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Colors, BorderRadius, Spacing, Shadows } from '@/constants/theme';
 import { useAuth } from '@/context/auth-context';
 import { usePremium } from '@/context/premium-context';
+import { useLocalization } from '@/context/localization-context';
 import { PremiumBadge } from '@/components/PremiumBadge';
 
 /**
@@ -26,6 +27,7 @@ export default function PremiumScreen() {
   const router = useRouter();
   const { user } = useAuth();
   const { isPremium, subscriptionInfo, refreshPremiumStatus } = usePremium();
+  const { t } = useLocalization();
   const [isProcessing, setIsProcessing] = useState(false);
 
   useEffect(() => {
@@ -34,51 +36,51 @@ export default function PremiumScreen() {
 
   const features = [
     {
-      icon: 'â­',
-      title: 'Profils mis en avant',
-      description: 'Soyez visible en premier pour les autres premium',
+      icon: '⭐',
+      title: t('premiumFeatureFeatured'),
+      description: t('premiumFeatureFeaturedDesc'),
       premium: true,
     },
     {
-      icon: 'ðŸ”„',
-      title: 'Undo illimitÃ©',
-      description: 'Revenir sur vos likes et dislikes',
+      icon: '🔄',
+      title: t('premiumFeatureUndo'),
+      description: t('premiumFeatureUndoDesc'),
       premium: true,
     },
     {
-      icon: 'ðŸ‘€',
-      title: 'Qui m\'a aimÃ©',
-      description: 'Voyez qui vous a likÃ© sans attendre un match',
+      icon: '👀',
+      title: t('premiumFeatureLikes'),
+      description: t('premiumFeatureLikesDesc'),
       premium: true,
     },
     {
-      icon: 'ðŸ’¬',
-      title: 'Message sans match',
-      description: 'Contactez quelqu\'un sans correspondance prÃ©alable',
+      icon: '💬',
+      title: t('premiumFeatureMessage'),
+      description: t('premiumFeatureMessageDesc'),
       premium: true,
     },
     {
-      icon: 'ðŸ“Š',
-      title: 'Statistiques dÃ©taillÃ©es',
-      description: 'Analyser vos vues et likes reÃ§us',
+      icon: '📊',
+      title: t('premiumFeatureStats'),
+      description: t('premiumFeatureStatsDesc'),
       premium: true,
     },
     {
-      icon: 'ðŸŒ',
-      title: 'Rayon illimitÃ©',
-      description: 'Recherchez au-delÃ  de 50km',
+      icon: '🌍',
+      title: t('premiumFeatureRadius'),
+      description: t('premiumFeatureRadiusDesc'),
       premium: true,
     },
     {
-      icon: 'ðŸŽšï¸',
-      title: 'Filtres avancÃ©s',
-      description: 'CritÃ¨res de recherche plus prÃ©cis',
+      icon: '🎚️',
+      title: t('premiumFeatureFilters'),
+      description: t('premiumFeatureFiltersDesc'),
       premium: true,
     },
     {
-      icon: 'âœ¨',
-      title: 'Profil stylisÃ©',
-      description: 'Badge premium visible par tous',
+      icon: '✨',
+      title: t('premiumFeatureProfile'),
+      description: t('premiumFeatureProfileDesc'),
       premium: true,
     },
   ];
@@ -86,7 +88,6 @@ export default function PremiumScreen() {
   const handleSubscribe = async () => {
     setIsProcessing(true);
     try {
-      // Open Stripe checkout link
       const stripeLink = 'https://buy.stripe.com/28EbJ3fFFbdBflCd4LcMM07';
       const canOpen = await Linking.canOpenURL(stripeLink);
 
@@ -94,13 +95,13 @@ export default function PremiumScreen() {
         await Linking.openURL(stripeLink);
       } else {
         Alert.alert(
-          'Erreur',
-          'Impossible d\'ouvrir le lien de paiement. Veuillez rÃ©essayer.'
+          t('error'),
+          t('documentUploadError')
         );
       }
     } catch (error) {
       console.error('Subscription error:', error);
-      Alert.alert('Erreur', 'Une erreur est survenue lors de l\'accÃ¨s au paiement');
+      Alert.alert(t('error'), t('documentUploadError'));
     } finally {
       setIsProcessing(false);
     }
@@ -111,13 +112,13 @@ export default function PremiumScreen() {
     try {
       // TODO: Implement restore purchase logic
       Alert.alert(
-        'Restaurer',
-        'Restauration des achats en cours. Feature coming soon!',
+        'Restore',
+        'Restoring purchases. Feature coming soon!',
         [{ text: 'OK', onPress: () => setIsProcessing(false) }]
       );
     } catch (error) {
       console.error('Restore error:', error);
-      Alert.alert('Erreur', 'Impossible de restaurer l\'achat');
+      Alert.alert('Error', 'Unable to restore the purchase');
       setIsProcessing(false);
     }
   };
@@ -140,15 +141,15 @@ export default function PremiumScreen() {
             <View style={[styles.card, styles.statusCard]}>
               <View style={styles.statusContent}>
                 <PremiumBadge size="large" />
-                <Text style={styles.statusTitle}>Vous Ãªtes Premium ! ðŸŽ‰</Text>
+                <Text style={styles.statusTitle}>{t('youArePremium')}</Text>
                 {subscriptionInfo.daysRemaining !== undefined && (
                   <Text style={styles.statusSubtitle}>
-                    Renouvellement dans {subscriptionInfo.daysRemaining} jours
+                    {t('renewsIn').replace('{days}', subscriptionInfo.daysRemaining.toString())}
                   </Text>
                 )}
               </View>
               <TouchableOpacity style={styles.manageButton}>
-                <Text style={styles.manageButtonText}>GÃ©rer l'abonnement</Text>
+                <Text style={styles.manageButtonText}>{t('premiumManage')}</Text>
               </TouchableOpacity>
             </View>
           )}
@@ -157,19 +158,19 @@ export default function PremiumScreen() {
           {!isPremium && (
             <View style={[styles.card, styles.priceCard]}>
               <View style={styles.priceHeader}>
-                <Text style={styles.priceLabel}>AccÃ¨s Premium</Text>
+                <Text style={styles.priceLabel}>{t('premiumAccess')}</Text>
                 <View style={styles.bestValueBadge}>
-                  <Text style={styles.bestValueText}>MEILLEURE VALEUR</Text>
+                  <Text style={styles.bestValueText}>{t('premiumBestValue')}</Text>
                 </View>
               </View>
 
               <View style={styles.priceRow}>
-                <Text style={styles.price}>12,99</Text>
+                <Text style={styles.price}>12.99</Text>
                 <Text style={styles.priceCurrency}>$</Text>
-                <Text style={styles.pricePeriod}>/mois</Text>
+                <Text style={styles.pricePeriod}>/month</Text>
               </View>
 
-              <Text style={styles.priceDescription}>Essai gratuit 7 jours â€¢ Annulation facile</Text>
+              <Text style={styles.priceDescription}>{t('premiumTrial')}</Text>
 
               <TouchableOpacity
                 style={styles.subscribeButton}
@@ -181,7 +182,7 @@ export default function PremiumScreen() {
                 ) : (
                   <>
                     <Ionicons name="star" size={20} color={Colors.text} style={styles.buttonIcon} />
-                    <Text style={styles.subscribeButtonText}>Passer Premium</Text>
+                    <Text style={styles.subscribeButtonText}>{t('premiumGo')}</Text>
                   </>
                 )}
               </TouchableOpacity>
@@ -190,22 +191,22 @@ export default function PremiumScreen() {
               <View style={styles.securityContainer}>
                 <View style={styles.securityBadge}>
                   <Ionicons name="lock-closed" size={16} color={Colors.success} />
-                  <Text style={styles.securityText}>Paiement sÃ©curisÃ©</Text>
+                  <Text style={styles.securityText}>{t('securePayment')}</Text>
                 </View>
                 <View style={styles.securityBadge}>
                   <Ionicons name="shield-checkmark" size={16} color={Colors.success} />
-                  <Text style={styles.securityText}>CryptÃ© SSL</Text>
+                  <Text style={styles.securityText}>{t('sslEncrypted')}</Text>
                 </View>
               </View>
 
               <View style={styles.trustContainer}>
-                <Text style={styles.trustIcon}>ðŸ”’</Text>
-                <Text style={styles.trustText}>Stripe â€¢ Paiement 100% sÃ©curisÃ©</Text>
+                <Text style={styles.trustIcon}>🔒</Text>
+                <Text style={styles.trustText}>Stripe • 100% secure payment</Text>
               </View>
 
               {!isPremium && (
                 <TouchableOpacity onPress={handleRestore} disabled={isProcessing}>
-                  <Text style={styles.restoreLink}>Restaurer l'achat</Text>
+                  <Text style={styles.restoreLink}>{t('retry')}</Text>
                 </TouchableOpacity>
               )}
             </View>
@@ -213,7 +214,7 @@ export default function PremiumScreen() {
 
           {/* Features */}
           <View style={styles.featuresSection}>
-            <Text style={styles.sectionTitle}>FonctionnalitÃ©s Premium</Text>
+            <Text style={styles.sectionTitle}>{t('fullProfiles')}</Text>
 
             <View style={styles.featuresList}>
               {features.map((feature, index) => (
@@ -234,23 +235,23 @@ export default function PremiumScreen() {
             <Text style={styles.sectionTitle}>Questions</Text>
 
             <View style={[styles.card, styles.faqItem]}>
-              <Text style={styles.faqQuestion}>â“ Puis-je annuler mon abonnement ?</Text>
+              <Text style={styles.faqQuestion}>❓ Can I cancel my subscription?</Text>
               <Text style={styles.faqAnswer}>
-                Oui, vous pouvez annuler votre abonnement Ã  tout moment. Aucune pÃ©nalitÃ©.
+                Yes, you can cancel your subscription at any time. No penalty.
               </Text>
             </View>
 
             <View style={[styles.card, styles.faqItem]}>
-              <Text style={styles.faqQuestion}>â“ Comment Ã§a marche l'essai gratuit ?</Text>
+              <Text style={styles.faqQuestion}>❓ How does the free trial work?</Text>
               <Text style={styles.faqAnswer}>
-                7 jours gratuits, puis renouvellement automatique. Vous pouvez annuler avant la fin de la pÃ©riode d'essai.
+                7 days free, then automatic renewal. You can cancel before the end of the trial period.
               </Text>
             </View>
 
             <View style={[styles.card, styles.faqItem]}>
-              <Text style={styles.faqQuestion}>â“ Puis-je changer de plan ?</Text>
+              <Text style={styles.faqQuestion}>❓ Can I change plans?</Text>
               <Text style={styles.faqAnswer}>
-                Bien sÃ»r ! Vous pouvez mettre Ã  jour ou rÃ©trograder Ã  tout moment.
+                Of course! You can upgrade or downgrade at any time.
               </Text>
             </View>
           </View>
@@ -258,9 +259,9 @@ export default function PremiumScreen() {
           {/* Terms */}
           <View style={styles.termsSection}>
             <Text style={styles.termsText}>
-              En vous abonnant, vous acceptez nos{' '}
-              <Text style={styles.termsLink}>Conditions d'utilisation</Text> et notre{' '}
-              <Text style={styles.termsLink}>Politique de confidentialitÃ©</Text>
+              By subscribing, you agree to our{' '}
+              <Text style={styles.termsLink}>Terms of Service</Text> and our{' '}
+              <Text style={styles.termsLink}>Privacy Policy</Text>
             </Text>
           </View>
         </ScrollView>

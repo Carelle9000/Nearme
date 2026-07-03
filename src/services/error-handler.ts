@@ -120,7 +120,7 @@ export const APP_ERROR_KEYS = {
 export function parseError(error: unknown): ErrorDetail {
   const firebaseError = error as any;
   const code = firebaseError?.code || 'unknown-error';
-  const message = firebaseError?.message || 'An error occurred';
+  const message = firebaseError?.message || '';
 
   return {
     code,
