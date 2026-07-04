@@ -48,3 +48,5 @@ CLAUDE.md
 
 #doc
 serviceAccountKey.json
+google-services.json
+google-play-service-account.json

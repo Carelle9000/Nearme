@@ -8,7 +8,6 @@ import {
   SafeAreaView,
   ActivityIndicator,
   Alert,
-  Linking,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -18,6 +17,8 @@ import { useAuth } from '@/context/auth-context';
 import { usePremium } from '@/context/premium-context';
 import { useLocalization } from '@/context/localization-context';
 import { PremiumBadge } from '@/components/PremiumBadge';
+import { iapService } from '@/services/iap.service';
+import Toast from 'react-native-toast-message';
 
 /**
  * Premium Subscription Page
@@ -31,7 +32,20 @@ export default function PremiumScreen() {
   const [isProcessing, setIsProcessing] = useState(false);
 
   useEffect(() => {
+    const init = async () => {
+      try {
+        await iapService.initConnection();
+      } catch (err) {
+        console.error('Failed to init IAP:', err);
+      }
+    };
+
+    init();
     refreshPremiumStatus();
+
+    return () => {
+      iapService.endConnection().catch(console.error);
+    };
   }, [refreshPremiumStatus]);
 
   const features = [
@@ -88,20 +102,23 @@ export default function PremiumScreen() {
   const handleSubscribe = async () => {
     setIsProcessing(true);
     try {
-      const stripeLink = 'https://buy.stripe.com/28EbJ3fFFbdBflCd4LcMM07';
-      const canOpen = await Linking.canOpenURL(stripeLink);
-
-      if (canOpen) {
-        await Linking.openURL(stripeLink);
-      } else {
-        Alert.alert(
-          t('error'),
-          t('documentUploadError')
-        );
-      }
-    } catch (error) {
+      await iapService.purchaseSubscription();
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      await refreshPremiumStatus();
+      Toast.show({
+        type: 'success',
+        text1: 'Succès',
+        text2: 'Vous êtes maintenant abonné au premium !',
+      });
+    } catch (error: any) {
       console.error('Subscription error:', error);
-      Alert.alert(t('error'), t('documentUploadError'));
+      if (error.message !== 'User cancelled') {
+        Toast.show({
+          type: 'error',
+          text1: 'Erreur',
+          text2: error.message || 'L\'achat a échoué',
+        });
+      }
     } finally {
       setIsProcessing(false);
     }
@@ -110,15 +127,18 @@ export default function PremiumScreen() {
   const handleRestore = async () => {
     setIsProcessing(true);
     try {
-      // TODO: Implement restore purchase logic
-      Alert.alert(
-        'Restore',
-        'Restoring purchases. Feature coming soon!',
-        [{ text: 'OK', onPress: () => setIsProcessing(false) }]
-      );
+      const restored = await iapService.restorePurchases();
+      if (restored) {
+        await refreshPremiumStatus();
+        Toast.show({
+          type: 'success',
+          text1: 'Succès',
+          text2: 'Votre abonnement a été restauré.',
+        });
+      }
     } catch (error) {
       console.error('Restore error:', error);
-      Alert.alert('Error', 'Unable to restore the purchase');
+    } finally {
       setIsProcessing(false);
     }
   };
@@ -218,7 +238,7 @@ export default function PremiumScreen() {
 
               <View style={styles.trustContainer}>
                 <Text style={styles.trustIcon}>🔒</Text>
-                <Text style={styles.trustText}>Stripe • 100% secure payment</Text>
+                <Text style={styles.trustText}>Google Play • Paiement sécurisé</Text>
               </View>
 
               {!isPremium && (

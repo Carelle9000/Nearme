@@ -60,11 +60,13 @@ export interface Profile {
   // Premium subscription fields (Firebase: ISO strings)
   premium?: {
     isActive: boolean;
-    tier: 'free' | 'premium';
+    tier: 'free' | 'trial' | 'premium';
     startDate?: string;
     expiryDate?: string;
     autoRenew?: boolean;
     cancelledAt?: string;
+    purchaseToken?: string;
+    productId?: string;
   };
   analytics?: {
     stats?: {

@@ -25,7 +25,8 @@ export interface PremiumSubscription {
   expiryDate?: string;          // ISO string in Firebase
   autoRenew?: boolean;
   cancelledAt?: string;         // ISO string in Firebase
-  stripeSubscriptionId?: string; // Pour la facturation
+  purchaseToken?: string;       // Google Play purchase token
+  productId?: string;           // Google Play product ID
 }
 
 /**

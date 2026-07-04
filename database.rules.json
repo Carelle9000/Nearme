@@ -90,9 +90,15 @@
 
           "stats": {
             ".read": "auth.uid == $userId || auth.token.type === 'backend'",
-            ".write": "auth.token.type === 'backend'",
+            ".write": "auth != null && auth.uid == $userId || auth.token.type === 'backend'",
             ".validate": "newData.hasChildren(['profileViews', 'likesReceived'])"
           }
+        },
+
+        "premium": {
+          ".read": "auth.uid == $userId || auth.token.type === 'backend'",
+          ".write": "auth.token.type === 'backend'",
+          ".validate": "newData.hasChildren(['isActive', 'tier'])"
         }
       }
     },
@@ -143,14 +149,15 @@
         ".read": "auth.uid == data.child('blockerId').val() || auth.token.type === 'backend'",
         ".write": "auth.uid == data.child('blockerId').val() || (auth != null && !data.exists() && newData.child('blockerId').val() === auth.uid) || auth.token.type === 'backend'",
         ".validate": "
-          newData.hasChildren(['blockerId', 'blockedId', 'createdAt']) &&
-          newData.child('blockerId').val().length > 0 &&
-          newData.child('blockerId').val().length <= 128 &&
-          newData.child('blockedId').val().length > 0 &&
-          newData.child('blockedId').val().length <= 128 &&
-          newData.child('blockerId').val() !== newData.child('blockedId').val() &&
-          newData.child('createdAt').val().isNumber() &&
-          newData.child('createdAt').val() > now - 10000
+          !newData.exists() ||
+          (
+            newData.hasChildren(['blockerId', 'blockedId', 'createdAt']) &&
+            newData.child('blockerId').val().length > 0 &&
+            newData.child('blockerId').val().length <= 128 &&
+            newData.child('blockedId').val().length > 0 &&
+            newData.child('blockedId').val().length <= 128 &&
+            newData.child('blockerId').val() !== newData.child('blockedId').val()
+          )
         "
       }
     },
