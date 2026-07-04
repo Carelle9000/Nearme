@@ -1,10 +1,6 @@
 import { onCall, HttpsError } from 'firebase-functions/v2/https';
 import { google } from 'googleapis';
-import { cert, initializeApp } from 'firebase-admin/app';
-import { getDatabase } from 'firebase-admin/database';
-
-const app = initializeApp(cert(process.env.FIREBASE_CONFIG as string ? JSON.parse(process.env.FIREBASE_CONFIG as string) : undefined));
-const rtdb = getDatabase(app);
+import { rtdb } from './firebase';
 
 export const validateGooglePlayPurchase = onCall(
   { region: 'europe-west1', timeoutSeconds: 30 },
@@ -42,13 +38,12 @@ export const validateGooglePlayPurchase = onCall(
       const paymentState = subscription.paymentState;
       const expiryTimeMillis = subscription.expiryTimeMillis;
       const autoRenewing = subscription.autoRenewing ?? true;
-      const cancelledAtMillis = subscription.cancelledAtMillis;
 
       if (paymentState !== 1 && paymentState !== 2) {
         throw new HttpsError('invalid-argument', 'L\'achat n\'a pas été confirmé (état du paiement: ' + paymentState + ')');
       }
 
-      if (cancelledAtMillis) {
+      if ((subscription as any).cancelledAtMillis) {
         throw new HttpsError('invalid-argument', 'Cet abonnement a été annulé');
       }
 
