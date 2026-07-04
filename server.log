@@ -1,0 +1,15 @@
+
+> rn-app@1.0.0 start
+> expo start --web
+
+env: load .env.local
+env: export EXPO_PUBLIC_FIREBASE_API_KEY EXPO_PUBLIC_FIREBASE_APP_ID EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID EXPO_PUBLIC_FIREBASE_PROJECT_ID EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET
+Starting project at C:\Users\DELL5500\Desktop\nearme
+Using src/app as the root directory for Expo Router.
+React Compiler enabled
+Starting Metro Bundler
+
+Waiting on http://localhost:8081
+An update for expo is available: 56.0.12 → ~56.0.14
+11 other packages may need updating. Run npx expo install --check for details.
+Logs for your project will appear below.

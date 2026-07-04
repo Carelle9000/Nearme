@@ -84,8 +84,18 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
     // primary guard against listener pile-up when the caller's useEffect re-runs.
     if (subscribedConversationIdRef.current === conversationId) return;
 
-    const conversation = conversationsRef.current.find((c) => c.id === conversationId);
-    if (!conversation) return;
+    let conversation = conversationsRef.current.find((c) => c.id === conversationId);
+
+    // If conversation not found in list, try to load it from database
+    if (!conversation) {
+      try {
+        conversation = await chatService.getConversation(conversationId);
+        if (!conversation) return;
+      } catch (err) {
+        console.error('Error loading conversation:', err);
+        return;
+      }
+    }
 
     // Tear down any previous listener BEFORE creating the new one so we can
     // never have two active at once.

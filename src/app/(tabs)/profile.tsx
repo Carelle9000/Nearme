@@ -1,25 +1,56 @@
-import { View, ScrollView, Text, StyleSheet, TouchableOpacity, Image, Alert } from 'react-native';
+import { View, ScrollView, Text, StyleSheet, TouchableOpacity, Image, Alert, AppState } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useAuth } from '@/context/auth-context';
 import { usePremium } from '@/context/premium-context';
 import { useToast } from '@/context/toast-context';
-import { useRouter } from 'expo-router';
+import { useRouter, useFocusEffect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Colors, BorderRadius, Shadows } from '@/constants/theme';
 import { ConfirmationModal } from '@/components/ConfirmationModal';
 import { AnalyticsCard } from '@/components/AnalyticsCard';
-import { useState } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useLocalization } from '@/context/localization-context';
 
 export default function ProfileScreen() {
   const { user, logout } = useAuth();
-  const { isPremium, stats, isLoadingAnalytics } = usePremium();
+  const { isPremium, stats, monthlyTrends, isLoadingAnalytics, loadAnalytics } = usePremium();
   const router = useRouter();
   const { t } = useLocalization();
   const { error: showError } = useToast();
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
+
+  const appState = useRef(AppState.currentState);
+
+  useEffect(() => {
+    if (isPremium && !stats) {
+      loadAnalytics();
+    }
+  }, [isPremium, stats, loadAnalytics]);
+
+  useFocusEffect(
+    useCallback(() => {
+      if (isPremium) {
+        loadAnalytics();
+      }
+    }, [isPremium, loadAnalytics])
+  );
+
+  useEffect(() => {
+    const subscription = AppState.addEventListener('change', (state) => {
+      if (appState.current.match(/inactive|background/) && state === 'active') {
+        if (isPremium) {
+          loadAnalytics();
+        }
+      }
+      appState.current = state;
+    });
+
+    return () => {
+      subscription.remove();
+    };
+  }, [isPremium, loadAnalytics]);
 
   const handleLogout = () => {
     setShowLogoutConfirm(true);
@@ -35,7 +66,7 @@ export default function ProfileScreen() {
       router.replace('/auth/login');
     } catch (error: any) {
       console.error('Logout error:', error);
-      const errorMessage = error?.message || t('errorUnableToSignOut') || 'An error occurred while signing out';
+      const errorMessage = error?.message || t('errorUnableToSignOut') || t('errorOccurredSignOut');
       setIsLoggingOut(false);
       setShowLogoutConfirm(false);
       showError(errorMessage);
@@ -118,6 +149,8 @@ export default function ProfileScreen() {
             isPremium={isPremium}
             profileViews={stats?.profileViews || 0}
             likesReceived={stats?.likesReceived || 0}
+            monthlyViewsTrend={monthlyTrends.viewsTrend}
+            monthlyLikesTrend={monthlyTrends.likesTrend}
             isLoading={isLoadingAnalytics}
             onViewAnalytics={() => router.push('/premium/liked')}
             onUpgrade={() => router.push('/premium')}

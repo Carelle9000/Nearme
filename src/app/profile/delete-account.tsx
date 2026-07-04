@@ -214,7 +214,7 @@ export default function DeleteAccountScreen() {
 
               <TextInput
                 style={styles.passwordInput}
-                placeholder="Your password"
+                placeholder={t('password')}
                 placeholderTextColor={Colors.textSecondary}
                 secureTextEntry
                 value={password}

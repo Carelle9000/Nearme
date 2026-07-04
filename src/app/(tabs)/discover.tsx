@@ -7,9 +7,11 @@ import { FloatingHearts } from '@/components/floating-hearts';
 import { ReactionFeedback } from '@/components/reaction-feedback';
 import { ConfettiBurst } from '@/components/confetti-burst';
 import { TrialStatusCard } from '@/components/TrialStatusCard';
+import { PremiumRequiredModal } from '@/components/PremiumRequiredModal';
+import { ExpiredTrialBanner } from '@/components/ExpiredTrialBanner';
 import { locationService } from '@/services/location.service';
 import { chatService } from '@/services/chat.service';
-import { useEffect, useCallback, useState } from 'react';
+import { useEffect, useCallback, useState, memo, useMemo } from 'react';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -17,6 +19,78 @@ import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '@/constants/theme';
 import { useLocalization } from '@/context/localization-context';
 import { useAuth } from '@/context/auth-context';
+import { usePremium } from '@/context/premium-context';
+import { PremiumFeature } from '@/models/premium';
+
+const PremiumFeaturesButtons = memo(({
+  isPremium,
+  currentProfile,
+  onFeatureAccess,
+  t,
+}: {
+  isPremium: boolean;
+  currentProfile: any;
+  onFeatureAccess: (feature: PremiumFeature) => void;
+  t: any;
+}) => {
+  if (!currentProfile) return null;
+
+  return (
+    <View style={styles.premiumFeaturesSection}>
+      <TouchableOpacity
+        style={[styles.premiumButton, !isPremium && styles.premiumButtonDisabled]}
+        onPress={() => onFeatureAccess('undo')}
+        disabled={!isPremium}
+      >
+        <Ionicons
+          name="refresh-outline"
+          size={16}
+          color={isPremium ? Colors.primary : Colors.textSecondary}
+        />
+        <Text style={[styles.premiumButtonText, !isPremium && styles.premiumButtonTextDisabled]}>
+          {t('premiumFeatureUndo')}
+        </Text>
+        {!isPremium && <Ionicons name="lock-closed" size={12} color={Colors.textSecondary} />}
+      </TouchableOpacity>
+    </View>
+  );
+});
+PremiumFeaturesButtons.displayName = 'PremiumFeaturesButtons';
+
+const AnimationLayer = memo(({
+  showLikeHearts,
+  showConfetti,
+  showReaction,
+  onHeartsComplete,
+  onConfettiComplete,
+  onReactionComplete,
+}: {
+  showLikeHearts: boolean;
+  showConfetti: boolean;
+  showReaction: { trigger: boolean; type: 'like' | 'favorite' | 'message' };
+  onHeartsComplete: () => void;
+  onConfettiComplete: () => void;
+  onReactionComplete: () => void;
+}) => (
+  <>
+    <FloatingHearts
+      trigger={showLikeHearts}
+      count={5}
+      onComplete={onHeartsComplete}
+    />
+    <ConfettiBurst
+      trigger={showConfetti}
+      count={20}
+      onComplete={onConfettiComplete}
+    />
+    <ReactionFeedback
+      trigger={showReaction.trigger}
+      type={showReaction.type}
+      onComplete={onReactionComplete}
+    />
+  </>
+));
+AnimationLayer.displayName = 'AnimationLayer';
 
 export default function DiscoverScreen() {
   const {
@@ -33,6 +107,7 @@ export default function DiscoverScreen() {
   } = useDiscover();
   const { t } = useLocalization();
   const { user } = useAuth();
+  const { isPremium, subscriptionInfo } = usePremium();
   const router = useRouter();
 
   // Animation states
@@ -42,6 +117,23 @@ export default function DiscoverScreen() {
     trigger: boolean;
     type: 'like' | 'favorite' | 'message';
   }>({ trigger: false, type: 'like' });
+
+  // Stable callbacks for animations
+  const handleHeartsComplete = useCallback(() => {
+    setShowLikeHearts(false);
+  }, []);
+
+  const handleConfettiComplete = useCallback(() => {
+    setShowConfetti(false);
+  }, []);
+
+  const handleReactionComplete = useCallback(() => {
+    setShowReaction({ trigger: false, type: 'like' });
+  }, []);
+
+  // Premium modal states
+  const [showPremiumModal, setShowPremiumModal] = useState(false);
+  const [blockedFeature, setBlockedFeature] = useState<PremiumFeature | null>(null);
 
   // Declare currentProfile early so it can be used in callbacks
   const currentProfile = profiles[currentIndex] || null;
@@ -144,6 +236,25 @@ export default function DiscoverScreen() {
     favorite(currentProfile.uid);
   }, [currentProfile, favorite]);
 
+  const handlePremiumFeatureAccess = useCallback((feature: PremiumFeature) => {
+    if (!isPremium) {
+      setBlockedFeature(feature);
+      setShowPremiumModal(true);
+      return;
+    }
+    // Handle the actual feature access based on type
+    switch (feature) {
+      case 'view_who_liked':
+        router.push('/premium?tab=liked');
+        break;
+      case 'profile_analytics':
+        router.push('/premium?tab=analytics');
+        break;
+      default:
+        break;
+    }
+  }, [isPremium, router]);
+
   useEffect(() => {
     loadProfiles();
   }, [loadProfiles]);
@@ -195,6 +306,13 @@ export default function DiscoverScreen() {
       <SafeAreaView style={styles.safeArea}>
         <DiscoverHeader onNotificationsPress={() => router.push('/notifications')} />
 
+        {/* Expired Trial Banner */}
+        {subscriptionInfo.status === 'expired' && (
+          <ExpiredTrialBanner
+            onPressUpgrade={() => router.push('/premium')}
+          />
+        )}
+
         {/* Trial Status Card */}
         <TrialStatusCard
           user={user}
@@ -211,25 +329,24 @@ export default function DiscoverScreen() {
           onMessage={handleMessage}
         />
 
-        {/* Floating Hearts Animation */}
-        <FloatingHearts
-          trigger={showLikeHearts}
-          count={5}
-          onComplete={() => setShowLikeHearts(false)}
+        <AnimationLayer
+          showLikeHearts={showLikeHearts}
+          showConfetti={showConfetti}
+          showReaction={showReaction}
+          onHeartsComplete={handleHeartsComplete}
+          onConfettiComplete={handleConfettiComplete}
+          onReactionComplete={handleReactionComplete}
         />
 
-        {/* Confetti Burst Animation */}
-        <ConfettiBurst
-          trigger={showConfetti}
-          count={20}
-          onComplete={() => setShowConfetti(false)}
-        />
-
-        {/* Reaction Feedback Animation */}
-        <ReactionFeedback
-          trigger={showReaction.trigger}
-          type={showReaction.type}
-          onComplete={() => setShowReaction({ trigger: false, type: 'like' })}
+        {/* Premium Required Modal */}
+        <PremiumRequiredModal
+          visible={showPremiumModal}
+          featureName={blockedFeature || undefined}
+          onClose={() => setShowPremiumModal(false)}
+          onUpgrade={() => {
+            setShowPremiumModal(false);
+            router.push('/premium');
+          }}
         />
       </SafeAreaView>
     </LinearGradient>
@@ -278,6 +395,36 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 14,
     fontWeight: '600',
+  },
+  premiumFeaturesSection: {
+    paddingHorizontal: 16,
+    paddingVertical: 16,
+    marginBottom: 16,
+    gap: 10,
+  },
+  premiumButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    backgroundColor: 'rgba(100, 200, 255, 0.1)',
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: 'rgba(100, 200, 255, 0.2)',
+    gap: 10,
+  },
+  premiumButtonDisabled: {
+    backgroundColor: 'rgba(200, 200, 200, 0.05)',
+    borderColor: 'rgba(200, 200, 200, 0.1)',
+  },
+  premiumButtonText: {
+    flex: 1,
+    fontSize: 13,
+    fontWeight: '500',
+    color: Colors.primary,
+  },
+  premiumButtonTextDisabled: {
+    color: Colors.textSecondary,
   },
 });
 

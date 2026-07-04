@@ -9,6 +9,7 @@ import {
 } from 'firebase/database';
 import { rtdb } from '../config/firebase';
 import { Conversation, Message } from '../models/user';
+import { userService } from './user.service';
 
 function normalizeParticipants(raw: unknown): string[] {
   if (Array.isArray(raw)) return raw.filter((v): v is string => typeof v === 'string');
@@ -30,12 +31,14 @@ class ChatService {
     userId1: string,
     userId2: string,
     user1Name: string,
-    user2Name: string
+    user2Name: string,
+    user1Photo?: string,
+    user2Photo?: string
   ): Promise<Conversation> {
     const conversationId = [userId1, userId2].sort().join('_');
     const now = Date.now();
 
-    await set(ref(rtdb, `conversations/${conversationId}`), {
+    const data: any = {
       id: conversationId,
       participants: { [userId1]: true, [userId2]: true },
       participantNames: {
@@ -44,7 +47,15 @@ class ChatService {
       },
       createdAt: now,
       updatedAt: now,
-    });
+    };
+
+    if (user1Photo || user2Photo) {
+      data.participantPhotos = {};
+      if (user1Photo) data.participantPhotos[userId1] = user1Photo;
+      if (user2Photo) data.participantPhotos[userId2] = user2Photo;
+    }
+
+    await set(ref(rtdb, `conversations/${conversationId}`), data);
 
     return {
       id: conversationId,
@@ -53,6 +64,7 @@ class ChatService {
         [userId1]: user1Name,
         [userId2]: user2Name,
       },
+      participantPhotos: data.participantPhotos,
       createdAt: new Date(now),
       updatedAt: new Date(now),
     };
@@ -71,7 +83,19 @@ class ChatService {
       return normalizeConversation(snapshot.val());
     }
 
-    return this.createConversation(userId1, userId2, user1Name, user2Name);
+    const [user1, user2] = await Promise.all([
+      userService.getProfile(userId1),
+      userService.getProfile(userId2),
+    ]);
+
+    return this.createConversation(
+      userId1,
+      userId2,
+      user1Name,
+      user2Name,
+      user1?.photoUrl,
+      user2?.photoUrl
+    );
   }
 
   async sendMessage(
@@ -140,10 +164,35 @@ class ChatService {
       if (!snapshot.exists()) return [];
 
       const conversationsObj = snapshot.val();
-      const conversations = Object.entries(conversationsObj)
+      let conversations = Object.entries(conversationsObj)
         .map(([id, data]: any) => normalizeConversation({ id, ...data }))
         .filter((conv) => conv.participants.includes(userId))
         .sort((a: any, b: any) => (b.lastMessageAt || 0) - (a.lastMessageAt || 0));
+
+      // Load photos for participants if not already in conversation
+      conversations = await Promise.all(
+        conversations.map(async (conv) => {
+          if (!conv.participantPhotos) {
+            conv.participantPhotos = {};
+          }
+
+          // Fill in missing photos
+          for (const participantId of conv.participants) {
+            if (!conv.participantPhotos[participantId]) {
+              try {
+                const profile = await userService.getProfile(participantId);
+                if (profile?.photoUrl) {
+                  conv.participantPhotos[participantId] = profile.photoUrl;
+                }
+              } catch (error) {
+                console.warn(`Failed to fetch photo for participant ${participantId}`);
+              }
+            }
+          }
+
+          return conv;
+        })
+      );
 
       return conversations;
     } catch (error) {
@@ -174,6 +223,19 @@ class ChatService {
 
       callback(messages);
     });
+  }
+
+  async getConversation(conversationId: string): Promise<Conversation | null> {
+    try {
+      const snapshot = await get(ref(rtdb, `conversations/${conversationId}`));
+      if (!snapshot.exists()) return null;
+
+      const data = snapshot.val();
+      return normalizeConversation(data);
+    } catch (error) {
+      console.error('Error loading conversation:', error);
+      return null;
+    }
   }
 
   async markMessageAsRead(conversationId: string, messageId: string): Promise<void> {

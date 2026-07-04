@@ -9,11 +9,14 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors, BorderRadius, Spacing, Shadows } from '../constants/theme';
+import { useLocalization } from '../context/localization-context';
 
 interface AnalyticsCardProps {
   isPremium: boolean;
   profileViews?: number;
   likesReceived?: number;
+  monthlyViewsTrend?: number;
+  monthlyLikesTrend?: number;
   onViewAnalytics?: () => void;
   onUpgrade?: () => void;
   isLoading?: boolean;
@@ -28,11 +31,14 @@ export function AnalyticsCard({
   isPremium,
   profileViews = 0,
   likesReceived = 0,
+  monthlyViewsTrend = 0,
+  monthlyLikesTrend = 0,
   onViewAnalytics,
   onUpgrade,
   isLoading = false,
   style,
 }: AnalyticsCardProps) {
+  const { t } = useLocalization();
   if (isLoading) {
     return (
       <View style={[styles.container, style]}>
@@ -50,16 +56,16 @@ export function AnalyticsCard({
           color={Colors.accent}
           style={styles.lockIcon}
         />
-        <Text style={styles.lockedTitle}>Statistiques Premium</Text>
+        <Text style={styles.lockedTitle}>{t('premiumStatistics') || 'Statistiques Premium'}</Text>
         <Text style={styles.lockedDescription}>
-          Déverrouillez votre analyse pour voir qui vous a aimé et visionné
+          {t('unlockAnalysisToSeeWhoLikedAndViewed') || 'Déverrouillez votre analyse pour voir qui vous a aimé et visionné'}
         </Text>
         <TouchableOpacity
           style={styles.upgradeButton}
           onPress={onUpgrade}
           activeOpacity={0.7}
         >
-          <Text style={styles.upgradeButtonText}>Passer Premium</Text>
+          <Text style={styles.upgradeButtonText}>{t('upgradeToPremium') || 'Passer Premium'}</Text>
           <Ionicons
             name="chevron-forward"
             size={16}
@@ -81,7 +87,7 @@ export function AnalyticsCard({
       <View style={styles.header}>
         <View style={styles.headerLeft}>
           <Ionicons name="analytics" size={24} color={Colors.primary} />
-          <Text style={styles.headerTitle}>Statistiques</Text>
+          <Text style={styles.headerTitle}>{t('statistics') || 'Statistiques'}</Text>
         </View>
         <Ionicons
           name="chevron-forward"
@@ -99,8 +105,10 @@ export function AnalyticsCard({
             <Ionicons name="eye" size={20} color={Colors.primary} />
           </View>
           <Text style={styles.statValue}>{profileViews}</Text>
-          <Text style={styles.statLabel}>Vues du profil</Text>
-          <Text style={styles.statTrend}>+12 ce mois</Text>
+          <Text style={styles.statLabel}>{t('profileViews') || 'Vues du profil'}</Text>
+          <Text style={styles.statTrend}>
+            {monthlyViewsTrend > 0 ? `+${monthlyViewsTrend}` : monthlyViewsTrend} {t('thisMonth') || 'ce mois'}
+          </Text>
         </View>
 
         {/* Likes Received */}
@@ -109,14 +117,16 @@ export function AnalyticsCard({
             <Ionicons name="heart" size={20} color={Colors.primary} />
           </View>
           <Text style={styles.statValue}>{likesReceived}</Text>
-          <Text style={styles.statLabel}>Likes reçus</Text>
-          <Text style={styles.statTrend}>+5 ce mois</Text>
+          <Text style={styles.statLabel}>{t('likesReceived') || 'Likes reçus'}</Text>
+          <Text style={styles.statTrend}>
+            {monthlyLikesTrend > 0 ? `+${monthlyLikesTrend}` : monthlyLikesTrend} {t('thisMonth') || 'ce mois'}
+          </Text>
         </View>
       </View>
 
       {/* CTA */}
       <View style={styles.cta}>
-        <Text style={styles.ctaText}>Voir les détails complets →</Text>
+        <Text style={styles.ctaText}>{t('viewFullDetails') || 'Voir les détails complets'} →</Text>
       </View>
     </TouchableOpacity>
   );

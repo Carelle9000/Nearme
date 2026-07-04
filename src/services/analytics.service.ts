@@ -2,6 +2,7 @@ import { ref, get, set, update } from 'firebase/database';
 import { rtdb } from '../config/firebase';
 import { Profile } from '../models/user';
 import { DiscoverStats, ProfileInteraction } from '../models/premium';
+import { userService } from './user.service';
 
 /**
  * AnalyticsService: Tracks profile views, likes, and statistics
@@ -142,7 +143,7 @@ class AnalyticsService {
 
       // Fetch profiles of users who liked
       const profiles = await Promise.all(
-        likerIds.map((likerId) => this.getProfile(likerId))
+        likerIds.map((likerId) => userService.getProfile(likerId))
       );
 
       return profiles.filter((p) => p !== null) as Profile[];
@@ -170,26 +171,13 @@ class AnalyticsService {
 
       // Fetch profiles of users who viewed
       const profiles = await Promise.all(
-        viewerIds.map((viewerId) => this.getProfile(viewerId))
+        viewerIds.map((viewerId) => userService.getProfile(viewerId))
       );
 
       return profiles.filter((p) => p !== null) as Profile[];
     } catch (error) {
       console.error('[Analytics] Failed to get who viewed you:', error);
       return [];
-    }
-  }
-
-  /**
-   * Helper: Get profile by ID
-   */
-  private async getProfile(uid: string): Promise<Profile | null> {
-    try {
-      const snapshot = await get(ref(rtdb, `profiles/${uid}`));
-      return snapshot.val() as Profile | null;
-    } catch (error) {
-      console.error('[Analytics] Failed to fetch profile:', error);
-      return null;
     }
   }
 
@@ -225,6 +213,53 @@ class AnalyticsService {
     } catch (error) {
       console.error('[Analytics] Failed to get monthly stats:', error);
       return null;
+    }
+  }
+
+  /**
+   * Calculate current month's interaction counts by scanning recent interactions
+   */
+  async getCurrentMonthStats(
+    userId: string
+  ): Promise<{ viewsTrend: number; likesTrend: number }> {
+    try {
+      const now = new Date();
+      const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+
+      // Count views this month
+      const viewsSnapshot = await get(
+        ref(rtdb, `profiles/${userId}/analytics/views`)
+      );
+      let viewsTrend = 0;
+      if (viewsSnapshot.exists()) {
+        const views = viewsSnapshot.val();
+        Object.values(views).forEach((interaction: any) => {
+          const date = new Date(interaction.createdAt);
+          if (date >= monthStart) {
+            viewsTrend++;
+          }
+        });
+      }
+
+      // Count likes this month
+      const likesSnapshot = await get(
+        ref(rtdb, `profiles/${userId}/analytics/likes`)
+      );
+      let likesTrend = 0;
+      if (likesSnapshot.exists()) {
+        const likes = likesSnapshot.val();
+        Object.values(likes).forEach((interaction: any) => {
+          const date = new Date(interaction.createdAt);
+          if (date >= monthStart) {
+            likesTrend++;
+          }
+        });
+      }
+
+      return { viewsTrend, likesTrend };
+    } catch (error) {
+      console.error('[Analytics] Failed to get current month stats:', error);
+      return { viewsTrend: 0, likesTrend: 0 };
     }
   }
 }

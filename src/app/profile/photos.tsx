@@ -54,11 +54,11 @@ export default function ManagePhotosScreen() {
       const success = await takeAndUploadPhoto();
       console.log('takeAndUploadPhoto result:', success);
       if (success) {
-        Alert.alert(t('success'), 'Your photo has been uploaded');
+        Alert.alert(t('success'), t('photoUploaded'));
       }
     } catch (error: any) {
       console.error('Camera error:', error);
-      Alert.alert(t('error'), error.message || 'Unable to take a photo');
+      Alert.alert(t('error'), error.message || t('unableTakePhoto'));
     }
   };
 
@@ -69,18 +69,18 @@ export default function ManagePhotosScreen() {
       const success = await pickAndUploadPhoto();
       console.log('pickAndUploadPhoto result:', success);
       if (success) {
-        Alert.alert(t('success'), 'Your photo has been uploaded');
+        Alert.alert(t('success'), t('photoUploaded'));
       }
     } catch (error: any) {
       console.error('Gallery error:', error);
-      Alert.alert(t('error'), error.message || 'Unable to load the photo');
+      Alert.alert(t('error'), error.message || t('unableLoadPhoto'));
     }
   };
 
   const handleDeletePhoto = (photoUrl: string) => {
-    Alert.alert('Delete photo', 'Are you sure you want to delete this photo?', [
+    Alert.alert(t('deletePhoto'), t('areYouSureDeletePhoto'), [
       {
-        text: 'Delete',
+        text: t('delete'),
         style: 'destructive',
         onPress: () => deletePhoto(photoUrl),
       },

@@ -21,7 +21,7 @@ class NotificationHistoryService {
 
   async saveNotification(
     userId: string,
-    notification: Omit<NotificationRecord, 'id' | 'createdAt' | 'updatedAt'>
+    notification: Omit<NotificationRecord, 'id' | 'createdAt' | 'updatedAt' | 'isRead'>
   ): Promise<string | null> {
     try {
       const notificationRef = this.getNotificationsRef(userId);

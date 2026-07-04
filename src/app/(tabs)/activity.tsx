@@ -14,6 +14,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useRouter } from 'expo-router';
 import { useAuth } from '@/context/auth-context';
+import { useLocalization } from '@/context/localization-context';
 import { Colors, BorderRadius, Shadows } from '@/constants/theme';
 import { ref, get, getDatabase } from 'firebase/database';
 import { firebaseApp } from '@/config/firebase';
@@ -31,6 +32,7 @@ interface Like {
 export default function ActivityScreen() {
   const { user } = useAuth();
   const router = useRouter();
+  const { t } = useLocalization();
   const [activeTab, setActiveTab] = useState<Tab>('likes');
   const [likes, setLikes] = useState<Like[]>([]);
   const [favorites, setFavorites] = useState<Profile[]>([]);
@@ -204,7 +206,7 @@ export default function ActivityScreen() {
               setBlocked(blocked.filter((p) => p.uid !== profile.uid));
             } catch (error) {
               console.error('Error unblocking:', error);
-              Alert.alert('Error', 'Unable to unblock this profile');
+              Alert.alert(t('error'), t('unableUnblockProfile'));
             }
           },
         },

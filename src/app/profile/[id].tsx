@@ -125,7 +125,7 @@ export default function PublicProfileScreen() {
       }
     } catch (err) {
       console.error('[PublicProfile] like failed:', err);
-      Alert.alert('Error', 'Unable to send the like');
+      Alert.alert(t('error'), t('unableSendLike'));
     } finally {
       setIsActing(false);
     }
@@ -139,7 +139,7 @@ export default function PublicProfileScreen() {
       router.back();
     } catch (err) {
       console.error('[PublicProfile] nope failed:', err);
-      Alert.alert('Error', 'Unable to pass this profile');
+      Alert.alert(t('error'), t('unablePassProfile'));
     } finally {
       setIsActing(false);
     }
@@ -418,8 +418,14 @@ export default function PublicProfileScreen() {
                 onPress={handleUnblock}
                 disabled={isActing}
               >
-                <Ionicons name="ban" size={18} color={Colors.textSecondary} />
-                <Text style={styles.blockButtonText}>Débloquer ce profil</Text>
+                {isActing ? (
+                  <ActivityIndicator size="small" color={Colors.textSecondary} />
+                ) : (
+                  <>
+                    <Ionicons name="ban" size={18} color={Colors.textSecondary} />
+                    <Text style={styles.blockButtonText}>{t('unblockThisProfile') || 'Débloquer ce profil'}</Text>
+                  </>
+                )}
               </TouchableOpacity>
             ) : (
               <>
@@ -429,8 +435,14 @@ export default function PublicProfileScreen() {
                   onPress={handleBlock}
                   disabled={isActing}
                 >
-                  <Ionicons name="ban" size={18} color={Colors.textSecondary} />
-                  <Text style={styles.blockButtonText}>Bloquer ce profil</Text>
+                  {isActing ? (
+                    <ActivityIndicator size="small" color={Colors.textSecondary} />
+                  ) : (
+                    <>
+                      <Ionicons name="ban" size={18} color={Colors.textSecondary} />
+                      <Text style={styles.blockButtonText}>{t('blockThisProfile') || 'Bloquer ce profil'}</Text>
+                    </>
+                  )}
                 </TouchableOpacity>
               </>
             )}

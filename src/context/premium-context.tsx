@@ -29,6 +29,7 @@ interface PremiumContextType {
 
   // Analytics (premium only)
   stats: DiscoverStats | null;
+  monthlyTrends: { viewsTrend: number; likesTrend: number };
   whoLikedYou: any[]; // Array of profiles
   whoViewedYou: any[]; // Array of profiles
   loadAnalytics: () => Promise<void>;
@@ -51,6 +52,7 @@ export function PremiumProvider({ children }: { children: React.ReactNode }) {
 
   // Analytics state
   const [stats, setStats] = useState<DiscoverStats | null>(null);
+  const [monthlyTrends, setMonthlyTrends] = useState({ viewsTrend: 0, likesTrend: 0 });
   const [whoLikedYou, setWhoLikedYou] = useState<any[]>([]);
   const [whoViewedYou, setWhoViewedYou] = useState<any[]>([]);
   const [isLoadingAnalytics, setIsLoadingAnalytics] = useState(false);
@@ -87,6 +89,10 @@ export function PremiumProvider({ children }: { children: React.ReactNode }) {
       // Load stats
       const statsData = await analyticsService.getProfileStats(user.id);
       setStats(statsData);
+
+      // Load current month trends
+      const trends = await analyticsService.getCurrentMonthStats(user.id);
+      setMonthlyTrends(trends);
 
       // Load who liked you
       const likedProfiles = await analyticsService.getWhoLikedYou(user.id);
@@ -133,6 +139,7 @@ export function PremiumProvider({ children }: { children: React.ReactNode }) {
         searchRadius,
         undoLimit,
         stats,
+        monthlyTrends,
         whoLikedYou,
         whoViewedYou,
         loadAnalytics,

@@ -249,7 +249,7 @@ export default function SignupStep3() {
             <Ionicons name="location" size={20} color={Colors.primary} style={styles.inputIcon} />
             <TextInput
               style={styles.input}
-              placeholder="Paris, London, New York..."
+              placeholder={t('locationPlaceholder')}
               placeholderTextColor={Colors.textSecondary}
               value={data.city}
               onChangeText={(city) => updateData({ city })}
@@ -331,7 +331,7 @@ export default function SignupStep3() {
           <View style={styles.inputContainer}>
             <TextInput
               style={[styles.input, styles.bioInput]}
-              placeholder="Tell us a bit about yourself..."
+              placeholder={t('bioPlaceholder')}
               placeholderTextColor={Colors.textSecondary}
               value={data.bio}
               onChangeText={(bio) => updateData({ bio: bio.slice(0, 500) })}

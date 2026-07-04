@@ -1,4 +1,4 @@
-import { View, FlatList, TextInput, TouchableOpacity, StyleSheet, ActivityIndicator, Text, Alert } from 'react-native';
+import { View, FlatList, TextInput, TouchableOpacity, StyleSheet, ActivityIndicator, Text, Alert, Image } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useChat } from '@/context/chat-context';
@@ -23,6 +23,7 @@ export default function ConversationScreen() {
   const [isBlockActing, setIsBlockActing] = useState(false);
 
   const otherUserId = id && currentConversation?.participants.find((pid) => pid !== user?.id);
+  const otherUserPhoto = otherUserId ? currentConversation?.participantPhotos?.[otherUserId] : null;
 
   useEffect(() => {
     if (id) {
@@ -188,27 +189,41 @@ export default function ConversationScreen() {
   }
 
   return (
-    <LinearGradient colors={[Colors.background, Colors.cardSurface]} style={styles.container}>
+    <LinearGradient colors={[Colors.background, Colors.cardSurface]} style={styles.container} pointerEvents="box-none">
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()}>
           <Ionicons name="chevron-back" size={28} color={Colors.primary} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>
-          {currentConversation?.participantNames?.[
-            currentConversation.participants.find((id) => id !== user?.id) || ''
-          ] || 'Chat'}
-        </Text>
+
+        <View style={styles.headerContent}>
+          {otherUserPhoto && (
+            <Image
+              source={{ uri: otherUserPhoto }}
+              style={styles.headerPhoto}
+            />
+          )}
+          <Text style={styles.headerTitle}>
+            {currentConversation?.participantNames?.[
+              currentConversation.participants.find((id) => id !== user?.id) || ''
+            ] || 'Chat'}
+          </Text>
+        </View>
+
         <TouchableOpacity
           onPress={isBlocked ? handleUnblock : handleBlock}
           disabled={isBlockActing}
           style={{ opacity: isBlockActing ? 0.6 : 1 }}
         >
-          <Ionicons
-            name="ban"
-            size={24}
-            color={isBlocked ? '#E74C3C' : Colors.primary}
-          />
+          {isBlockActing ? (
+            <ActivityIndicator size="small" color={Colors.primary} />
+          ) : (
+            <Ionicons
+              name="ban"
+              size={24}
+              color={isBlocked ? '#E74C3C' : Colors.primary}
+            />
+          )}
         </TouchableOpacity>
       </View>
 
@@ -222,10 +237,10 @@ export default function ConversationScreen() {
       />
 
       {/* Input Area */}
-      <View style={styles.inputContainer}>
+      <View style={styles.inputContainer} pointerEvents={isSending ? 'none' : 'auto'}>
         <TextInput
           style={styles.input}
-          placeholder="Type a message..."
+          placeholder={t('typeMessage')}
           value={messageText}
           onChangeText={setMessageText}
           editable={!isSending}
@@ -270,10 +285,23 @@ const styles = StyleSheet.create({
     borderBottomColor: Colors.border,
     backgroundColor: Colors.cardSurface,
   },
+  headerContent: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  headerPhoto: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: Colors.secondary,
+  },
   headerTitle: {
     fontSize: 18,
     fontWeight: '600',
     color: Colors.text,
+    flex: 1,
   },
   messagesList: {
     padding: 16,

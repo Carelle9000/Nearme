@@ -363,6 +363,9 @@ export const TRANSLATIONS = {
     upgradeNow: 'Passez au premium pour continuer à profiter de tous les avantages',
     securePayment: 'Paiement sécurisé',
     sslEncrypted: 'Chiffré SSL',
+    premiumRequiredMessage: 'Cette fonctionnalité exclusive est réservée aux membres Premium.',
+    withPremiumYouCan: 'Avec Premium, vous pouvez :',
+    trialExpiredBannerMessage: 'Passez à Premium pour débloquer toutes les fonctionnalités',
 
     // Tab Navigation
     discoverTab: 'Découvrir',
@@ -551,6 +554,25 @@ export const TRANSLATIONS = {
     // Common actions/buttons
     retry: 'Réessayer',
     undo: 'Annuler',
+
+    // Missing translations
+    photoUploaded: 'Votre photo a été téléchargée',
+    unableToTakePhoto: 'Impossible de prendre une photo',
+    unableToLoadPhoto: 'Impossible de charger la photo',
+    areYouSureDeletePhoto: 'Êtes-vous sûr de vouloir supprimer cette photo ?',
+    unableToRestorePurchase: 'Impossible de restaurer l\'achat',
+    unableSendLike: 'Impossible d\'envoyer le like',
+    unablePassProfile: 'Impossible de passer ce profil',
+    unableUnblockProfile: 'Impossible de débloquer ce profil',
+    firebaseConnected: '✅ Firebase connecté',
+    yourFirebaseConnected: 'Votre Firebase est correctement configuré !',
+    firebaseError: '❌ Erreur Firebase',
+    errorOccurredSignOut: 'Une erreur s\'est produite lors de la déconnexion',
+    signOutSuccessfully: 'Vous avez été déconnecté avec succès',
+    newPassword: 'Nouveau mot de passe',
+    locationPlaceholder: 'Paris, Londres, New York...',
+    enterYourName: 'Entrez votre nom',
+    tellAboutYourself: 'Parlez-nous de vous...',
   },
   en: {
     // Language Selection
@@ -873,6 +895,9 @@ export const TRANSLATIONS = {
     upgradeNow: 'Go premium to continue enjoying all benefits',
     securePayment: 'Secure payment',
     sslEncrypted: 'SSL encrypted',
+    premiumRequiredMessage: 'This exclusive feature is reserved for Premium members.',
+    withPremiumYouCan: 'With Premium, you can:',
+    trialExpiredBannerMessage: 'Go Premium to unlock all features',
 
     // Tab Navigation
     discoverTab: 'Discover',

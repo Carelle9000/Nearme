@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, Alert } from 'react-native';
 import { useAuth } from '@/context/auth-context';
+import { useLocalization } from '@/context/localization-context';
 import { authService } from '@/services/auth.service';
 import { userService } from '@/services/user.service';
 import { chatService } from '@/services/chat.service';
@@ -26,6 +27,7 @@ const TestButton = ({ title, onPress, color = '#007AFF', loading = false }: any)
 
 export default function DebugScreen() {
   const { user } = useAuth();
+  const { t } = useLocalization();
   const [loading, setLoading] = useState(false);
   const [results, setResults] = useState<string[]>([]);
   const [testEmail, setTestEmail] = useState('test@example.com');
@@ -70,10 +72,10 @@ export default function DebugScreen() {
         }
       }
 
-      Alert.alert('✅ Firebase Connected', 'Your Firebase is properly connected!');
+      Alert.alert(t('firebaseConnected'), t('yourFirebaseConnected'));
     } catch (error: any) {
       addError(`Firebase Error: ${error.message}`);
-      Alert.alert('❌ Firebase Error', error.message);
+      Alert.alert(t('firebaseError'), error.message);
     } finally {
       setLoading(false);
     }

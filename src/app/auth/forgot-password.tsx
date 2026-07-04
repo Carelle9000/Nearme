@@ -184,7 +184,7 @@ export default function ForgotPasswordScreen() {
               />
               <TextInput
                 style={styles.input}
-                placeholder="New password"
+                placeholder={t('newPassword')}
                 placeholderTextColor={Colors.textSecondary}
                 value={newPassword}
                 onChangeText={setNewPassword}
@@ -213,7 +213,7 @@ export default function ForgotPasswordScreen() {
               />
               <TextInput
                 style={styles.input}
-                placeholder="Confirm password"
+                placeholder={t('confirmPassword')}
                 placeholderTextColor={Colors.textSecondary}
                 value={confirmPassword}
                 onChangeText={setConfirmPassword}

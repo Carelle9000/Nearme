@@ -198,7 +198,7 @@ export default function EditProfileScreen() {
             <Text style={styles.sectionTitle}>Display name</Text>
             <TextInput
               style={styles.input}
-              placeholder="Enter your name"
+              placeholder={t('enterYourName')}
               placeholderTextColor={Colors.textSecondary}
               value={displayName}
               onChangeText={setDisplayName}
@@ -210,10 +210,10 @@ export default function EditProfileScreen() {
 
           {/* Bio */}
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Bio</Text>
+            <Text style={styles.sectionTitle}>{t('bio')}</Text>
             <TextInput
               style={[styles.input, styles.bioInput]}
-              placeholder="Tell us about yourself..."
+              placeholder={t('tellAboutYourself')}
               placeholderTextColor={Colors.textSecondary}
               value={bio}
               onChangeText={setBio}
