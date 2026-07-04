@@ -1,4 +1,4 @@
-import { View, StyleSheet, ActivityIndicator, Alert, TouchableOpacity, Text, Image } from 'react-native';
+import { View, StyleSheet, ActivityIndicator, Alert, TouchableOpacity, Text, Image, ScrollView } from 'react-native';
 import { useDiscover } from '@/context/discover-context';
 import { ProfileCard } from '@/components/profile-card';
 import { ProfileCardSkeleton } from '@/components/profile-card-skeleton';
@@ -6,6 +6,7 @@ import { DiscoverHeader } from '@/components/discover-header';
 import { FloatingHearts } from '@/components/floating-hearts';
 import { ReactionFeedback } from '@/components/reaction-feedback';
 import { ConfettiBurst } from '@/components/confetti-burst';
+import { TrialStatusCard } from '@/components/TrialStatusCard';
 import { locationService } from '@/services/location.service';
 import { chatService } from '@/services/chat.service';
 import { useEffect, useCallback, useState } from 'react';
@@ -164,6 +165,12 @@ export default function DiscoverScreen() {
         <SafeAreaView style={styles.safeArea}>
           <DiscoverHeader onNotificationsPress={() => router.push('/notifications')} />
 
+          {/* Trial Status Card */}
+          <TrialStatusCard
+            user={user}
+            onPressUpgrade={() => router.push('/premium')}
+          />
+
           {/* Empty State */}
           <View style={styles.emptyContainer}>
             <Ionicons name="search-outline" size={64} color={Colors.primary} />
@@ -187,6 +194,12 @@ export default function DiscoverScreen() {
     <LinearGradient colors={[Colors.background, Colors.cardSurface]} style={styles.container}>
       <SafeAreaView style={styles.safeArea}>
         <DiscoverHeader onNotificationsPress={() => router.push('/notifications')} />
+
+        {/* Trial Status Card */}
+        <TrialStatusCard
+          user={user}
+          onPressUpgrade={() => router.push('/premium')}
+        />
 
         {/* Profile Card */}
         <ProfileCard

@@ -209,6 +209,8 @@ export const TRANSLATIONS = {
     yes: 'Oui',
     no: 'Non',
     maybe: 'Peut-être',
+    day: 'jour',
+    days: 'jours',
 
     // Signup
     signupSubtitle: 'Commencez à rencontrer des personnes près de chez vous',
@@ -717,6 +719,8 @@ export const TRANSLATIONS = {
     yes: 'Yes',
     no: 'No',
     maybe: 'Maybe',
+    day: 'day',
+    days: 'days',
 
     // Signup
     signupSubtitle: 'Start meeting people near you',
