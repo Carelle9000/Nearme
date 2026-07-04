@@ -1,8 +1,9 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
-import { get, set, ref } from 'firebase/database';
+import { get, set, ref, query, orderByChild, equalTo } from 'firebase/database';
 import { rtdb } from '../config/firebase';
 import { Profile } from '../models/user';
 import { userService } from '../services/user.service';
+import { blockService } from '../services/block.service';
 import { analyticsService } from '../services/analytics.service';
 import { useAuth } from './auth-context';
 import { usePremium } from './premium-context';
@@ -189,11 +190,15 @@ export function DiscoverProvider({ children }: { children: React.ReactNode }) {
       const nearbyProfiles = await userService.getNearbyProfiles(latitude, longitude, maxDistance);
       console.log(`[Discover] Got ${nearbyProfiles.length} nearby profiles within ${maxDistance}km`);
 
-      // Filter out current user, already liked/noped (read via refs to keep callback stable).
+      // Load blocked profiles
+      const blockedIds = await blockService.getBlockedByMe(user.id);
+      console.log(`[Discover] User has ${blockedIds.size} blocked profiles`);
+
+      // Filter out current user, already liked/noped (read via refs to keep callback stable), and blocked.
       const currentLiked = likedIdsRef.current;
       const currentNoped = nopeIdsRef.current;
       const filtered = nearbyProfiles.filter(
-        (p) => p.uid !== user.id && !currentLiked.has(p.uid) && !currentNoped.has(p.uid)
+        (p) => p.uid !== user.id && !currentLiked.has(p.uid) && !currentNoped.has(p.uid) && !blockedIds.has(p.uid)
       );
 
       console.log(`[Discover] After filtering: ${filtered.length} profiles remain`);
@@ -216,7 +221,7 @@ export function DiscoverProvider({ children }: { children: React.ReactNode }) {
         // eslint-disable-next-line react-hooks/set-state-in-effect
         applyFilters(currentFilters, profiles);
       } else {
-        // eslint-disable-next-line react-hooks/set-state-in-effect
+         
         setFilteredProfiles(profiles);
       }
     }

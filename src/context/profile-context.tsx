@@ -35,7 +35,7 @@ export function ProfileProvider({ children }: { children: React.ReactNode }) {
       setError(null);
     } else {
       // Clear photos when user logs out
-      // eslint-disable-next-line react-hooks/set-state-in-effect
+       
       setProfilePhotos([]);
       setError(null);
       setIsUploadingPhoto(false);

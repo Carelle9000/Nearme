@@ -29,6 +29,7 @@
     "expo-system-ui": "~56.0.5",
     "expo-web-browser": "~56.0.5",
     "firebase": "^12.15.0",
+    "lottie-react-native": "^7.3.8",
     "ngeohash": "^0.6.3",
     "react": "19.2.3",
     "react-dom": "19.2.3",

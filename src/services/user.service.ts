@@ -11,6 +11,7 @@ import {
 import { rtdb } from '../config/firebase';
 import { Profile } from '../models/user';
 import { matchService } from './match.service';
+import { blockService } from './block.service';
 import { encodeLocation, neighborPrefixRanges } from '../utils/geohash';
 
 class UserService {
@@ -282,6 +283,8 @@ class UserService {
         blockedId: targetId,
         createdAt: now,
       });
+      // Invalidate cache after blocking
+      blockService.invalidateCache(userId);
     } catch (error: any) {
       if (error?.code === 'PERMISSION_DENIED') {
         console.error('[RTDB-DENY] saveBlock', { userId, targetId }, error);
@@ -302,6 +305,8 @@ class UserService {
         const block = snapshot.val();
         if (block.blockerId === userId && block.blockedId === targetId) {
           await set(blockRef, null);
+          // Invalidate cache after unblocking
+          blockService.invalidateCache(userId);
         }
       }
     } catch (error: any) {
@@ -326,6 +331,22 @@ class UserService {
     } catch (error) {
       console.error('Error checking block status:', error);
       return false;
+    }
+  }
+
+  async isBlockedByEitherWay(userId: string, targetId: string): Promise<{
+    iBlocked: boolean;
+    iBlockThem: boolean;
+  }> {
+    try {
+      const [iBlocked, iBlockThem] = await Promise.all([
+        this.isBlocked(targetId, userId),
+        this.isBlocked(userId, targetId),
+      ]);
+      return { iBlocked, iBlockThem };
+    } catch (error) {
+      console.error('Error checking bidirectional block:', error);
+      return { iBlocked: false, iBlockThem: false };
     }
   }
 }

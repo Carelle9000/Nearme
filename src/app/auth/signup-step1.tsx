@@ -1,4 +1,4 @@
-﻿import {
+import {
   View,
   Text,
   TextInput,
@@ -69,6 +69,8 @@ export default function SignupStep1() {
   };
 
   const handleCreateAccount = async () => {
+    if (isLoading) return;
+
     if (!validateForm()) {
       return;
     }
@@ -215,11 +217,11 @@ export default function SignupStep1() {
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
           style={[styles.buttonGradient, Shadows.glow]}
+          pointerEvents="box-none"
         >
           <TouchableOpacity
             style={[styles.button, isLoading && styles.buttonDisabled]}
             onPress={handleCreateAccount}
-            disabled={isLoading}
           >
             {isLoading ? (
               <ActivityIndicator color={Colors.text} size="small" />

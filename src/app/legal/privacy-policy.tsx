@@ -1,4 +1,4 @@
-﻿import {
+import {
   View,
   Text,
   StyleSheet,
@@ -10,9 +10,11 @@ import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Colors } from '@/constants/theme';
+import { useLocalization } from '@/context/localization-context';
 
 export default function PrivacyPolicyScreen() {
   const router = useRouter();
+  const { t } = useLocalization();
 
   return (
     <LinearGradient colors={[Colors.background, Colors.cardSurface]} style={styles.container}>
@@ -21,89 +23,73 @@ export default function PrivacyPolicyScreen() {
           <TouchableOpacity onPress={() => router.back()}>
             <Ionicons name="chevron-back" size={28} color={Colors.primary} />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>Politique de confidentialité</Text>
+          <Text style={styles.headerTitle}>{t('privacyPolicy')}</Text>
           <View style={{ width: 28 }} />
         </View>
 
         <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>1. Introduction</Text>
-            <Text style={styles.text}>
-              nearme est engagé à protéger votre vie privée. Cette politique de confidentialité explique comment nous collectons, utilisons et protégeons vos données personnelles.
-            </Text>
+            <Text style={styles.sectionTitle}>1. {t('introduction')}</Text>
+            <Text style={styles.text}>{t('privacyIntroText')}</Text>
           </View>
 
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>2. Données collectées</Text>
-            <Text style={styles.text}>
-              Nous collectons les informations suivantes :
-            </Text>
+            <Text style={styles.sectionTitle}>2. {t('dataCollected')}</Text>
+            <Text style={styles.text}>{t('dataCollectedText')}</Text>
             <View style={styles.list}>
-              <Text style={styles.listItem}>• Informations de compte (email, mot de passe)</Text>
-              <Text style={styles.listItem}>• Profil utilisateur (nom, âge, photo, bio, intérêts)</Text>
-              <Text style={styles.listItem}>• Localisation (ville, coordonnées GPS)</Text>
-              <Text style={styles.listItem}>• Historique de messages</Text>
-              <Text style={styles.listItem}>• Préférences et paramètres</Text>
+              <Text style={styles.listItem}>• {t('accountInformation')}</Text>
+              <Text style={styles.listItem}>• {t('userProfile')}</Text>
+              <Text style={styles.listItem}>• {t('location')}</Text>
+              <Text style={styles.listItem}>• {t('messageHistory')}</Text>
+              <Text style={styles.listItem}>• {t('preferences')}</Text>
             </View>
           </View>
 
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>3. Utilisation des données</Text>
-            <Text style={styles.text}>
-              Nous utilisons vos données pour :
-            </Text>
+            <Text style={styles.sectionTitle}>3. {t('dataUsage')}</Text>
+            <Text style={styles.text}>{t('dataUsageText')}</Text>
             <View style={styles.list}>
-              <Text style={styles.listItem}>• Fournir et améliorer nos services</Text>
-              <Text style={styles.listItem}>• Vous recommander des profils compatibles</Text>
-              <Text style={styles.listItem}>• Assurer la sécurité de votre compte</Text>
-              <Text style={styles.listItem}>• Communiquer avec vous</Text>
-              <Text style={styles.listItem}>• Respecter les obligations légales</Text>
+              <Text style={styles.listItem}>• {t('provideServices')}</Text>
+              <Text style={styles.listItem}>• {t('recommendProfiles')}</Text>
+              <Text style={styles.listItem}>• {t('accountSecurity')}</Text>
+              <Text style={styles.listItem}>• {t('contactYou')}</Text>
+              <Text style={styles.listItem}>• {t('legalCompliance')}</Text>
             </View>
           </View>
 
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>4. Partage des données</Text>
-            <Text style={styles.text}>
-              Nous ne partageons pas vos données personnelles avec des tiers, sauf :
-            </Text>
+            <Text style={styles.sectionTitle}>4. {t('dataSharing')}</Text>
+            <Text style={styles.text}>{t('dataSharingText')}</Text>
             <View style={styles.list}>
-              <Text style={styles.listItem}>• Pour respecter la loi ou une ordonnance judiciaire</Text>
-              <Text style={styles.listItem}>• Pour protéger la sécurité et les droits de nearme</Text>
-              <Text style={styles.listItem}>• Avec votre consentement explicite</Text>
+              <Text style={styles.listItem}>• {t('lawCompliance')}</Text>
+              <Text style={styles.listItem}>• {t('protectSecurity')}</Text>
+              <Text style={styles.listItem}>• {t('explicitConsent')}</Text>
             </View>
           </View>
 
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>5. Sécurité des données</Text>
-            <Text style={styles.text}>
-              Nous implémentons des mesures de sécurité techniques et organisationnelles pour protéger vos données contre l'accès non autorisé, la modification ou la divulgation.
-            </Text>
+            <Text style={styles.sectionTitle}>5. {t('dataSecurity')}</Text>
+            <Text style={styles.text}>{t('dataSecurityText')}</Text>
           </View>
 
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>6. Vos droits</Text>
-            <Text style={styles.text}>
-              Vous avez le droit de :
-            </Text>
+            <Text style={styles.sectionTitle}>6. {t('yourRights')}</Text>
+            <Text style={styles.text}>{t('yourRightsText')}</Text>
             <View style={styles.list}>
-              <Text style={styles.listItem}>• Accéder à vos données personnelles</Text>
-              <Text style={styles.listItem}>• Corriger les données inexactes</Text>
-              <Text style={styles.listItem}>• Demander la suppression de vos données</Text>
-              <Text style={styles.listItem}>• Vous opposer au traitement de vos données</Text>
+              <Text style={styles.listItem}>• {t('accessData')}</Text>
+              <Text style={styles.listItem}>• {t('correctData')}</Text>
+              <Text style={styles.listItem}>• {t('deleteData')}</Text>
+              <Text style={styles.listItem}>• {t('objectProcessing')}</Text>
             </View>
           </View>
 
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>7. Contact</Text>
-            <Text style={styles.text}>
-              Pour toute question concernant cette politique de confidentialité, veuillez nous contacter à : privacy@nearme.app
-            </Text>
+            <Text style={styles.sectionTitle}>7. {t('contact')}</Text>
+            <Text style={styles.text}>{t('privacyContact')}</Text>
           </View>
 
           <View style={styles.lastUpdate}>
-            <Text style={styles.lastUpdateText}>
-              Dernière mise à jour : janvier 2026
-            </Text>
+            <Text style={styles.lastUpdateText}>{t('lastUpdatedJanuary')}</Text>
           </View>
         </ScrollView>
       </SafeAreaView>

@@ -1,4 +1,4 @@
-﻿import { View, ScrollView, StyleSheet } from 'react-native';
+import { View, ScrollView, StyleSheet } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useSignup, SignupProvider } from '@/context/signup-context';

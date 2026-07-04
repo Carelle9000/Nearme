@@ -1,4 +1,4 @@
-﻿import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   StyleSheet,
@@ -6,11 +6,10 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   ScrollView,
-} from 'react-native';
+ Text } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Text } from 'react-native';
 import { Colors, BorderRadius, Spacing, Shadows } from '@/constants/theme';
 import { useAuth } from '@/context/auth-context';
 import { usePremium } from '@/context/premium-context';

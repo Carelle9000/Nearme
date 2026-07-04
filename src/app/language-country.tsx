@@ -1,4 +1,4 @@
-﻿import { View, ScrollView, Text, StyleSheet, TouchableOpacity, FlatList, TextInput } from 'react-native';
+import { View, ScrollView, Text, StyleSheet, TouchableOpacity, FlatList, TextInput } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';

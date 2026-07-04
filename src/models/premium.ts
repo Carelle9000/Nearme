@@ -3,7 +3,7 @@
  * All timestamps stored as ISO strings in Firebase, converted to Date in app
  */
 
-export type PremiumTier = 'free' | 'premium';
+export type PremiumTier = 'free' | 'trial' | 'premium';
 
 export type PremiumFeature =
   | 'view_who_liked'           // Voir qui m'a aimé

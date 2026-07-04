@@ -1,4 +1,4 @@
-﻿import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { View, TextInput, TouchableOpacity, Text, StyleSheet, Alert, ActivityIndicator, ScrollView, Image } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
@@ -63,6 +63,8 @@ export default function LoginScreen() {
   };
 
   const handleLogin = async () => {
+    if (isLoading) return;
+
     if (!validateForm()) {
       return;
     }
@@ -193,11 +195,11 @@ export default function LoginScreen() {
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
             style={[styles.buttonGradient, Shadows.glow]}
+            pointerEvents="box-none"
           >
             <TouchableOpacity
               style={[styles.button, isLoading && styles.buttonDisabled]}
               onPress={handleLogin}
-              disabled={isLoading}
             >
               {isLoading ? (
                 <ActivityIndicator color={Colors.text} size="small" />

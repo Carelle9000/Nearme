@@ -1,5 +1,5 @@
 // ngeohash ships no types; declare the two symbols we use.
-// eslint-disable-next-line @typescript-eslint/no-require-imports
+ 
 const ngeohash: {
   encode: (lat: number, lng: number, precision: number) => string;
   neighbors: (hash: string) => string[];
@@ -37,7 +37,7 @@ export function neighborPrefixRanges(
   latitude: number,
   longitude: number,
   radiusKm: number
-): Array<[string, string]> {
+): [string, string][] {
   const prefixLen = prefixLengthForRadius(radiusKm);
   const center = ngeohash.encode(latitude, longitude, prefixLen);
   const neighbors: string[] = ngeohash.neighbors(center);

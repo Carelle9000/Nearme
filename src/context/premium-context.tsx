@@ -6,8 +6,8 @@ import { analyticsService } from '../services/analytics.service';
 import { useAuth } from './auth-context';
 
 interface SubscriptionInfo {
-  status: 'active' | 'expired' | 'free' | 'cancelled';
-  tier: 'free' | 'premium';
+  status: 'active' | 'expired' | 'free' | 'cancelled' | 'trial';
+  tier: 'free' | 'premium' | 'trial';
   daysRemaining?: number;
   expiryDate?: Date;
 }
@@ -15,6 +15,7 @@ interface SubscriptionInfo {
 interface PremiumContextType {
   // Subscription status
   isPremium: boolean;
+  isTrial: boolean;
   subscriptionInfo: SubscriptionInfo;
 
   // Feature access control
@@ -115,6 +116,7 @@ export function PremiumProvider({ children }: { children: React.ReactNode }) {
     <PremiumContext.Provider
       value={{
         isPremium: premiumService.isPremium(user),
+        isTrial: premiumService.isTrial(user),
         subscriptionInfo,
         canAccess,
         canUndo,

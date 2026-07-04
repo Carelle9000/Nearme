@@ -1,4 +1,4 @@
-﻿import {
+import {
   View,
   Text,
   StyleSheet,
@@ -10,9 +10,11 @@ import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Colors } from '@/constants/theme';
+import { useLocalization } from '@/context/localization-context';
 
 export default function TermsOfServiceScreen() {
   const router = useRouter();
+  const { t } = useLocalization();
 
   return (
     <LinearGradient colors={[Colors.background, Colors.cardSurface]} style={styles.container}>
@@ -21,109 +23,85 @@ export default function TermsOfServiceScreen() {
           <TouchableOpacity onPress={() => router.back()}>
             <Ionicons name="chevron-back" size={28} color={Colors.primary} />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>Conditions d'utilisation</Text>
+          <Text style={styles.headerTitle}>{t('termsOfService')}</Text>
           <View style={{ width: 28 }} />
         </View>
 
         <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>1. Acceptation des conditions</Text>
-            <Text style={styles.text}>
-              En utilisant nearme, vous acceptez ces conditions d'utilisation. Si vous ne les acceptez pas, veuillez ne pas utiliser notre application.
-            </Text>
+            <Text style={styles.sectionTitle}>1. {t('acceptanceOfTerms')}</Text>
+            <Text style={styles.text}>{t('acceptanceText')}</Text>
           </View>
 
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>2. Licence d'utilisation</Text>
-            <Text style={styles.text}>
-              Nous vous accordons une licence limitée, non exclusive et révocable pour utiliser nearme conformément à ces conditions. Vous ne pouvez pas reproduire, vendre ou exploiter notre application à des fins commerciales.
-            </Text>
+            <Text style={styles.sectionTitle}>2. {t('licenseOfUse')}</Text>
+            <Text style={styles.text}>{t('licenseText')}</Text>
           </View>
 
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>3. Compte utilisateur</Text>
-            <Text style={styles.text}>
-              Vous êtes responsable de :
-            </Text>
+            <Text style={styles.sectionTitle}>3. {t('userAccount')}</Text>
+            <Text style={styles.text}>{t('userAccountText')}</Text>
             <View style={styles.list}>
-              <Text style={styles.listItem}>• Maintenir la confidentialité de votre mot de passe</Text>
-              <Text style={styles.listItem}>• Toutes les activités de votre compte</Text>
-              <Text style={styles.listItem}>• Informer nearme de tout accès non autorisé</Text>
+              <Text style={styles.listItem}>• {t('passwordConfidentiality')}</Text>
+              <Text style={styles.listItem}>• {t('accountActivities')}</Text>
+              <Text style={styles.listItem}>• {t('reportUnauthorized')}</Text>
             </View>
           </View>
 
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>4. Comportement utilisateur</Text>
-            <Text style={styles.text}>
-              Vous acceptez de ne pas :
-            </Text>
+            <Text style={styles.sectionTitle}>4. {t('userBehavior')}</Text>
+            <Text style={styles.text}>{t('userBehaviorText')}</Text>
             <View style={styles.list}>
-              <Text style={styles.listItem}>• Harceler, intimider ou menacer d'autres utilisateurs</Text>
-              <Text style={styles.listItem}>• Partager du contenu illégal ou offensant</Text>
-              <Text style={styles.listItem}>• Escroquer ou tromper d'autres utilisateurs</Text>
-              <Text style={styles.listItem}>• Spammer ou abuseR de la plateforme</Text>
-              <Text style={styles.listItem}>• Utiliser l'application à des fins illégales</Text>
+              <Text style={styles.listItem}>• {t('harassOtherUsers')}</Text>
+              <Text style={styles.listItem}>• {t('shareIllegalContent')}</Text>
+              <Text style={styles.listItem}>• {t('fraudulentBehavior')}</Text>
+              <Text style={styles.listItem}>• {t('spamPlatform')}</Text>
+              <Text style={styles.listItem}>• {t('illegalUse')}</Text>
             </View>
           </View>
 
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>5. Contenu utilisateur</Text>
-            <Text style={styles.text}>
-              Vous conservez les droits sur le contenu que vous publiez. En partageant du contenu, vous nous accordez le droit de l'utiliser, de le reproduire et de l'afficher dans nearme.
-            </Text>
+            <Text style={styles.sectionTitle}>5. {t('userContent')}</Text>
+            <Text style={styles.text}>{t('userContentText')}</Text>
           </View>
 
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>6. Limitation de responsabilité</Text>
-            <Text style={styles.text}>
-              nearme est fourni "tel quel" sans garanties. Nous ne sommes pas responsables des :
-            </Text>
+            <Text style={styles.sectionTitle}>6. {t('limitationOfLiability')}</Text>
+            <Text style={styles.text}>{t('limitationText')}</Text>
             <View style={styles.list}>
-              <Text style={styles.listItem}>• Dommages indirects ou accidentels</Text>
-              <Text style={styles.listItem}>• Perte de données ou profits</Text>
-              <Text style={styles.listItem}>• Interruptions du service</Text>
+              <Text style={styles.listItem}>• {t('indirectDamages')}</Text>
+              <Text style={styles.listItem}>• {t('dataLoss')}</Text>
+              <Text style={styles.listItem}>• {t('serviceInterruption')}</Text>
             </View>
           </View>
 
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>7. Modification du service</Text>
-            <Text style={styles.text}>
-              Nous pouvons modifier ou cesser nearme à tout moment. Nous nous efforcerons de vous informer de tout changement important.
-            </Text>
+            <Text style={styles.sectionTitle}>7. {t('serviceModification')}</Text>
+            <Text style={styles.text}>{t('modificationText')}</Text>
           </View>
 
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>8. Résiliation</Text>
-            <Text style={styles.text}>
-              Nous pouvons résilier votre compte si vous violez ces conditions d'utilisation ou la loi. Vous pouvez supprimer votre compte à tout moment.
-            </Text>
+            <Text style={styles.sectionTitle}>8. {t('termination')}</Text>
+            <Text style={styles.text}>{t('terminationText')}</Text>
           </View>
 
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>9. Modification des conditions</Text>
-            <Text style={styles.text}>
-              Nous pouvons modifier ces conditions à tout moment. Les modifications entrent en vigueur immédiatement. Votre utilisation continue de nearme constitue votre acceptation des conditions modifiées.
-            </Text>
+            <Text style={styles.sectionTitle}>9. {t('modificationOfTerms')}</Text>
+            <Text style={styles.text}>{t('modificationOfTermsText')}</Text>
           </View>
 
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>10. Droit applicable</Text>
-            <Text style={styles.text}>
-              Ces conditions sont régies par les lois de la France. Tout différend sera soumis aux tribunaux compétents.
-            </Text>
+            <Text style={styles.sectionTitle}>10. {t('governingLaw')}</Text>
+            <Text style={styles.text}>{t('governingLawText')}</Text>
           </View>
 
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>11. Contact</Text>
-            <Text style={styles.text}>
-              Pour toute question concernant ces conditions, veuillez nous contacter à : legal@nearme.app
-            </Text>
+            <Text style={styles.sectionTitle}>11. {t('contact')}</Text>
+            <Text style={styles.text}>{t('termsContact')}</Text>
           </View>
 
           <View style={styles.lastUpdate}>
-            <Text style={styles.lastUpdateText}>
-              Dernière mise à jour : janvier 2026
-            </Text>
+            <Text style={styles.lastUpdateText}>{t('lastUpdatedJanuary')}</Text>
           </View>
         </ScrollView>
       </SafeAreaView>

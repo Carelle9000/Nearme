@@ -1,4 +1,4 @@
-﻿import { useState } from 'react';
+import { useState } from 'react';
 import {
   View,
   TextInput,
@@ -134,6 +134,7 @@ export default function ForgotPasswordScreen() {
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 1 }}
               style={[styles.buttonGradient, Shadows.glow]}
+              pointerEvents="box-none"
             >
               <TouchableOpacity
                 style={styles.button}
@@ -231,6 +232,7 @@ export default function ForgotPasswordScreen() {
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 1 }}
               style={[styles.buttonGradient, Shadows.glow]}
+              pointerEvents="box-none"
             >
               <TouchableOpacity
                 style={styles.button}

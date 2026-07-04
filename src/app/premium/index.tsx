@@ -1,4 +1,4 @@
-﻿import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -26,7 +26,7 @@ import { PremiumBadge } from '@/components/PremiumBadge';
 export default function PremiumScreen() {
   const router = useRouter();
   const { user } = useAuth();
-  const { isPremium, subscriptionInfo, refreshPremiumStatus } = usePremium();
+  const { isPremium, isTrial, subscriptionInfo, refreshPremiumStatus } = usePremium();
   const { t } = useLocalization();
   const [isProcessing, setIsProcessing] = useState(false);
 
@@ -141,21 +141,38 @@ export default function PremiumScreen() {
             <View style={[styles.card, styles.statusCard]}>
               <View style={styles.statusContent}>
                 <PremiumBadge size="large" />
-                <Text style={styles.statusTitle}>{t('youArePremium')}</Text>
+                <Text style={styles.statusTitle}>
+                  {isTrial ? t('trialActive') : t('youArePremium')}
+                </Text>
                 {subscriptionInfo.daysRemaining !== undefined && (
                   <Text style={styles.statusSubtitle}>
-                    {t('renewsIn').replace('{days}', subscriptionInfo.daysRemaining.toString())}
+                    {isTrial
+                      ? t('trialExpiresIn').replace('{days}', subscriptionInfo.daysRemaining.toString())
+                      : t('renewsIn').replace('{days}', subscriptionInfo.daysRemaining.toString())}
                   </Text>
                 )}
               </View>
-              <TouchableOpacity style={styles.manageButton}>
-                <Text style={styles.manageButtonText}>{t('premiumManage')}</Text>
-              </TouchableOpacity>
+              {!isTrial && (
+                <TouchableOpacity style={styles.manageButton}>
+                  <Text style={styles.manageButtonText}>{t('premiumManage')}</Text>
+                </TouchableOpacity>
+              )}
+            </View>
+          )}
+
+          {/* Trial Expired Section */}
+          {!isPremium && subscriptionInfo.tier === 'trial' && subscriptionInfo.status === 'expired' && (
+            <View style={[styles.card, styles.statusCard]}>
+              <View style={styles.statusContent}>
+                <Text style={{ fontSize: 36, marginBottom: 8 }}>⏰</Text>
+                <Text style={styles.statusTitle}>{t('trialExpired')}</Text>
+                <Text style={styles.statusSubtitle}>{t('upgradeNow')}</Text>
+              </View>
             </View>
           )}
 
           {/* Price Section */}
-          {!isPremium && (
+          {!isPremium && subscriptionInfo.status !== 'expired' && (
             <View style={[styles.card, styles.priceCard]}>
               <View style={styles.priceHeader}>
                 <Text style={styles.priceLabel}>{t('premiumAccess')}</Text>

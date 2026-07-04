@@ -1,4 +1,4 @@
-﻿import {
+import {
   View,
   Text,
   StyleSheet,
@@ -11,15 +11,18 @@ import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
+import { get, ref, query, orderByChild, equalTo } from 'firebase/database';
+import { rtdb } from '@/config/firebase';
 import { useAuth } from '@/context/auth-context';
 import { useLocalization } from '@/context/localization-context';
 import { Colors, BorderRadius, Shadows } from '@/constants/theme';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ConfirmationModal } from '@/components/ConfirmationModal';
+import { userService } from '@/services/user.service';
 
 export default function DeleteAccountScreen() {
   const router = useRouter();
-  const { logout } = useAuth();
+  const { logout, user } = useAuth();
   const { t } = useLocalization();
 
   const [step, setStep] = useState<1 | 2 | 3>(1);
@@ -27,6 +30,44 @@ export default function DeleteAccountScreen() {
   const [showPasswordModal, setShowPasswordModal] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const cleanupBlocksForUser = async (userId: string): Promise<void> => {
+    try {
+      console.log('[DeleteAccount] Cleaning up blocks for user:', userId);
+      const snapshot = await get(
+        query(
+          ref(rtdb, 'blocks'),
+          orderByChild('blockerId'),
+          equalTo(userId)
+        )
+      );
+
+      if (!snapshot.val()) {
+        console.log('[DeleteAccount] No blocks found to clean up');
+        return;
+      }
+
+      const blocks = snapshot.val() as Record<string, any>;
+      const blockIds = Object.keys(blocks);
+
+      console.log(`[DeleteAccount] Found ${blockIds.length} blocks to clean up`);
+
+      // Delete each block (one at a time to avoid timeout)
+      for (const blockId of blockIds) {
+        try {
+          await userService.unblock(userId, blocks[blockId].blockedId);
+        } catch (err) {
+          console.warn(`[DeleteAccount] Failed to clean up block ${blockId}:`, err);
+          // Continue with next block even if this one fails
+        }
+      }
+
+      console.log('[DeleteAccount] Blocks cleanup completed');
+    } catch (error) {
+      console.error('[DeleteAccount] Error cleaning up blocks:', error);
+      // Non-blocking: continue with account deletion even if cleanup fails
+    }
+  };
 
   const handleDeleteAccount = async () => {
     if (!password.trim()) {
@@ -36,6 +77,11 @@ export default function DeleteAccountScreen() {
 
     setIsDeleting(true);
     try {
+      // Clean up blocks before deleting account
+      if (user?.id) {
+        await cleanupBlocksForUser(user.id);
+      }
+
       // TODO: Implement deleteAccount in AuthService
       // await authService.deleteAccount(password);
 

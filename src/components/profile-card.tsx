@@ -27,6 +27,7 @@ interface ProfileCardProps {
   isFavorite?: boolean;
   onLike?: () => void;
   onFavorite?: () => void;
+  onNope?: () => void;
   onMessage?: () => void;
 }
 
@@ -128,22 +129,38 @@ export function ProfileCard({
   isFavorite = false,
   onLike,
   onFavorite,
+  onNope,
   onMessage,
 }: ProfileCardProps) {
   const entranceAnimRef = useRef(createEntranceAnimation());
   const messageButtonAnimRef = useRef(createPressAnimation());
   const likeButtonAnimRef = useRef(createPressAnimation());
   const staggerAnimRef = useRef(createStaggerAnimation(4, 100));
+  const flipAnimRef = useRef(new RNAnimated.Value(0));
 
   const entranceAnim = entranceAnimRef.current;
   const messageButtonAnim = messageButtonAnimRef.current;
   const likeButtonAnim = likeButtonAnimRef.current;
   const staggerAnim = staggerAnimRef.current;
+  const flipAnim = flipAnimRef.current;
 
   useEffect(() => {
     entranceAnim.animate();
     staggerAnim.animateAll();
   }, [profile?.uid]);
+
+  const handleNopeWithFlip = () => {
+    RNAnimated.parallel([
+      RNAnimated.timing(flipAnim, {
+        toValue: 1,
+        duration: 300,
+        useNativeDriver: false,
+      }),
+    ]).start(() => {
+      flipAnimRef.current.setValue(0);
+      onNope?.();
+    });
+  };
 
   if (!profile) {
     return (
@@ -169,8 +186,26 @@ export function ProfileCard({
             transform: [
               { scale: entranceAnim.scale },
               { translateY: entranceAnim.translateY },
+              {
+                translateX: flipAnim.interpolate({
+                  inputRange: [0, 1],
+                  outputRange: [0, -width],
+                }),
+              },
+              {
+                rotate: flipAnim.interpolate({
+                  inputRange: [0, 1],
+                  outputRange: ['0deg', '-15deg'],
+                }),
+              },
             ],
-            opacity: entranceAnim.opacity,
+            opacity: RNAnimated.multiply(
+              entranceAnim.opacity,
+              flipAnim.interpolate({
+                inputRange: [0, 0.8, 1],
+                outputRange: [1, 1, 0],
+              })
+            ),
           },
         ]}
       >
@@ -205,7 +240,15 @@ export function ProfileCard({
             <Text style={styles.name}>
               {profile.displayName || profile.name}, {age}
             </Text>
-            {isFavorite && <Ionicons name="star" size={20} color={Colors.primary} />}
+            {onFavorite && (
+              <TouchableOpacity onPress={onFavorite}>
+                <Ionicons
+                  name={isFavorite ? 'star' : 'star-outline'}
+                  size={24}
+                  color={Colors.primary}
+                />
+              </TouchableOpacity>
+            )}
           </RNAnimated.View>
 
           {profile.location?.city && (
@@ -262,6 +305,21 @@ export function ProfileCard({
           }}
         >
           <TouchableOpacity
+            style={styles.nopeButton}
+            onPress={handleNopeWithFlip}
+            onPressIn={messageButtonAnim.onPressIn}
+            onPressOut={messageButtonAnim.onPressOut}
+          >
+            <Ionicons name="close" size={28} color="#fff" />
+          </TouchableOpacity>
+        </RNAnimated.View>
+
+        <RNAnimated.View
+          style={{
+            transform: [{ scale: messageButtonAnim.scale }],
+          }}
+        >
+          <TouchableOpacity
             style={styles.messageButton}
             onPress={onMessage}
             onPressIn={messageButtonAnim.onPressIn}
@@ -270,10 +328,6 @@ export function ProfileCard({
             <Ionicons name="chatbubble-outline" size={24} color={Colors.text} />
           </TouchableOpacity>
         </RNAnimated.View>
-
-        {onFavorite && (
-          <FavoriteButton isFavorite={isFavorite} onFavorite={onFavorite} />
-        )}
 
         <RNAnimated.View
           style={{
@@ -386,6 +440,15 @@ const styles = StyleSheet.create({
     gap: 24,
     marginTop: 24,
     paddingHorizontal: 16,
+  },
+  nopeButton: {
+    width: 56,
+    height: 56,
+    borderRadius: BorderRadius.full,
+    backgroundColor: '#666',
+    justifyContent: 'center',
+    alignItems: 'center',
+    ...Shadows.soft,
   },
   messageButton: {
     width: 56,

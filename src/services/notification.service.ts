@@ -97,7 +97,19 @@ class NotificationService {
     });
   }
 
-  setupNotificationListener(
+  setupNotificationReceivedListener(
+    callback: (notification: Notifications.Notification) => void
+  ): () => void {
+    const subscription = Notifications.addNotificationReceivedListener(
+      (notification) => {
+        callback(notification);
+      }
+    );
+
+    return () => subscription.remove();
+  }
+
+  setupNotificationResponseListener(
     callback: (notification: Notifications.Notification) => void
   ): () => void {
     const subscription = Notifications.addNotificationResponseReceivedListener(

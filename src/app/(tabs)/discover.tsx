@@ -1,11 +1,14 @@
-﻿import { View, StyleSheet, ActivityIndicator, Alert, TouchableOpacity, Text, Image } from 'react-native';
+import { View, StyleSheet, ActivityIndicator, Alert, TouchableOpacity, Text, Image } from 'react-native';
 import { useDiscover } from '@/context/discover-context';
 import { ProfileCard } from '@/components/profile-card';
-import { FilterPanel } from '@/components/filter-panel';
-import { UndoButton } from '@/components/UndoButton';
+import { ProfileCardSkeleton } from '@/components/profile-card-skeleton';
+import { DiscoverHeader } from '@/components/discover-header';
+import { FloatingHearts } from '@/components/floating-hearts';
+import { ReactionFeedback } from '@/components/reaction-feedback';
+import { ConfettiBurst } from '@/components/confetti-burst';
 import { locationService } from '@/services/location.service';
 import { chatService } from '@/services/chat.service';
-import { useEffect, useCallback } from 'react';
+import { useEffect, useCallback, useState } from 'react';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -13,7 +16,6 @@ import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '@/constants/theme';
 import { useLocalization } from '@/context/localization-context';
 import { useAuth } from '@/context/auth-context';
-import { usePremium } from '@/context/premium-context';
 
 export default function DiscoverScreen() {
   const {
@@ -22,16 +24,23 @@ export default function DiscoverScreen() {
     isLoading,
     loadNearbyProfiles,
     like,
+    nope,
     favorite,
     favoriteIds,
     lastMatch,
     clearLastMatch,
-    undo,
   } = useDiscover();
   const { t } = useLocalization();
   const { user } = useAuth();
-  const { canUndo: isPremiumCanUndo } = usePremium();
   const router = useRouter();
+
+  // Animation states
+  const [showLikeHearts, setShowLikeHearts] = useState(false);
+  const [showConfetti, setShowConfetti] = useState(false);
+  const [showReaction, setShowReaction] = useState<{
+    trigger: boolean;
+    type: 'like' | 'favorite' | 'message';
+  }>({ trigger: false, type: 'like' });
 
   // Declare currentProfile early so it can be used in callbacks
   const currentProfile = profiles[currentIndex] || null;
@@ -89,11 +98,21 @@ export default function DiscoverScreen() {
     }
   }, [loadNearbyProfiles, user?.location]);
 
+  const handleNope = useCallback(async () => {
+    if (!currentProfile) return;
+    try {
+      await nope(currentProfile.uid);
+    } catch (error) {
+      console.error('Error rejecting profile:', error);
+    }
+  }, [currentProfile, nope]);
+
   const handleMessage = useCallback(async () => {
     if (!currentProfile || !user) return;
 
+    setShowReaction({ trigger: true, type: 'message' });
+
     try {
-      // Create or get existing conversation
       const conversation = await chatService.getOrCreateConversation(
         user.id,
         currentProfile.uid,
@@ -101,38 +120,28 @@ export default function DiscoverScreen() {
         currentProfile.displayName || currentProfile.name
       );
 
-      // Navigate to chat
-      router.push(`/chat/${conversation.id}`);
+      setTimeout(() => {
+        router.push(`/chat/${conversation.id}`);
+      }, 300);
     } catch (error) {
       console.error('Error creating conversation:', error);
       Alert.alert(t('error'), t('unableToCreateConversation'));
     }
-  }, [currentProfile, user, router]);
+  }, [currentProfile, user, router, t]);
 
-  const handleUndo = useCallback(async () => {
-    try {
-      await undo();
-      Alert.alert(t('undo'), t('actionUndone'));
-    } catch (error) {
-      console.error('Undo error:', error);
-      Alert.alert(t('error'), t('errorUnableToUndoAction'));
-    }
-  }, [undo, t]);
+  const handleLike = useCallback(() => {
+    if (!currentProfile) return;
+    setShowLikeHearts(true);
+    setShowConfetti(true);
+    setShowReaction({ trigger: true, type: 'like' });
+    like(currentProfile.uid);
+  }, [currentProfile, like]);
 
-  const handleLockedUndo = useCallback(() => {
-    // Show premium upsell
-    Alert.alert(
-      t('premiumFeatureTitle'),
-      t('unlockPremium'),
-      [
-        { text: t('later'), style: 'cancel' },
-        {
-          text: t('premiumGo'),
-          onPress: () => router.push('/premium'),
-        },
-      ]
-    );
-  }, [router, t]);
+  const handleFavorite = useCallback(() => {
+    if (!currentProfile) return;
+    setShowReaction({ trigger: true, type: 'favorite' });
+    favorite(currentProfile.uid);
+  }, [currentProfile, favorite]);
 
   useEffect(() => {
     loadProfiles();
@@ -141,7 +150,10 @@ export default function DiscoverScreen() {
   if (isLoading) {
     return (
       <LinearGradient colors={[Colors.background, Colors.cardSurface]} style={styles.loaderContainer}>
-        <ActivityIndicator size="large" color={Colors.primary} />
+        <SafeAreaView style={styles.safeArea}>
+          <DiscoverHeader onNotificationsPress={() => router.push('/notifications')} />
+          <ProfileCardSkeleton />
+        </SafeAreaView>
       </LinearGradient>
     );
   }
@@ -150,22 +162,7 @@ export default function DiscoverScreen() {
     return (
       <LinearGradient colors={[Colors.background, Colors.cardSurface]} style={styles.container}>
         <SafeAreaView style={styles.safeArea}>
-          {/* Header */}
-          <View style={styles.header}>
-            <View style={styles.logoContainer}>
-              <Image
-                source={require('../../../assets/images/logon.jpeg')}
-                style={styles.logo}
-              />
-              <Text style={styles.logoText}>nearme</Text>
-            </View>
-            <View style={styles.headerActions}>
-              <FilterPanel />
-              <TouchableOpacity hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
-                <Ionicons name="menu" size={24} color={Colors.text} />
-              </TouchableOpacity>
-            </View>
-          </View>
+          <DiscoverHeader onNotificationsPress={() => router.push('/notifications')} />
 
           {/* Empty State */}
           <View style={styles.emptyContainer}>
@@ -189,40 +186,38 @@ export default function DiscoverScreen() {
   return (
     <LinearGradient colors={[Colors.background, Colors.cardSurface]} style={styles.container}>
       <SafeAreaView style={styles.safeArea}>
-        {/* Header */}
-        <View style={styles.header}>
-          <View style={styles.logoContainer}>
-            <Image
-              source={require('../../../assets/images/logon.jpeg')}
-              style={styles.logo}
-            />
-            <Text style={styles.logoText}>nearme</Text>
-          </View>
-          <View style={styles.headerActions}>
-            <FilterPanel />
-            <TouchableOpacity hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
-              <Ionicons name="menu" size={24} color={Colors.text} />
-            </TouchableOpacity>
-          </View>
-        </View>
+        <DiscoverHeader onNotificationsPress={() => router.push('/notifications')} />
 
         {/* Profile Card */}
         <ProfileCard
           profile={currentProfile}
           isFavorite={isFavorite}
-          onLike={() => currentProfile && like(currentProfile.uid)}
-          onFavorite={() => currentProfile && favorite(currentProfile.uid)}
+          onLike={handleLike}
+          onFavorite={handleFavorite}
+          onNope={handleNope}
           onMessage={handleMessage}
         />
 
-        {/* Undo Button (Premium Feature) */}
-        <View style={styles.undoContainer}>
-          <UndoButton
-            isLocked={!isPremiumCanUndo}
-            onPress={handleUndo}
-            onLockedPress={handleLockedUndo}
-          />
-        </View>
+        {/* Floating Hearts Animation */}
+        <FloatingHearts
+          trigger={showLikeHearts}
+          count={5}
+          onComplete={() => setShowLikeHearts(false)}
+        />
+
+        {/* Confetti Burst Animation */}
+        <ConfettiBurst
+          trigger={showConfetti}
+          count={20}
+          onComplete={() => setShowConfetti(false)}
+        />
+
+        {/* Reaction Feedback Animation */}
+        <ReactionFeedback
+          trigger={showReaction.trigger}
+          type={showReaction.type}
+          onComplete={() => setShowReaction({ trigger: false, type: 'like' })}
+        />
       </SafeAreaView>
     </LinearGradient>
   );
@@ -238,39 +233,6 @@ const styles = StyleSheet.create({
   loaderContainer: {
     flex: 1,
     justifyContent: 'center',
-    alignItems: 'center',
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-    marginBottom: 16,
-  },
-  logoContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  logo: {
-    width: 32,
-    height: 32,
-    borderRadius: 8,
-  },
-  logoText: {
-    fontSize: 24,
-    fontWeight: '700',
-    color: Colors.text,
-  },
-  headerActions: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-  },
-  undoContainer: {
-    paddingHorizontal: 20,
-    paddingVertical: 12,
     alignItems: 'center',
   },
   emptyContainer: {

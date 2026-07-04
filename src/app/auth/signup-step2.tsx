@@ -1,4 +1,4 @@
-﻿import {
+import {
   View,
   Text,
   TouchableOpacity,
@@ -144,6 +144,7 @@ export default function SignupStep2() {
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
             style={[styles.buttonGradient, Shadows.glow]}
+            pointerEvents="box-none"
           >
             <TouchableOpacity
               style={styles.button}
@@ -177,6 +178,7 @@ export default function SignupStep2() {
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
           style={[styles.buttonGradient, Shadows.glow]}
+          pointerEvents="box-none"
         >
           <TouchableOpacity
             style={styles.button}

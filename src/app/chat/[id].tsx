@@ -19,6 +19,7 @@ export default function ConversationScreen() {
   const [messageText, setMessageText] = useState('');
   const [isSending, setIsSending] = useState(false);
   const [isBlocked, setIsBlocked] = useState(false);
+  const [amBlockedByOther, setAmBlockedByOther] = useState(false);
   const [isBlockActing, setIsBlockActing] = useState(false);
 
   const otherUserId = id && currentConversation?.participants.find((pid) => pid !== user?.id);
@@ -33,8 +34,9 @@ export default function ConversationScreen() {
     const checkBlockStatus = async () => {
       if (user?.id && otherUserId) {
         try {
-          const blocked = await userService.isBlocked(user.id, otherUserId);
-          setIsBlocked(blocked);
+          const { iBlocked, iBlockThem } = await userService.isBlockedByEitherWay(user.id, otherUserId);
+          setAmBlockedByOther(iBlocked);
+          setIsBlocked(iBlockThem);
         } catch (error) {
           console.error('Error checking block status:', error);
         }
@@ -44,11 +46,19 @@ export default function ConversationScreen() {
   }, [user?.id, otherUserId]);
 
   const handleSendMessage = async () => {
-    // Bug Z1: read the latest value inside the handler and guard here.
-    // Do NOT gate this via `disabled={!messageText.trim()}` on the button —
-    // the disabled prop is captured on the previous render, so a fast
-    // "type last letter + tap send" sequence swallows the first tap.
     const text = messageText.trim();
+
+    // Check if either user has blocked the other
+    if (isBlocked) {
+      Alert.alert(t('error') || 'Erreur', t('cannotSendMessage') || 'Vous ne pouvez pas envoyer de messages à ce profil');
+      return;
+    }
+
+    if (amBlockedByOther) {
+      Alert.alert(t('error') || 'Erreur', t('profileBlockedYou') || 'Ce profil vous a bloqué. Vous ne pouvez pas envoyer de messages.');
+      return;
+    }
+
     if (!text || !id || isSending) return;
 
     setIsSending(true);
@@ -63,29 +73,50 @@ export default function ConversationScreen() {
   const handleBlock = () => {
     if (!user?.id || !otherUserId || isBlockActing) return;
 
+    // First confirmation popup
     Alert.alert(
-      t('blockThisProfile'),
-      t('blockThisProfileMessage'),
+      t('blockThisProfile') || 'Bloquer ce profil',
+      t('blockThisProfileMessage') || 'Ce profil ne pourra plus vous voir ni vous contacter.',
       [
         {
-          text: t('cancel'),
+          text: t('cancel') || 'Annuler',
           style: 'cancel',
         },
         {
-          text: t('block'),
+          text: t('block') || 'Bloquer',
           style: 'destructive',
-          onPress: async () => {
-            setIsBlockActing(true);
-            try {
-              await userService.saveBlock(user.id, otherUserId);
-              setIsBlocked(true);
-              Alert.alert(t('errorProfileBlocked'), t('blockThisProfileMessage'));
-            } catch (error) {
-              console.error('Error blocking:', error);
-              Alert.alert(t('error'), t('errorUnableToBlockProfile'));
-            } finally {
-              setIsBlockActing(false);
-            }
+          onPress: () => {
+            // Second confirmation popup for security
+            Alert.alert(
+              'Confirmer le blocage',
+              'Êtes-vous sûr? Cette action ne peut pas être annulée facilement.',
+              [
+                {
+                  text: 'Non, retour',
+                  style: 'cancel',
+                },
+                {
+                  text: 'Oui, bloquer',
+                  style: 'destructive',
+                  onPress: async () => {
+                    setIsBlockActing(true);
+                    try {
+                      await userService.saveBlock(user.id, otherUserId);
+                      setIsBlocked(true);
+                      Alert.alert(
+                        t('profileBlocked') || 'Profil bloqué',
+                        'Ce profil a été bloqué avec succès. Vous ne pouvez plus envoyer de messages.'
+                      );
+                    } catch (error) {
+                      console.error('Error blocking:', error);
+                      Alert.alert(t('error') || 'Erreur', t('unableToBlockProfile') || 'Impossible de bloquer ce profil');
+                    } finally {
+                      setIsBlockActing(false);
+                    }
+                  },
+                },
+              ]
+            );
           },
         },
       ]
@@ -96,24 +127,27 @@ export default function ConversationScreen() {
     if (!user?.id || !otherUserId || isBlockActing) return;
 
     Alert.alert(
-      t('unblockThisProfile'),
-      t('unblockThisProfileMessage'),
+      t('unblockThisProfile') || 'Débloquer ce profil',
+      t('unblockThisProfileMessage') || 'Ce profil pourra à nouveau vous voir et vous contacter.',
       [
         {
-          text: t('cancel'),
+          text: t('cancel') || 'Annuler',
           style: 'cancel',
         },
         {
-          text: t('unblock'),
+          text: t('unblock') || 'Débloquer',
           onPress: async () => {
             setIsBlockActing(true);
             try {
               await userService.unblock(user.id, otherUserId);
               setIsBlocked(false);
-              Alert.alert(t('errorProfileUnblocked'), t('unblockThisProfileMessage'));
+              Alert.alert(
+                t('profileUnblocked') || 'Profil débloqué',
+                'Ce profil a été débloqué avec succès.'
+              );
             } catch (error) {
               console.error('Error unblocking:', error);
-              Alert.alert(t('error'), t('errorUnableToUnblockProfile'));
+              Alert.alert(t('error') || 'Erreur', t('unableToUnblockProfile') || 'Impossible de débloquer ce profil');
             } finally {
               setIsBlockActing(false);
             }

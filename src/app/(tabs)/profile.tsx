@@ -1,7 +1,8 @@
-﻿import { View, ScrollView, Text, StyleSheet, TouchableOpacity, Image, Alert } from 'react-native';
+import { View, ScrollView, Text, StyleSheet, TouchableOpacity, Image, Alert } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useAuth } from '@/context/auth-context';
 import { usePremium } from '@/context/premium-context';
+import { useToast } from '@/context/toast-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -16,6 +17,7 @@ export default function ProfileScreen() {
   const { isPremium, stats, isLoadingAnalytics } = usePremium();
   const router = useRouter();
   const { t } = useLocalization();
+  const { error: showError } = useToast();
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
 
@@ -33,10 +35,10 @@ export default function ProfileScreen() {
       router.replace('/auth/login');
     } catch (error: any) {
       console.error('Logout error:', error);
-      const errorMessage = error?.message || 'An error occurred while signing out';
+      const errorMessage = error?.message || t('errorUnableToSignOut') || 'An error occurred while signing out';
       setIsLoggingOut(false);
       setShowLogoutConfirm(false);
-      Alert.alert(t('error'), errorMessage);
+      showError(errorMessage);
     }
   };
 

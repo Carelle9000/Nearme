@@ -14,13 +14,14 @@ class PremiumService {
   private readonly PREMIUM_INITIAL_MESSAGES = Infinity;
 
   /**
-   * Check if user has an active premium subscription
+   * Check if user has an active premium subscription (includes trial)
    */
   isPremium(user: AppUser | Profile | null): boolean {
     if (!user) return false;
     return (
       user.premium?.isActive === true &&
-      user.premium?.tier === 'premium'
+      (user.premium?.tier === 'premium' || user.premium?.tier === 'trial') &&
+      this.isSubscriptionValid(user)
     );
   }
 
@@ -123,11 +124,19 @@ class PremiumService {
   }
 
   /**
+   * Check if user is on trial
+   */
+  isTrial(user: AppUser | Profile | null): boolean {
+    if (!user?.premium) return false;
+    return user.premium.tier === 'trial' && user.premium.isActive && this.isSubscriptionValid(user);
+  }
+
+  /**
    * Get subscription information and days remaining
    */
   getSubscriptionInfo(user: AppUser | Profile | null): {
-    status: 'active' | 'expired' | 'free' | 'cancelled';
-    tier: 'free' | 'premium';
+    status: 'active' | 'expired' | 'free' | 'cancelled' | 'trial';
+    tier: 'free' | 'premium' | 'trial';
     daysRemaining?: number;
     expiryDate?: Date;
   } {
@@ -171,8 +180,9 @@ class PremiumService {
         };
       }
 
+      const status = user.premium.tier === 'trial' ? 'trial' : 'active';
       return {
-        status: 'active',
+        status,
         tier: user.premium.tier,
         daysRemaining,
         expiryDate: expiry,

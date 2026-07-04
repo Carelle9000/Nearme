@@ -1,4 +1,4 @@
-﻿import {
+import {
   View,
   Text,
   TouchableOpacity,
@@ -85,6 +85,8 @@ export default function SignupStep3() {
     data.city.trim().length > 0;
 
   const handleCreateProfile = async () => {
+    if (isLoading) return;
+
     if (!isFormValid) {
       setErrorModal({
         visible: true,
@@ -349,7 +351,6 @@ export default function SignupStep3() {
           look is kept via the gradient style so nothing changes for the eye. */}
       <TouchableOpacity
         onPress={handleCreateProfile}
-        disabled={isLoading}
         activeOpacity={0.7}
       >
         <LinearGradient

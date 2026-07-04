@@ -169,4 +169,20 @@ export const signupService = {
     return emailRegex.test(email);
   },
 
+  /**
+   * Get user-friendly error message from Firebase error codes
+   */
+  getErrorMessage(code: string): string {
+    const errorMessages: { [key: string]: string } = {
+      'auth/invalid-email': 'Adresse email invalide.',
+      'auth/email-already-in-use': 'Cet email est déjà utilisé.',
+      'auth/weak-password': 'Le mot de passe est trop faible.',
+      'auth/operation-not-allowed': 'L\'enregistrement n\'est pas disponible.',
+      'auth/too-many-requests': 'Trop de tentatives. Veuillez réessayer plus tard.',
+      'Users must be at least 18 years old': 'Vous devez avoir au moins 18 ans.',
+    };
+
+    return errorMessages[code] || 'Une erreur s\'est produite. Veuillez réessayer.';
+  },
+
 };

@@ -1,4 +1,4 @@
-﻿import { View, ScrollView, Text, StyleSheet, TouchableOpacity, Image, Modal } from 'react-native';
+import { View, ScrollView, Text, StyleSheet, TouchableOpacity, Image, Modal } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -629,82 +629,6 @@ const styles = StyleSheet.create({
   },
   buttonDisabled: {
     opacity: 0.5,
-  },
-  headerButtons: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  languageButton: {
-    width: 44,
-    height: 44,
-    borderRadius: BorderRadius.base,
-    borderWidth: 1,
-    borderColor: Colors.primary,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: 'rgba(232, 61, 81, 0.1)',
-  },
-  languageButtonText: {
-    fontSize: 20,
-  },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'flex-end',
-  },
-  modalContent: {
-    backgroundColor: Colors.cardSurface,
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    paddingHorizontal: 20,
-    paddingTop: 20,
-    paddingBottom: 32,
-    maxHeight: '70%',
-  },
-  modalHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 20,
-  },
-  modalTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: Colors.text,
-  },
-  languageGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 12,
-  },
-  languageOption: {
-    width: '48%',
-    paddingVertical: 16,
-    paddingHorizontal: 12,
-    borderRadius: BorderRadius.base,
-    backgroundColor: Colors.background,
-    borderWidth: 2,
-    borderColor: 'transparent',
-    alignItems: 'center',
-    gap: 8,
-  },
-  languageOptionActive: {
-    backgroundColor: 'rgba(232, 61, 81, 0.1)',
-    borderColor: Colors.primary,
-  },
-  languageFlag: {
-    fontSize: 32,
-  },
-  languageLabel: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: Colors.text,
-    textAlign: 'center',
-  },
-  languageLabelActive: {
-    color: Colors.primary,
-    fontWeight: '700',
   },
 });
 

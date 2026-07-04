@@ -1,11 +1,10 @@
-﻿import {
+import {
   View,
   Text,
   StyleSheet,
   TouchableOpacity,
   TextInput,
   ScrollView,
-  Alert,
   ActivityIndicator,
   Image,
 } from 'react-native';
@@ -15,10 +14,11 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useAuth } from '@/context/auth-context';
 import { useProfile } from '@/context/profile-context';
+import { useToast } from '@/context/toast-context';
 import { Colors, BorderRadius, Shadows } from '@/constants/theme';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import DateTimePicker from '@react-native-community/datetimepicker';
 import { useLocalization } from '@/context/localization-context';
+import { DatePickerInput } from '@/components/DatePickerInput';
 
 const INTERESTS_OPTIONS = [
   'Travel', 'Music', 'Sport', 'Art', 'Movies', 'Cooking',
@@ -30,7 +30,8 @@ export default function EditProfileScreen() {
   const router = useRouter();
   const { t } = useLocalization();
   const { user, updateProfile } = useAuth();
-  const { error, clearError, pickAndUploadPhoto, isUploadingPhoto } = useProfile();
+  const { error, clearError, pickAndUploadPhoto, isUploadingPhoto, profilePhotos } = useProfile();
+  const { success, error: showError, warning } = useToast();
 
   const [displayName, setDisplayName] = useState(user?.displayName || user?.name || '');
   const [bio, setBio] = useState(user?.bio || '');
@@ -38,19 +39,19 @@ export default function EditProfileScreen() {
   const [gender, setGender] = useState<'male' | 'female' | 'other'>(user?.gender || 'other');
   const [isSaving, setIsSaving] = useState(false);
   const [birthDate, setBirthDate] = useState<Date>(user?.birthDate ? new Date(user.birthDate) : new Date());
-  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [previewPhotoUrl, setPreviewPhotoUrl] = useState<string | null>(null);
 
   useEffect(() => {
     if (user) {
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setDisplayName(user.displayName || user.name || '');
-      // eslint-disable-next-line react-hooks/set-state-in-effect
+       
       setBio(user.bio || '');
-      // eslint-disable-next-line react-hooks/set-state-in-effect
+       
       setSelectedInterests(user.interests || []);
-      // eslint-disable-next-line react-hooks/set-state-in-effect
+       
       setGender(user.gender || 'other');
-      // eslint-disable-next-line react-hooks/set-state-in-effect
+       
       setBirthDate(user.birthDate ? new Date(user.birthDate) : new Date());
     }
   }, [user?.id]);
@@ -65,12 +66,13 @@ export default function EditProfileScreen() {
 
   const handleChangeProfilePhoto = async () => {
     try {
-      const success = await pickAndUploadPhoto();
-      if (success) {
-        Alert.alert(t('success'), t('profilePhotoUpdated'));
+      const uploadSuccess = await pickAndUploadPhoto();
+      if (uploadSuccess && profilePhotos.length > 0) {
+        setPreviewPhotoUrl(profilePhotos[0]);
+        success(t('profilePhotoUpdated'));
       }
     } catch (err: any) {
-      Alert.alert(t('error'), err.message || t('errorUnableToLoadPhoto'));
+      showError(err.message || t('errorUnableToLoadPhoto'));
     }
   };
 
@@ -84,24 +86,18 @@ export default function EditProfileScreen() {
     return age;
   };
 
-  const handleDateChange = (event: any, selectedDate: Date | undefined) => {
-    if (selectedDate) {
-      setBirthDate(selectedDate);
-    }
-    setShowDatePicker(false);
-  };
 
   const handleSave = async () => {
     if (!user) return;
 
     if (!displayName.trim()) {
-      Alert.alert(t('error'), t('displayNameCannotBeEmpty'));
+      warning(t('displayNameCannotBeEmpty'));
       return;
     }
 
     const age = getAge(birthDate);
     if (age < 18) {
-      Alert.alert(t('error'), t('ageLabel'));
+      warning(t('ageLabel'));
       return;
     }
 
@@ -114,14 +110,14 @@ export default function EditProfileScreen() {
         gender,
         birthDate: birthDate.toISOString(),
       });
-      Alert.alert(t('success'), t('profilePhotoUpdated'));
+      success(t('profileUpdated') || 'Profil mis à jour');
       if (router.canGoBack()) {
         router.back();
       } else {
         router.replace('/(tabs)/profile');
       }
     } catch (error: any) {
-      Alert.alert(t('error'), error.message || t('errorUnableToUpdateProfile'));
+      showError(error.message || t('errorUnableToUpdateProfile'));
       console.error('Error updating profile:', error);
     } finally {
       setIsSaving(false);
@@ -173,8 +169,8 @@ export default function EditProfileScreen() {
           {/* Profile photo */}
           <View style={styles.photoSection}>
             <View style={styles.avatarContainer}>
-              {user?.photoUrl ? (
-                <Image source={{ uri: user.photoUrl }} style={styles.avatar} />
+              {previewPhotoUrl || user?.photoUrl ? (
+                <Image source={{ uri: previewPhotoUrl || user?.photoUrl }} style={styles.avatar} />
               ) : (
                 <View style={styles.avatarPlaceholder}>
                   <Ionicons name="person" size={48} color="#fff" />
@@ -311,29 +307,12 @@ export default function EditProfileScreen() {
               <Text style={styles.sectionTitle}>Date of birth</Text>
               <Text style={styles.ageText}>{getAge(birthDate)} years old</Text>
             </View>
-            <TouchableOpacity
-              style={styles.dateButton}
-              onPress={() => setShowDatePicker(true)}
+            <DatePickerInput
+              value={birthDate}
+              onChange={setBirthDate}
+              maximumDate={new Date(new Date().getFullYear() - 18, new Date().getMonth(), new Date().getDate())}
               disabled={isSaving}
-            >
-              <Ionicons name="calendar" size={20} color={Colors.primary} />
-              <Text style={styles.dateButtonText}>
-                {birthDate.toLocaleDateString('en-US', {
-                  year: 'numeric',
-                  month: 'long',
-                  day: 'numeric',
-                })}
-              </Text>
-            </TouchableOpacity>
-            {showDatePicker && (
-              <DateTimePicker
-                value={birthDate}
-                mode="date"
-                display="spinner"
-                onChange={handleDateChange}
-                maximumDate={new Date(new Date().getFullYear() - 18, new Date().getMonth(), new Date().getDate())}
-              />
-            )}
+            />
           </View>
 
           {/* Interests */}

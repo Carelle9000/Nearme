@@ -22,19 +22,28 @@ class AuthService {
     const userCred = await createUserWithEmailAndPassword(auth, email, password);
     const uid = userCred.user.uid;
 
+    const now = new Date();
+    const trialExpiryDate = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000); // +7 days
+
     const appUser: AppUser = {
       id: uid,
       name,
       email,
-      createdAt: new Date(),
+      createdAt: now,
       verified: false,
+      premium: {
+        isActive: true,
+        tier: 'trial',
+        startDate: now.toISOString(),
+        expiryDate: trialExpiryDate.toISOString(),
+      },
     };
 
     // Create profile in Realtime Database
     await set(ref(rtdb, `profiles/${uid}`), {
       ...appUser,
       uid, // Required by Firebase validation rules
-      createdAt: Date.now(),
+      createdAt: now.getTime(),
     });
 
     this.cachedUser = appUser;
