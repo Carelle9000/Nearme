@@ -29,18 +29,27 @@ export function ProfileProvider({ children }: { children: React.ReactNode }) {
 
   // Sync photos when user changes
   useEffect(() => {
-    if (user?.id) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setProfilePhotos(user.photos || []);
-      setError(null);
-    } else {
-      // Clear photos when user logs out
-       
-      setProfilePhotos([]);
-      setError(null);
-      setIsUploadingPhoto(false);
-      setIsSavingProfile(false);
-    }
+    let mounted = true;
+
+    (async () => {
+      if (user?.id) {
+        if (mounted) {
+          setProfilePhotos(user.photos || []);
+          setError(null);
+        }
+      } else {
+        if (mounted) {
+          setProfilePhotos([]);
+          setError(null);
+          setIsUploadingPhoto(false);
+          setIsSavingProfile(false);
+        }
+      }
+    })();
+
+    return () => {
+      mounted = false;
+    };
   }, [user?.id]);
 
   const pickAndUploadPhoto = async (): Promise<boolean> => {

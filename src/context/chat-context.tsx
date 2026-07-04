@@ -62,10 +62,19 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
   }, [user]);
 
   useEffect(() => {
-    if (user?.id) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      loadConversations();
-    }
+    if (!user?.id) return;
+
+    let mounted = true;
+
+    (async () => {
+      if (mounted) {
+        await loadConversations();
+      }
+    })();
+
+    return () => {
+      mounted = false;
+    };
   }, [user?.id, loadConversations]);
 
   const selectConversation = useCallback(async (conversationId: string) => {

@@ -30,23 +30,37 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [needsAgeVerif, setNeedsAgeVerif] = useState(false);
 
   useEffect(() => {
+    let mounted = true;
+
     const unsubscribe = authService.setupAuthListener((currentUser) => {
-      setUser(currentUser);
-      setNeedsAgeVerif(authService.needsAgeVerify);
-      setIsLoading(false);
+      if (mounted) {
+        setUser(currentUser);
+        setNeedsAgeVerif(authService.needsAgeVerify);
+        setIsLoading(false);
+      }
     });
 
     // Initial load
-    authService.loadCurrentUser().then(() => {
-      setUser(authService.currentUser);
-      setNeedsAgeVerif(authService.needsAgeVerify);
-      setIsLoading(false);
-    }).catch((error) => {
-      console.error('Failed to load current user:', error);
-      setIsLoading(false);
-    });
+    (async () => {
+      try {
+        await authService.loadCurrentUser();
+        if (mounted) {
+          setUser(authService.currentUser);
+          setNeedsAgeVerif(authService.needsAgeVerify);
+          setIsLoading(false);
+        }
+      } catch (error) {
+        console.error('Failed to load current user:', error);
+        if (mounted) {
+          setIsLoading(false);
+        }
+      }
+    })();
 
-    return unsubscribe;
+    return () => {
+      mounted = false;
+      unsubscribe();
+    };
   }, []);
 
   const login = useCallback(async (email: string, password: string, rememberMe: boolean = false) => {

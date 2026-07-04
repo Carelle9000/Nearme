@@ -216,15 +216,21 @@ export function DiscoverProvider({ children }: { children: React.ReactNode }) {
 
   // Apply filters when profiles change (separate effect to avoid infinite loop)
   useEffect(() => {
-    if (profiles.length > 0) {
-      if (currentFilters) {
-        // eslint-disable-next-line react-hooks/set-state-in-effect
-        applyFilters(currentFilters, profiles);
-      } else {
-         
-        setFilteredProfiles(profiles);
+    let mounted = true;
+
+    (async () => {
+      if (mounted && profiles.length > 0) {
+        if (currentFilters) {
+          applyFilters(currentFilters, profiles);
+        } else {
+          setFilteredProfiles(profiles);
+        }
       }
-    }
+    })();
+
+    return () => {
+      mounted = false;
+    };
   }, [profiles, currentFilters]);
 
   // Track profile views for analytics (non-blocking)

@@ -71,7 +71,11 @@ export default function ConversationScreen() {
   };
 
   const handleBlock = () => {
-    if (!user?.id || !otherUserId || isBlockActing) return;
+    console.log('[handleBlock] called', { otherUserId, userId: user?.id, isBlockActing });
+    if (!user?.id || !otherUserId || isBlockActing) {
+      console.log('[handleBlock] early return', { otherUserId, userId: user?.id, isBlockActing });
+      return;
+    }
 
     // First confirmation popup
     Alert.alert(
@@ -88,15 +92,15 @@ export default function ConversationScreen() {
           onPress: () => {
             // Second confirmation popup for security
             Alert.alert(
-              'Confirmer le blocage',
-              'Êtes-vous sûr? Cette action ne peut pas être annulée facilement.',
+              t('confirm') || 'Confirmer le blocage',
+              t('confirmBlockMessage') || 'Êtes-vous sûr? Cette action ne peut pas être facilement annulée.',
               [
                 {
-                  text: 'Non, retour',
+                  text: t('cancel') || 'Non, retour',
                   style: 'cancel',
                 },
                 {
-                  text: 'Oui, bloquer',
+                  text: t('confirm') || 'Oui, bloquer',
                   style: 'destructive',
                   onPress: async () => {
                     setIsBlockActing(true);

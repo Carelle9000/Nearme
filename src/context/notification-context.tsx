@@ -112,10 +112,22 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
   };
 
   useEffect(() => {
-    if (user?.id) {
-      initializeNotifications();
-      loadNotifications();
-    }
+    if (!user?.id) return;
+
+    let mounted = true;
+
+    (async () => {
+      if (mounted) {
+        await initializeNotifications();
+      }
+      if (mounted) {
+        await loadNotifications();
+      }
+    })();
+
+    return () => {
+      mounted = false;
+    };
   }, [user?.id, initializeNotifications, loadNotifications]);
 
   const requestNotificationPermission = async (): Promise<boolean> => {

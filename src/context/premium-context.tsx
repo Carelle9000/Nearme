@@ -57,9 +57,18 @@ export function PremiumProvider({ children }: { children: React.ReactNode }) {
 
   // Update subscription info when user changes
   useEffect(() => {
-    const info = user ? premiumService.getSubscriptionInfo(user) : { status: 'free', tier: 'free' };
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setSubscriptionInfo(info);
+    let mounted = true;
+
+    (async () => {
+      const info = user ? premiumService.getSubscriptionInfo(user) : { status: 'free', tier: 'free' };
+      if (mounted) {
+        setSubscriptionInfo(info);
+      }
+    })();
+
+    return () => {
+      mounted = false;
+    };
   }, [user]);
 
   // Load analytics when user becomes premium

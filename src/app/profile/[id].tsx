@@ -150,7 +150,11 @@ export default function PublicProfileScreen() {
   };
 
   const handleBlock = async () => {
-    if (!id || !user?.id || isActing) return;
+    console.log('[handleBlock] called', { id, userId: user?.id, isActing });
+    if (!id || !user?.id || isActing) {
+      console.log('[handleBlock] early return', { id, userId: user?.id, isActing });
+      return;
+    }
 
     // First confirmation popup
     Alert.alert(
@@ -167,15 +171,15 @@ export default function PublicProfileScreen() {
           onPress: () => {
             // Second confirmation popup for security
             Alert.alert(
-              'Confirmer le blocage',
-              'Êtes-vous sûr? Cette action ne peut pas être annulée facilement.',
+              t('confirm') || 'Confirmer le blocage',
+              t('confirmBlockMessage') || 'Êtes-vous sûr? Cette action ne peut pas être annulée facilement.',
               [
                 {
-                  text: 'Non, retour',
+                  text: t('cancel') || 'Non, retour',
                   style: 'cancel',
                 },
                 {
-                  text: 'Oui, bloquer',
+                  text: t('confirm') || 'Oui, bloquer',
                   style: 'destructive',
                   onPress: async () => {
                     setIsActing(true);

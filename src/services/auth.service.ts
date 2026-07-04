@@ -83,6 +83,24 @@ class AuthService {
       const snapshot = await get(ref(rtdb, `profiles/${user.uid}`));
       if (snapshot.exists()) {
         const profileData = snapshot.val() as Profile;
+
+        // Ensure existing users have premium/trial data
+        // If they don't have premium data, they should get a 7-day trial
+        let premium = profileData.premium;
+        if (!premium) {
+          console.log(`[Migration] No premium data for user ${user.uid}, assigning 7-day trial`);
+          const now = new Date();
+          const trialExpiryDate = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+          premium = {
+            isActive: true,
+            tier: 'trial',
+            startDate: now.toISOString(),
+            expiryDate: trialExpiryDate.toISOString(),
+          };
+          // Update the profile with trial data
+          await set(ref(rtdb, `profiles/${user.uid}/premium`), premium);
+        }
+
         this.cachedUser = {
           id: user.uid,
           name: profileData.name || user.displayName || '',
@@ -98,9 +116,14 @@ class AuthService {
           createdAt: profileData.createdAt ? new Date(profileData.createdAt) : new Date(),
           verified: user.emailVerified,
           isAgeVerified: profileData.isAgeVerified,
+          premium,
+          analytics: profileData.analytics,
         };
       } else {
-        // Profile doesn't exist yet (new user) - use Auth data
+        // Profile doesn't exist yet (new user) - use Auth data and create trial
+        const now = new Date();
+        const trialExpiryDate = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+
         this.cachedUser = {
           id: user.uid,
           name: user.displayName || '',
@@ -108,6 +131,12 @@ class AuthService {
           photos: [],
           createdAt: new Date(),
           verified: user.emailVerified,
+          premium: {
+            isActive: true,
+            tier: 'trial',
+            startDate: now.toISOString(),
+            expiryDate: trialExpiryDate.toISOString(),
+          },
         };
       }
       this.checkAgeVerificationNeeded();
@@ -115,6 +144,9 @@ class AuthService {
       console.error('Error loading user profile:', error);
       // If RTDB read fails, still create a minimal user object from Auth
       // This allows users to proceed even if profile is not yet created
+      const now = new Date();
+      const trialExpiryDate = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+
       this.cachedUser = {
         id: user.uid,
         name: user.displayName || '',
@@ -122,6 +154,12 @@ class AuthService {
         photos: [],
         createdAt: new Date(),
         verified: user.emailVerified,
+        premium: {
+          isActive: true,
+          tier: 'trial',
+          startDate: now.toISOString(),
+          expiryDate: trialExpiryDate.toISOString(),
+        },
       };
       this.checkAgeVerificationNeeded();
     }
