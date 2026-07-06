@@ -81,7 +81,8 @@
           }
         }
       ],
-      "react-native-iap"
+      "react-native-iap",
+      "expo-iap"
     ],
     "experiments": {
       "typedRoutes": true,
