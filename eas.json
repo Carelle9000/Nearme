@@ -11,6 +11,9 @@
       "distribution": "internal",
       "android": {
         "buildType": "apk"
+      },
+      "env": {
+        "GOOGLE_SERVICES_JSON": "file"
       }
     },
     "production": {

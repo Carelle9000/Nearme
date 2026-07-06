@@ -31,7 +31,8 @@
         "android.permission.RECEIVE_BOOT_COMPLETED",
         "android.permission.INTERNET",
         "android.permission.WAKE_LOCK",
-        "android.permission.ACCESS_NETWORK_STATE"
+        "android.permission.ACCESS_NETWORK_STATE",
+        "android.permission.RECORD_AUDIO"
       ]
     },
     "web": {
@@ -85,6 +86,12 @@
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "149a1cd7-4eaa-4efd-a215-6bce4c78ba2c"
+      }
     }
   }
 }

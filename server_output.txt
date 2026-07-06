@@ -13,3 +13,24 @@ Waiting on http://localhost:8081
 An update for expo is available: 56.0.12 → ~56.0.14
 11 other packages may need updating. Run npx expo install --check for details.
 Logs for your project will appear below.
+
+<--- Last few GCs --->
+
+[18456:000002236529B000] 14069322 ms: Mark-Compact (reduce) 2047.8 (2086.6) -> 2046.6 (2084.3) MB, pooled: 0 MB, 1899.98 / 0.00 ms  (+ 164.5 ms in 0 steps since start of marking, biggest step 0.0 ms, walltime since start of marking 2707 ms) (average mu = 
+
+<--- JS stacktrace --->
+
+FATAL ERROR: Reached heap limit Allocation failed - JavaScript heap out of memory
+----- Native stack trace -----
+
+ 1: 00007FF69FBD7487 node::SetCppgcReference+16583
+ 2: 00007FF69FB3B1B8 v8::base::CPU::num_virtual_address_bits+103032
+ 3: 00007FF6A06AC011 v8::Isolate::ReportExternalAllocationLimitReached+65
+ 4: 00007FF6A0698B96 v8::Function::Experimental_IsNopFunction+3302
+ 5: 00007FF6A04F54E0 v8::internal::StrongRootAllocatorBase::StrongRootAllocatorBase+33904
+ 6: 00007FF6A04F1B6A v8::internal::StrongRootAllocatorBase::StrongRootAllocatorBase+19194
+ 7: 00007FF6A050800C v8::Isolate::GetHeapProfiler+7692
+ 8: 00007FF6A050888A v8::Isolate::GetHeapProfiler+9866
+ 9: 00007FF6A051927B v8::Isolate::GetHeapProfiler+77947
+10: 00007FF6A01E644B v8::base::AddressSpaceReservation::AddressSpaceReservation+323419
+11: 00007FF64072D8D0 
