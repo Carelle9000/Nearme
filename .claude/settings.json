@@ -1,0 +1,19 @@
+{
+  "permissions": {
+    "allow": [
+      "mcp__claude_ai_Claude_Code_Remote__create_trigger",
+      "Bash(firebase projects:list)",
+      "Bash(pkill -f \"expo start\")",
+      "Bash(npx expo *)",
+      "PowerShell(\"Processes killed\")",
+      "PowerShell(node -e \"try { const admin = require\\('firebase-admin'\\); console.log\\('? firebase-admin loaded'\\); console.log\\('Keys:', Object.keys\\(admin\\).slice\\(0,10\\)\\); } catch\\(e\\) { console.error\\('? Error:', e.message\\); }\")",
+      "PowerShell(node -e \"const admin = require\\('firebase-admin'\\); console.log\\('credential:', typeof admin.credential\\); console.log\\('cert:', typeof admin.credential?.cert\\); const cred = admin.cert; console.log\\('admin.cert:', typeof cred\\);\")",
+      "PowerShell(node -e \"const admin = require\\('firebase-admin'\\); const keys = Object.keys\\(admin\\); const methods = keys.filter\\(k => typeof admin[k] === 'function'\\); console.log\\('Available methods:', methods.slice\\(0, 20\\).join\\(', '\\)\\);\")",
+      "PowerShell(node -e \"const admin = require\\('firebase-admin'\\); console.log\\('Version:', admin.SDK_VERSION\\); console.log\\('App:', typeof admin.app\\); const serviceAccount = require\\('./serviceAccountKey.json'\\); const app = admin.initializeApp\\({ credential: admin.cert\\(serviceAccount\\), databaseURL: 'https://nearme-bd95a.firebaseio.com' }\\); console.log\\('App initialized:', app.name\\);\")",
+      "PowerShell(Get-Process | Where-Object { $_.ProcessName -match \"node|expo\" } | Stop-Process -Force -Verbose)"
+    ]
+  },
+  "enabledPlugins": {
+    "expo@claude-plugins-official": true
+  }
+}

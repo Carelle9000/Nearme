@@ -1,0 +1,13 @@
+diff --git a/node_modules/react-native-web/dist/exports/Modal/ModalPortal.js b/node_modules/react-native-web/dist/exports/Modal/ModalPortal.js
+index df3bcbb..416df77 100644
+--- a/node_modules/react-native-web/dist/exports/Modal/ModalPortal.js
++++ b/node_modules/react-native-web/dist/exports/Modal/ModalPortal.js
+@@ -24,7 +24,7 @@ function ModalPortal(props) {
+   React.useEffect(() => {
+     if (canUseDOM) {
+       return () => {
+-        if (document.body && elementRef.current) {
++        if (document.body && elementRef.current && document.body.contains(elementRef.current)) {
+           document.body.removeChild(elementRef.current);
+           elementRef.current = null;
+         }

@@ -1,0 +1,197 @@
+{
+  "rules": {
+    "users": {
+      "$userId": {
+        ".read": "auth.uid == $userId || auth.token.type === 'backend'",
+        ".write": "auth.token.type === 'backend'",
+        ".validate": "newData.hasChildren(['email'])",
+        "refreshTokens": {
+          "$tokenId": {
+            ".read": "auth.token.type === 'backend'",
+            ".write": "auth.token.type === 'backend'"
+          }
+        }
+      }
+    },
+
+    "profiles": {
+      ".read": "auth != null",
+      ".indexOn": ["geohash"],
+      "$userId": {
+        ".read": "auth != null",
+        ".write": "auth.uid == $userId || auth.token.type === 'backend'",
+        ".validate": "newData.child('uid').exists() || data.child('uid').exists()",
+
+        "sent_likes": {
+          ".read": "auth.uid == $userId || auth.token.type === 'backend'",
+          "$targetId": {
+            ".read": "auth.uid == $userId || auth.token.type === 'backend'",
+            ".write": "auth.uid == $userId || auth.token.type === 'backend'",
+            ".validate": "newData.hasChildren(['createdAt'])"
+          }
+        },
+
+        "received_likes": {
+          ".read": "auth.uid == $userId || auth.token.type === 'backend'",
+          "$senderId": {
+            ".read": "auth.uid == $userId || auth.token.type === 'backend'",
+            ".write": "auth != null || auth.token.type === 'backend'",
+            ".validate": "newData.hasChildren(['createdAt'])"
+          }
+        },
+
+        "nopes": {
+          ".read": "auth.uid == $userId || auth.token.type === 'backend'",
+          "$targetId": {
+            ".read": "auth.uid == $userId || auth.token.type === 'backend'",
+            ".write": "auth.uid == $userId || auth.token.type === 'backend'",
+            ".validate": "newData.hasChildren(['createdAt'])"
+          }
+        },
+
+        "favorites": {
+          ".read": "auth.uid == $userId || auth.token.type === 'backend'",
+          "$targetId": {
+            ".read": "auth.uid == $userId || auth.token.type === 'backend'",
+            ".write": "auth.uid == $userId || auth.token.type === 'backend'",
+            ".validate": "newData.hasChildren(['createdAt'])"
+          }
+        },
+
+        "notifications": {
+          ".read": "auth.uid == $userId || auth.token.type === 'backend'",
+          "$notificationId": {
+            ".read": "auth.uid == $userId || auth.token.type === 'backend'",
+            ".write": "auth != null || auth.token.type === 'backend'",
+            ".validate": "newData.hasChildren(['type', 'title', 'message'])"
+          }
+        },
+
+        "analytics": {
+          ".read": "auth.uid == $userId || auth.token.type === 'backend'",
+
+          "views": {
+            ".read": "auth.uid == $userId || auth.token.type === 'backend'",
+            "$viewerId": {
+              ".read": "auth.uid == $userId || auth.token.type === 'backend'",
+              ".write": "auth != null && auth.uid == $viewerId || auth.token.type === 'backend'",
+              ".validate": "newData.hasChildren(['userId', 'type', 'createdAt'])"
+            }
+          },
+
+          "likes": {
+            ".read": "auth.uid == $userId || auth.token.type === 'backend'",
+            "$likerId": {
+              ".read": "auth.uid == $userId || auth.token.type === 'backend'",
+              ".write": "auth != null && auth.uid == $likerId || auth.token.type === 'backend'",
+              ".validate": "newData.hasChildren(['userId', 'type', 'createdAt'])"
+            }
+          },
+
+          "stats": {
+            ".read": "auth.uid == $userId || auth.token.type === 'backend'",
+            ".write": "auth != null && auth.uid == $userId || auth.token.type === 'backend'",
+            ".validate": "newData.hasChildren(['profileViews', 'likesReceived'])"
+          }
+        },
+
+        "premium": {
+          ".read": "auth.uid == $userId || auth.token.type === 'backend'",
+          ".write": "auth.token.type === 'backend'",
+          ".validate": "newData.hasChildren(['isActive', 'tier'])"
+        }
+      }
+    },
+
+    "conversations": {
+      ".read": "auth != null",
+      "$conversationId": {
+        ".read": "auth != null && (data.child('participants').child(auth.uid).exists() || auth.token.type === 'backend')",
+        ".write": "auth.token.type === 'backend' || (auth != null && ((!data.exists() && newData.child('participants').child(auth.uid).exists()) || data.child('participants').child(auth.uid).exists()))",
+        ".validate": "newData.hasChildren(['participants'])",
+
+        "messages": {
+          "$messageId": {
+            ".read": "auth != null && (root.child('conversations').child($conversationId).child('participants').child(auth.uid).exists() || auth.token.type === 'backend')",
+
+            ".write": "auth.token.type === 'backend' || (auth != null && root.child('conversations').child($conversationId).child('participants').child(auth.uid).exists() && (newData.child('senderId').val() === auth.uid || (data.exists() && newData.child('readAt').exists())))",
+
+            ".validate": "newData.hasChildren(['senderId', 'content', 'createdAt'])"
+          }
+        }
+      }
+    },
+
+    "matches": {
+      ".read": "auth != null",
+      ".indexOn": ["userId1", "userId2"],
+      "$matchId": {
+        ".read": "auth != null && (data.child('userId1').val() === auth.uid || data.child('userId2').val() === auth.uid || auth.token.type === 'backend')",
+        ".write": "auth.token.type === 'backend' || (auth != null && !data.exists() && (newData.child('userId1').val() === auth.uid || newData.child('userId2').val() === auth.uid))",
+        ".validate": "newData.hasChildren(['userId1', 'userId2', 'matchedAt'])",
+
+        "messages": {
+          "$messageId": {
+            ".read": "auth != null && (root.child('matches').child($matchId).child('userId1').val() === auth.uid || root.child('matches').child($matchId).child('userId2').val() === auth.uid || auth.token.type === 'backend')",
+
+            ".write": "auth.token.type === 'backend' || (auth != null && !data.exists() && newData.child('senderId').val() === auth.uid) || (auth != null && data.exists() && newData.child('readAt').exists())",
+
+            ".validate": "newData.hasChildren(['senderId', 'content', 'sentAt'])"
+          }
+        }
+      }
+    },
+
+    "blocks": {
+      ".read": "auth != null",
+      ".indexOn": ["blockerId"],
+      "$blockId": {
+        ".read": "auth.uid == data.child('blockerId').val() || auth.token.type === 'backend'",
+        ".write": "auth.uid == data.child('blockerId').val() || (auth != null && !data.exists() && newData.child('blockerId').val() === auth.uid) || auth.token.type === 'backend'",
+        ".validate": "
+          !newData.exists() ||
+          (
+            newData.hasChildren(['blockerId', 'blockedId', 'createdAt']) &&
+            newData.child('blockerId').val().length > 0 &&
+            newData.child('blockerId').val().length <= 128 &&
+            newData.child('blockedId').val().length > 0 &&
+            newData.child('blockedId').val().length <= 128 &&
+            newData.child('blockerId').val() !== newData.child('blockedId').val()
+          )
+        "
+      }
+    },
+
+    "sharedSpots": {
+      "$spotId": {
+        ".read": "auth != null",
+        ".write": "auth.token.type === 'backend'",
+        ".validate": "newData.hasChildren(['userId', 'name'])"
+      }
+    },
+
+    "verificationSessions": {
+      "$sessionId": {
+        ".read": "auth.token.type === 'backend'",
+        ".write": "auth.token.type === 'backend'",
+        ".validate": "newData.hasChildren(['userId', 'createdAt'])"
+      }
+    },
+
+    "notificationHistory": {
+      "$userId": {
+        ".read": "auth.uid == $userId || auth.token.type === 'backend'",
+        ".write": "auth.token.type === 'backend'",
+        ".validate": "newData.hasChildren(['title', 'body'])",
+        "$notificationId": {
+          ".read": "auth.uid == $userId || auth.token.type === 'backend'",
+          ".write": "auth.token.type === 'backend'",
+          ".validate": "newData.hasChildren(['title', 'body'])"
+        }
+      }
+    },
+
+    ".read": false,
+    ".write": false
+  }
+}

@@ -1,0 +1,494 @@
+{
+  "testUsers": [
+    {
+      "id": "user-admin-001",
+      "email": "test.admin@nearme.dev",
+      "password": "TestAdmin123!",
+      "profile": {
+        "firstName": "François",
+        "lastName": "Dupont",
+        "displayName": "François Dupont",
+        "bio": "J'adore la technologie et les caractères spéciaux: éàèçù",
+        "birthYear": 1998,
+        "age": 28,
+        "gender": "male",
+        "city": "Paris",
+        "country": "FR",
+        "interests": ["Tech", "Voyages", "Sports"],
+        "photos": [
+          "photo1-admin.jpg",
+          "photo2-admin.jpg",
+          "photo3-admin.jpg"
+        ],
+        "verified": true,
+        "premium": true,
+        "ageVerified": true
+      }
+    },
+    {
+      "id": "user-premium-002",
+      "email": "test.premium@nearme.dev",
+      "password": "TestPremium123!",
+      "profile": {
+        "firstName": "Sophie",
+        "lastName": "Martin",
+        "displayName": "Sophie Martin",
+        "bio": "Ingénieur logiciel, J'aime l'innovation",
+        "birthYear": 1998,
+        "age": 26,
+        "gender": "female",
+        "city": "Lyon",
+        "country": "FR",
+        "interests": ["Code", "Musique", "Cinéma"],
+        "photos": [
+          "photo1-sophie.jpg",
+          "photo2-sophie.jpg",
+          "photo3-sophie.jpg",
+          "photo4-sophie.jpg"
+        ],
+        "verified": true,
+        "premium": true,
+        "ageVerified": true
+      }
+    },
+    {
+      "id": "user-basic-003",
+      "email": "test.basic@nearme.dev",
+      "password": "TestBasic123!",
+      "profile": {
+        "firstName": "Jean",
+        "lastName": "Moreau",
+        "displayName": "Jean Moreau",
+        "bio": "Découvrir de nouvelles personnes",
+        "birthYear": 1996,
+        "age": 30,
+        "gender": "male",
+        "city": "Marseille",
+        "country": "FR",
+        "interests": ["Voyages", "Lecture"],
+        "photos": [
+          "photo1-jean.jpg",
+          "photo2-jean.jpg"
+        ],
+        "verified": false,
+        "premium": false,
+        "ageVerified": false
+      }
+    },
+    {
+      "id": "user-special-004",
+      "email": "test.special@nearme.dev",
+      "password": "TestSpécial@123!",
+      "profile": {
+        "firstName": "José",
+        "lastName": "García",
+        "displayName": "José García",
+        "bio": "Hola! Ich spreche Deutsch, 我也会中文",
+        "birthYear": 2001,
+        "age": 25,
+        "gender": "other",
+        "city": "Barcelona",
+        "country": "ES",
+        "interests": ["Langues", "Musique", "Cuisine"],
+        "photos": [
+          "photo1-jose.jpg",
+          "photo2-jose.jpg",
+          "photo3-jose.jpg"
+        ],
+        "verified": true,
+        "premium": false,
+        "ageVerified": true
+      }
+    },
+    {
+      "id": "user-unverified-005",
+      "email": "test.unverified@nearme.dev",
+      "password": "TestUnverified123!",
+      "profile": {
+        "firstName": "Marie",
+        "lastName": "Leblanc",
+        "displayName": "Marie Leblanc",
+        "bio": "Nouvelle sur la plateforme",
+        "birthYear": 2004,
+        "age": 22,
+        "gender": "female",
+        "city": "Toulouse",
+        "country": "FR",
+        "interests": ["Art", "Mode", "Voyage"],
+        "photos": [
+          "photo1-marie.jpg"
+        ],
+        "verified": false,
+        "premium": false,
+        "ageVerified": false
+      }
+    }
+  ],
+  "testMessages": [
+    {
+      "id": "msg-001",
+      "sender": "user-admin-001",
+      "receiver": "user-premium-002",
+      "text": "Bonjour Sophie! Ça va bien?",
+      "timestamp": "2026-07-03T10:00:00Z",
+      "special_chars": true
+    },
+    {
+      "id": "msg-002",
+      "sender": "user-premium-002",
+      "receiver": "user-admin-001",
+      "text": "Coucou François! Très bien, et toi?",
+      "timestamp": "2026-07-03T10:05:00Z",
+      "special_chars": true
+    },
+    {
+      "id": "msg-003",
+      "sender": "user-admin-001",
+      "receiver": "user-premium-002",
+      "text": "J'adore la programmation, c'est incroyable!",
+      "timestamp": "2026-07-03T10:10:00Z",
+      "special_chars": true
+    },
+    {
+      "id": "msg-004",
+      "sender": "user-admin-001",
+      "receiver": "user-premium-002",
+      "text": "Grüße aus Deutschland! Über vieles interessieren!",
+      "timestamp": "2026-07-03T10:15:00Z",
+      "special_chars": true,
+      "language": "de"
+    },
+    {
+      "id": "msg-005",
+      "sender": "user-admin-001",
+      "receiver": "user-premium-002",
+      "text": "¡Hola! Me encanta viajar por España.",
+      "timestamp": "2026-07-03T10:20:00Z",
+      "special_chars": true,
+      "language": "es"
+    },
+    {
+      "id": "msg-006",
+      "sender": "user-admin-001",
+      "receiver": "user-premium-002",
+      "text": "Olá! Tudo bem com você? Portugal é lindo!",
+      "timestamp": "2026-07-03T10:25:00Z",
+      "special_chars": true,
+      "language": "pt"
+    },
+    {
+      "id": "msg-007",
+      "sender": "user-admin-001",
+      "receiver": "user-premium-002",
+      "text": "你好! 我叫François。中文很有意思!",
+      "timestamp": "2026-07-03T10:30:00Z",
+      "special_chars": true,
+      "language": "zh"
+    },
+    {
+      "id": "msg-008",
+      "sender": "user-admin-001",
+      "receiver": "user-premium-002",
+      "text": "안녕하세요! 저는 엔지니어입니다.",
+      "timestamp": "2026-07-03T10:35:00Z",
+      "special_chars": true,
+      "language": "ko"
+    },
+    {
+      "id": "msg-009",
+      "sender": "user-admin-001",
+      "receiver": "user-premium-002",
+      "text": "こんにちは！プログラミングが好きです。🚀",
+      "timestamp": "2026-07-03T10:40:00Z",
+      "special_chars": true,
+      "language": "ja"
+    }
+  ],
+  "testBios": [
+    {
+      "id": "bio-001",
+      "content": "J'adore la programmation et l'innovation!",
+      "languages": ["fr"],
+      "special_chars": ["é", "'", "d'"]
+    },
+    {
+      "id": "bio-002",
+      "content": "Bonjour! Ça va bien? J'aime vraiment ça.",
+      "languages": ["fr"],
+      "special_chars": ["ç", "à", "'"]
+    },
+    {
+      "id": "bio-003",
+      "content": "Prénom: François-Michaël, Très passionné!",
+      "languages": ["fr"],
+      "special_chars": ["é", "ç", "-"]
+    },
+    {
+      "id": "bio-004",
+      "content": "Grüße aus München! Über vieles interessieren!",
+      "languages": ["de"],
+      "special_chars": ["ü", "ö"]
+    },
+    {
+      "id": "bio-005",
+      "content": "¡Hola! Me encanta viajar. ¿Quieres salir?",
+      "languages": ["es"],
+      "special_chars": ["¡", "!", "á", "ü", "?"]
+    },
+    {
+      "id": "bio-006",
+      "content": "Olá! Tudo bem? São Paulo é minha cidade!",
+      "languages": ["pt"],
+      "special_chars": ["ã", "õ"]
+    },
+    {
+      "id": "bio-007",
+      "content": "你好! 我叫François。中文很有意思!",
+      "languages": ["zh", "fr"],
+      "special_chars": ["chinese_chars", "é"]
+    },
+    {
+      "id": "bio-008",
+      "content": "안녕하세요! 저는 엔지니어입니다. 반갑습니다!",
+      "languages": ["ko"],
+      "special_chars": ["korean_chars"]
+    },
+    {
+      "id": "bio-009",
+      "content": "こんにちは！プログラミングが好きです。日本語を話します。",
+      "languages": ["ja"],
+      "special_chars": ["japanese_chars"]
+    },
+    {
+      "id": "bio-010",
+      "content": "Hello! 你好! Salut! Hola! Hallo! مرحبا!",
+      "languages": ["en", "zh", "fr", "es", "de", "ar"],
+      "special_chars": ["multiple_languages"]
+    }
+  ],
+  "testNames": [
+    {
+      "id": "name-001",
+      "firstName": "François",
+      "lastName": "Dupont",
+      "language": "fr",
+      "special_chars": true
+    },
+    {
+      "id": "name-002",
+      "firstName": "José",
+      "lastName": "García",
+      "language": "es",
+      "special_chars": true
+    },
+    {
+      "id": "name-003",
+      "firstName": "Müller",
+      "lastName": "Schmidt",
+      "language": "de",
+      "special_chars": true
+    },
+    {
+      "id": "name-004",
+      "firstName": "João",
+      "lastName": "Silva",
+      "language": "pt",
+      "special_chars": true
+    },
+    {
+      "id": "name-005",
+      "firstName": "François-Michaël",
+      "lastName": "Dupont-Martin",
+      "language": "fr",
+      "special_chars": true,
+      "note": "Tirets et accents combinés"
+    },
+    {
+      "id": "name-006",
+      "firstName": "O'Connor",
+      "lastName": "Murphy",
+      "language": "en",
+      "special_chars": true,
+      "note": "Apostrophe"
+    },
+    {
+      "id": "name-007",
+      "firstName": "李",
+      "lastName": "明",
+      "language": "zh",
+      "special_chars": true
+    },
+    {
+      "id": "name-008",
+      "firstName": "김",
+      "lastName": "민준",
+      "language": "ko",
+      "special_chars": true
+    },
+    {
+      "id": "name-009",
+      "firstName": "田中",
+      "lastName": "太郎",
+      "language": "ja",
+      "special_chars": true
+    }
+  ],
+  "errorMessages": [
+    {
+      "code": "auth/email-already-in-use",
+      "fr": "Cet email est déjà utilisé",
+      "en": "This email is already in use",
+      "test_value": "test.admin@nearme.dev"
+    },
+    {
+      "code": "auth/weak-password",
+      "fr": "Mot de passe faible",
+      "en": "Weak password",
+      "test_value": "123456"
+    },
+    {
+      "code": "auth/wrong-password",
+      "fr": "Identifiants invalides. Veuillez réessayer.",
+      "en": "Invalid credentials. Please try again.",
+      "test_value": "wrongpassword"
+    },
+    {
+      "code": "permission-denied",
+      "fr": "Vous n'avez pas la permission d'accéder à cette ressource.",
+      "en": "You don't have permission to access this resource.",
+      "special_chars": true
+    },
+    {
+      "code": "operation-not-allowed",
+      "fr": "La réinitialisation de mot de passe n'est pas activée.",
+      "en": "Password reset is not enabled.",
+      "special_chars": true
+    }
+  ],
+  "testScenarios": [
+    {
+      "id": "scenario-001",
+      "name": "Happy Path: Inscription et Login",
+      "steps": [
+        "Aller à /language-country",
+        "Sélectionner FR et FR",
+        "Cliquer Continuer",
+        "Aller à /auth/register",
+        "Créer compte avec test.new.user@nearme.dev",
+        "Compléter profil avec accents",
+        "Vérifier identité",
+        "Se déconnecter",
+        "Se reconnecter avec même email",
+        "Vérifier profil sauvegardé"
+      ],
+      "expected_duration_minutes": 10
+    },
+    {
+      "id": "scenario-002",
+      "name": "Like + Match + Message",
+      "steps": [
+        "Connecté en tant que user-admin-001",
+        "Aller à /discover",
+        "Like profil user-premium-002",
+        "Connecté user-premium-002 (autre navigateur/incognito)",
+        "Aller à /discover",
+        "Like profil user-admin-001",
+        "Revenir user-admin-001",
+        "Vérifier match créé",
+        "Aller à /chat",
+        "Ouvrir chat avec user-premium-002",
+        "Envoyer message avec accents",
+        "Vérifier réception"
+      ],
+      "expected_duration_minutes": 15
+    },
+    {
+      "id": "scenario-003",
+      "name": "Édition Profil Complète",
+      "steps": [
+        "Connecté",
+        "Aller à /profile/edit",
+        "Éditer prénom: François-Michaël",
+        "Éditer bio: 'J'adore...' avec accents",
+        "Aller à /profile/photos",
+        "Ajouter 6 photos",
+        "Tenter ajouter 7e photo (erreur)",
+        "Supprimer une photo",
+        "Ajouter nouvelle photo",
+        "Vérifier modifications sauvegardées"
+      ],
+      "expected_duration_minutes": 15
+    },
+    {
+      "id": "scenario-004",
+      "name": "Caractères Spéciaux Multilingues",
+      "steps": [
+        "Connecté",
+        "Aller à /profile/edit",
+        "Bio: 'Français + Deutsch + Español + 日本語'",
+        "Message à user-premium-002: Multilingue",
+        "Aller à /discover",
+        "Like profil avec accents",
+        "Vérifier affichage dans /activity",
+        "Vérifier tous les caractères intacts"
+      ],
+      "expected_duration_minutes": 10
+    }
+  ],
+  "platforms": [
+    {
+      "name": "Web - Chrome",
+      "type": "web",
+      "browser": "Chrome",
+      "version": "latest",
+      "os": "Windows/Mac/Linux",
+      "priority": "🔴 Critique"
+    },
+    {
+      "name": "Web - Firefox",
+      "type": "web",
+      "browser": "Firefox",
+      "version": "latest",
+      "os": "Windows/Mac/Linux",
+      "priority": "🟠 Majeur"
+    },
+    {
+      "name": "Web - Safari",
+      "type": "web",
+      "browser": "Safari",
+      "version": "latest",
+      "os": "Mac/iOS",
+      "priority": "🟠 Majeur"
+    },
+    {
+      "name": "iOS",
+      "type": "mobile",
+      "platform": "iOS",
+      "version": "17+",
+      "device": "iPhone",
+      "priority": "🔴 Critique"
+    },
+    {
+      "name": "Android",
+      "type": "mobile",
+      "platform": "Android",
+      "version": "13+",
+      "device": "Samsung/Google Pixel",
+      "priority": "🔴 Critique"
+    }
+  ],
+  "testMetrics": {
+    "totalTestCases": 350,
+    "criticalTests": 50,
+    "majorTests": 120,
+    "minorTests": 180,
+    "estimatedDuration": {
+      "critical": "4 hours",
+      "major": "8 hours",
+      "minor": "6 hours",
+      "total": "18 hours"
+    },
+    "recommendedTeamSize": 2,
+    "platforms": 5
+  }
+}

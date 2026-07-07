@@ -1,0 +1,11 @@
+export { authService } from './auth.service';
+export { userService } from './user.service';
+export { blockService } from './block.service';
+export { chatService } from './chat.service';
+export { matchService } from './match.service';
+export { photoService } from './photo.service';
+export { locationService } from './location.service';
+export { notificationService } from './notification.service';
+export { notificationHistoryService } from './notification-history.service';
+export { stripeIdentityService } from './stripe-identity.service';
+export { faceCompareService } from './face-compare.service';
