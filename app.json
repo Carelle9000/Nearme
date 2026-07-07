@@ -81,7 +81,6 @@
           }
         }
       ],
-      "react-native-iap",
       "expo-iap"
     ],
     "experiments": {
