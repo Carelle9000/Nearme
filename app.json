@@ -4,7 +4,7 @@
     "slug": "nearme",
     "version": "1.0.2",
     "orientation": "portrait",
-    "icon": "./assets/images/logon.jpeg",
+    "icon": "./assets/images/logon.png",
     "scheme": "nearme",
     "userInterfaceStyle": "dark",
     "ios": {
@@ -81,7 +81,7 @@
           }
         }
       ],
-      "expo-iap"
+      "react-native-iap"
     ],
     "experiments": {
       "typedRoutes": true,
